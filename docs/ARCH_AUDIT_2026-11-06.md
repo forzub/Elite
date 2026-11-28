@@ -1,3 +1,5 @@
+> **ИСТОРИЧЕСКИЙ ДОКУМЕНТ, НЕ НОРМАТИВНЫЙ (ревизия требований 2026-11-28).** Его нормы (включая «frozen»/«accepted», запрет выбора закона управления во время работы, числовые радиусы, прямые и скорости) не действуют, если не перенесены в `PROJECT_STATE.md`. Действующее состояние и требования — `PROJECT_STATE.md`.
+
 # Elite — architecture audit (read-only), 2026-11-06
 
 Scope: `main` at `994be849` plus the ~133 commits of the last 3 days (free flight / J engine / stabilization,

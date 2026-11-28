@@ -1,46 +1,75 @@
-# Elite repository agent contract
+# Правила работы агентов в репозитории ELITE / HUNTED
 
-This file defines repository-level working rules for coding/maintenance agents.
+## Источник состояния
 
-## Canonical project context
+- `PROJECT_STATE.md` в `main` — единственный действующий документ состояния и требований. Перед работой прочитать
+  его и сверить утверждения с кодом.
+- Нормативны только:
+  - `PROJECT_STATE.md`;
+  - предметные документы, на которые он ссылается (`docs/TRADE_DESIGN.md`, `JUMP_MECHANICS.md`,
+    `docs/WORLD_SAVE_CONTRACT.md` и т. п.), в части своего предмета.
+- Исторические, не нормативны:
+  - `PROJECT_STATE_HISTORY_*.md`, `CURRENT_STATE.md`, `CURRENT_TASK.md`, `CONTINUE_PROMPT.md`;
+  - октябрьские хартии `docs/navigation/`, `docs/recovery/`;
+  - `NAVIGATION_WORLD_V2.md`, `src/game/navigation/NAVIGATION_V2_EXECUTION_ARCHITECTURE.md`;
+  - `AUTOPILOT_CONTROL_CONTRACT.md`;
+  - документы старого Model Asset Editor.
 
-`PROJECT_STATE.md` on `main` is the ONE living project-state and
-continuation file. Read it before implementing a new slice; corroborate its
-claims against current code and target-machine logs. Do not reconstruct
-project state from old chats or superseded summaries.
+  Это источники для поиска прошлых решений, а не требования.
+- Не восстанавливать состояние по старым чатам и сводкам.
 
-`CURRENT_STATE.md` and `CURRENT_TASK.md` are legacy dated histories, NOT
-parallel living state files. Read them or stage-specific architecture contracts
-only when investigating the relevant historical design. The normative
-navigation architecture remains in its dedicated source contracts (for example
-`src/game/navigation/NAVIGATION_V2_EXECUTION_ARCHITECTURE.md`).
+## Происхождение требований
 
-## Mandatory state recording
+- **Метки** — у каждого нормативного пункта:
+  - [A] — слова автора с датой;
+  - [A~] — пересказ;
+  - [E] — инженерный контракт со ссылкой на [A];
+  - [T] — техническое решение;
+  - [H] — гипотеза;
+  - [X] — эксперимент.
+- **Атрибуция.** Прежде чем назвать что-то требованием автора, найти его собственную фразу. Запись в документе,
+  реализация или тест не доказывают, что требование авторское.
+- **Свои решения.** Решение агента записывается как [T] и никогда как «author change».
+- **Новое решение заменяет старую строку**, а не дописывается рядом; история — в git.
+- **Тест** ссылается на требование или контракт, который защищает. Проверка без живого требования — кандидат на
+  удаление.
+- **Временные документы.** Временные аудиты и ревизии удаляются после переноса выводов в `PROJECT_STATE.md`.
+  Параллельную систему документации не создавать.
 
-After every **state-affecting event**, update `PROJECT_STATE.md` only,
-before beginning the next implementation slice. Record changed scope,
-ownership or acceptance criteria, real gate results, diagnosed root causes,
-completed changes and explicit next steps. Do not append similar status
-sections into `CURRENT_STATE.md`, `CURRENT_TASK.md`, or stage documents.
-Update a separate architecture/contract document only when THAT document's
-actual normative contract changes.
+## Самостоятельность и неудачи
 
-Separate source-audited changes from compiled tests and live Windows flight
-evidence. Never turn a proposed fix into an accepted result just by committing
-it.
+- **Самостоятельно** агент выбирает алгоритмы, заменяет неудачные технические решения, удаляет устаревшие тесты и
+  упрощает. Согласование с автором нужно только для изменения игрового поведения, авторских требований и
+  существенных характеристик продукта.
+- **При повторяющихся неудачах** — остановить подстройку коэффициентов, таймеров и порогов и представить отчёт по
+  `PROJECT_STATE.md` §1.2. Сначала проверить постановку задачи, гипотезы и искусственные ограничения.
+- **Порядок исправлений.** Не исправлять потребителя ошибочных данных вместо их источника. Не вводить технических
+  ограничений без объективной необходимости.
 
-## Evidence semantics
+## Запись состояния
 
-Use hashes as **verified baselines / acceptance evidence**, not as "current
-HEAD" fields. A commit that updates documentation changes HEAD immediately, so
-"current HEAD" stored inside the same documentation is self-invalidating.
+- После события, меняющего состояние, обновить `PROJECT_STATE.md`. Он не хроника: менять соответствующий пункт
+  раздела 2, 3, 4 или 5.
+- Подробности доказательств хранить в сообщении коммита.
+- Различать уровни: исходник проверен, собрано, автоматические проверки, живой прогон. Коммит — не приёмка.
+- Хеши — это ссылки на доказательства, а не поле «текущий HEAD».
+- Неудачные проверки — тоже факт. Записывается причина и выбранное исправление.
 
-Do not mark a runtime slice ACCEPTED without the required target-machine
-evidence. Failed gates are part of project history and should be recorded with
-their root cause and the correction chosen; do not erase them merely because a
-later attempt passes.
+## Ветка и коммиты
 
-## Canonical branch
+- `main` — единственная ветка разработки. WIP-ветки — только для временно отложенной работы, с записью в
+  `PROJECT_STATE.md` §5.
+- Добавлять файлы командой `git add -A -- . ':!src/assets/data/belt_demo_haze.json'`. Этот файл никогда не
+  откатывать.
+- Точка восстановления `44bbbcf829763bc1c86e41ab3cbf46cf17896308` — не переписывать.
 
-`main` is the canonical development branch unless the state documents
-explicitly say otherwise.
+## Окружение (Windows)
+
+- **Сборка.** MSYS2 MinGW64: `export PATH=/c/msys64/mingw64/bin:$PATH`, затем
+  `ninja EliteGame EliteServer` в `build-relwithdebinfo`. Не ставить `/c/msys64/usr/bin` первым: игра теряет
+  LOCALAPPDATA/TEMP.
+- **Временные файлы.** `D:/tmp` — только для временных `elite_*` файлов; чужие файлы там не трогать.
+- **Процессы.** Останавливать только процесс со своим PID; по имени не убивать. Перед запуском проверить `tasklist`
+  на игру пользователя. Пока игра запущена, не линковать.
+- **Живые прогоны** — видимые на экране (`ELITE_DEV_OFFSCREEN_WINDOW=0`) и под сторожем зависания.
+- **Пути.** Не создавать junction или symlink в рабочие деревья. Не заменять `D:/__elite/prodaction`.

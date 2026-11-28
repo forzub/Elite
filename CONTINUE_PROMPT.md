@@ -1,3 +1,5 @@
+> **ИСТОРИЧЕСКИЙ ДОКУМЕНТ, НЕ НОРМАТИВНЫЙ (ревизия требований 2026-11-28).** Его нормы (включая «frozen»/«accepted», запрет выбора закона управления во время работы, числовые радиусы, прямые и скорости) не действуют, если не перенесены в `PROJECT_STATE.md`. Действующее состояние и требования — `PROJECT_STATE.md`.
+
 ## Continue from 2026-10-06 frozen Navigation V2 execution architecture
 
 Read `src/game/navigation/NAVIGATION_V2_EXECUTION_ARCHITECTURE.md` before changing navigation code.

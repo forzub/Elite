@@ -1,3 +1,5 @@
+> **ИСТОРИЧЕСКИЙ ДОКУМЕНТ, НЕ НОРМАТИВНЫЙ (ревизия требований 2026-11-28).** Его нормы (включая «frozen»/«accepted», запрет выбора закона управления во время работы, числовые радиусы, прямые и скорости) не действуют, если не перенесены в `PROJECT_STATE.md`. Действующее состояние и требования — `PROJECT_STATE.md`.
+
 ### v0.10.73 wave7E SEMANTICS effect extraction
 
 - The complete 51-function logical owner `semantics` is physically owned by `src/assets/webui/model_asset_editor/effects/semantics.js` via `createSemanticsEffects(...)`; no owned implementation remains inline.

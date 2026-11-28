@@ -1,3 +1,5 @@
+> **ИСТОРИЧЕСКИЙ ДОКУМЕНТ, НЕ НОРМАТИВНЫЙ (ревизия требований 2026-11-28).** Его нормы (включая «frozen»/«accepted», запрет выбора закона управления во время работы, числовые радиусы, прямые и скорости) не действуют, если не перенесены в `PROJECT_STATE.md`. Действующее состояние и требования — `PROJECT_STATE.md`.
+
 # Navigator: planner + autopilot (author's task, 2026-11-22)
 
 One navigator for every route kind: from where the ship is to a target with end conditions on demand (velocity

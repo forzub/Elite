@@ -1,0 +1,9809 @@
+> **ИСТОРИЧЕСКИЙ ДОКУМЕНТ, НЕ НОРМАТИВНЫЙ (с 2026-11-28).** Хроника `PROJECT_STATE.md` до ревизии требований
+> 2026-11-28. Строки «CONTRACT», «author», «frozen» здесь не доказывают, что это действующее требование: многие из
+> них — гипотезы ассистентов. Действующее состояние — `PROJECT_STATE.md`. Источник для поиска ранее принятых
+> решений и доказательств.
+
+# ELITE — PROJECT STATE (single canonical continuation document)
+Updated: 2026-11-24, Europe/Kyiv. Repository: `forzub/Elite`. Branch: **main ONLY**.
+Layout: the rules and the CURRENT INVARIANTS first (what holds now, with its status); then the dated chronology (newest
+at the end - the evidence of each change). A chronology entry never overrides the invariants; a changed invariant is
+edited HERE and its evidence appended below.
+
+## Current invariants (2026-11-24; status: CONTRACT = in force and covered, EXPERIMENT = behind a flag, REVOKED =
+## no longer true, AUTHOR = waits for the author's decision)
+World physics
+- CONTRACT: the universe's constants and laws live in ONE place, src/world/WorldLaws.h (light speed, standard g, the
+  medium: free coasting to 0.6 c, exponential resistance above against the dominant body, 1e5 g holds 0.9 c). Every
+  moving body obeys them whatever drives it (ships, the cockpit-capsule, drones, wrecks); technology only uses them
+  (author 2026-11-24: «всё подчиняется местной физике»). The J field's half-speed rule without a whole field is the
+  field's, in JDrive.h.
+- CONTRACT: a ring hub is DATA: radius, width (plan bounds), rim g and period come from its hub plan ("ring"); the
+  modules that turn with it are marked in the world data (turns_with_ring). No ring size / speed in code.
+Navigation - route planning
+- CONTRACT: the optimizer minimizes the TRAVEL TIME (timeOptimalWeights; ELITE_ROUTE_TIME_OBJECTIVE=0 = the old mix).
+  The pure planner (RoutePlanner.cpp, the optimizer, SegmentedRouteComposer, RouteEntryBinder) reads no env / files /
+  clocks / logs: RoutePlannerOptions set by configureRoutePlannerFromEnvironment() in the CLIENT (SpaceState); the
+  optimizer's budget clock is injected, else an evaluation count (check_navigation_route_boundaries green).
+- CONTRACT: the route-draft net is on (ELITE_ROUTE_DRAFT=0 off); its model is refused unless it meets the contract
+  (schema, feature_version 2, shapes 112 -> 11, finite stats; ctest route_draft_net_contract).
+- CONTRACT: the hub lane chain is costed in SECONDS (ELITE_LANE_CHAIN_COST=metres = the old metres); every lane /
+  junction section is flown at its own limit (no piece at its slowest part); the search runs off the frame thread.
+- AUTHOR (PLAN-2): in seconds mode FreeInHubFactor (2026-11-22: green lanes beat free space in a hub for SAFETY) applies
+  nowhere - does "everything by time" (2026-11-24) replace it?
+- CONTRACT: the planning-time lead (lower median of the last 5 FULL adopted plans x 1.5, 8..30 s) covers the ship's
+  own start leg only. A resting Assisted start: 3 hull lengths (>= 30 m); moving: >= 1 km.
+- CONTRACT: a route is accepted only if [RouteCheck] (the obstacle grid, hull radius + each obstacle's clearance)
+  passes - a failure refuses the plan. Rotating parts (a station's habitat ring) are planned as their swept rings; the
+  server's ring volumes are angular sectors (ObjectRuntimeHitBuilder) turned with the module at collision time.
+- REVOKED: the obstacle grid inside the lane-chain search (reverted eba3e5a31); "the planning lead = 1.5 x the last
+  plan" (now the lower median of 5); the route-draft net's lab "game" numbers (old weights, no net).
+- EXPERIMENT: ELITE_HUB_FREE_SPEED=1 (the zone limit sizes the geometry only), ELITE_HUB_ZONE_SPEED_CAP=0.
+Navigation - evasion
+- CONTRACT: the reflex judges every interval of the predicted flight as continuous motion (TrajectoryConflict.h:
+  analytic closest approach / first touch, chord bound); targets' real sizes from the radar track; own size from own
+  hit volumes; old scans turned into the current body frame; uncertainty in the safety envelope (base 15 m).
+  ctest evasion_trajectory_conflict (independent oracle).
+- CONTRACT: one reflex episode per route run / virtual-pilot phase / own flight (no stale dodge); the dodge cancels a
+  persistent alignment (wire 50); every virtual pilot submits through submitVirtualPilotControl (reflex in hub-local
+  flight; NOT in global / J flight); the predicted dodge goes through the execution gateway with the real RCS flags.
+- CONTRACT: the manual collision assist by the difficulty (off / warn / assist) acts when a safety-clearance violation
+  (< 0: hulls + 15 m + uncertainty) is due within the urgency window - not only an "unavoidable touch".
+- AUTHOR: the J keep-out drops J acceleration, not speed (a ship entering at 0.5 c crosses it); debris is not in it.
+Server / replication
+- CONTRACT: hub kit modules and layout cities derive their hit volumes on the client (not replicated); the welcome
+  carries the hub content fingerprint (HUB_CONTENT_MISMATCH refuses); construction overrides are replicated in the
+  session (schema 72) and the construction clock is the server's universe time; entering a system takes complete
+  objects from the canonical snapshot; an unencodable snapshot answers SNAPSHOT_TOO_LARGE (wire 51); inbound TCP queues
+  bounded (4096). Wire protocol 55, snapshot schema 80.
+- CONTRACT: the activation diagnostics CSV only with ELITE_DEV_ACTIVATION_CSV=1.
+- CONTRACT (audit 2026-11-26, the ownership rule): every mutable fact has exactly ONE authoritative runtime owner;
+  derived structures are views / projections and never a second owner; network snapshots are explicit projections of
+  the authoritative state, not serialized copies of runtime structures; client state is a replica / prediction /
+  presentation and never server truth; persistence and replay use versioned schemas / DTOs, never the memory layout of
+  a runtime C++ struct. NOT YET MET (open, in this order): ShipSnapshot carries DynamicMotionState almost whole (144 of
+  161 fields, the same row for every audience) - the replication projection; ShipParams stored raw in replay cases.
+- CONTRACT: m_canonicalReplicationSnapshot (GameServer) is canonical for REPLICATION only (hydration of late joiners,
+  sparse nested fields kept between publications) - it is a projection of the server runtime, never gameplay truth;
+  nothing reads it back into the simulation.
+Economy
+- CONTRACT: a ship loss is keyed by ship + universe time, recorded for every ship with cargo or a player; an insured
+  lost lot is subrogated to the insurer (claim paid, payout recorded); a failed state write is retried until saved;
+  request ids run once per session; a dropped request answers "busy".
+- OPEN: one transaction for economy + ships.json; durable-before-reply; container identity / holder modules (ECO-6).
+Gates (the green base, re-measured 2026-11-24): architecture contracts 184 / 14 baseline reds (none new); navigation
+ctest 66: 57 / 9 baseline reds; EliteEconomyCheck 258 / 0. Lists: "Baseline reds - architecture contracts".
+
+## Hard rules
+- This file is the ONLY active continuation state. No alternative state /
+  notes files, no side branches. History lives in git, not here.
+- Full chronology up to 2026-10-29 (every dated gate, failed gates included):
+  `git show 3435b220:PROJECT_STATE.md` (older: `PROJECT_STATE_HISTORY_THROUGH_2026-09-13.md`).
+- Work in small source-grounded steps; WIP commits on main; commit != acceptance.
+  Status levels: SOURCE / BUILD PASS / AUTOMATED PASS / GAME START /
+  HEALTHY FLIGHT / DAMAGE FLIGHT.
+- User Windows: MSYS2 MinGW64 (`/c/msys64/mingw64/bin` on PATH; do NOT put
+  `/c/msys64/usr/bin` first - the game then loses LOCALAPPDATA/TEMP), CMake +
+  Ninja. `build/` = game (Debug -O0), `build/headless_server/` = server + DEV tools.
+- D:/tmp holds only transient `elite_*` files, emptied per stage; never touch
+  other files there. Never kill processes by broad name; DEV scripts stop
+  only the PID they started; check `tasklist` for a user game first.
+- **Recovery checkpoint:** `44bbbcf829763bc1c86e41ab3cbf46cf17896308` (empty
+  commit pointing to the pre-Claude-cleanup tree of `590eb24a`). Never rewrite.
+
+## Architecture (current)
+
+### Server / client
+- Server is the only physical authority (equipment, damage, power, heat, real
+  forces and torques, rigid body, NPCs, collisions). Client interpolates and
+  extrapolates kinematically; no second force model. Pilot and autopilot send
+  the SAME numbered `ShipControlState` through `ShipControlExecutionGateway`.
+- `ObjectModuleRuntime` = authoritative equipment state (damage causes
+  accumulate). `HitVolume.health` = structural hit volumes, not engine authority.
+- Production ships: Cobrett-I N1 (Newtonian), A3 (Assisted) passports; I/Y/X
+  are validation configurations. Body basis +X right, +Y up, -Z nose.
+
+### Navigation (Newtonian stack)
+- ONE factual `NavigationControlCapability` (main, signed RCS per direction,
+  signed angular, gimbal, limits; zero is zero) read by route request,
+  profile, compiler and pilot; published by the server
+  (`ShipControlAuthorityTelemetry`) incl. the RCS gas pressure share.
+- Route autopilot `DedicatedClientRouteAutopilot<Law, Pilot>` (per-law control
+  flow, pilot) + `RouteExecutionCore` (.cpp; continuous reference, runtime
+  speed profile, thrust-reversal coast, curve maps, program builder) on
+  `RouteExecutionState` -> `NewtonianMotionProfile` (one profile owner) ->
+  `NewtonianManoeuvreProgram` compiler -> `NewtonianOptimalController` pilot
+  -> `NewtonianExecutionSafetyMonitor`. Doctrine constants:
+  `NewtonianFlightPolicy`; one turn model `NewtonianTurnModel`; narrow zones:
+  `NarrowZoneEnvelope::analyseRotationFit`; speed band
+  `NewtonianSpeedTolerancePolicy`.
+- Capability change during a route (`NewtonianCapabilityWatch`, 10 % / 0.5 s):
+  in-place reprofile + recompile, deferred inside narrow zones; hand-back for
+  a replan only when a speed ahead is unreachable, an RCS direction is dead or
+  no authority is left. Reactors off: neutral coast, wait, replan.
+  Failed attempts coast and replan (5 attempts >= 5 s apart).
+- Rotating dock: terminal roll follows the live dock roll phase; with a
+  rotating terminal frame rest is judged on pitch/yaw.
+- RCS gas: installed Cobra AT-500 tank (module `rcs_gas_tank`); refill only
+  while the nozzles draw nothing; below the 20 % regulator knee the nozzles
+  (and the published authority) weaken; routes start from rest at >= 75 % fill.
+
+### Propulsion / power / thermal (as in source; see the stage audit below)
+- ER-5 propulsion generators feed main + RCS (RCS never draws from the 70 MW
+  service reactor: `m_powerBus.setAuxiliaryDemandMW(0)`); ER-5 has its own
+  radiation pad (11 x 11 m, 6 MW/m^2 law); main / RCS nozzles radiate from
+  their own pads, residual heat stays in their thermal mass.
+- `ShipCore::m_propulsionThermal` = propulsion coolant store separate from the
+  service coolant `m_thermal` (service reactor, auxiliaries, 1600 m^2 radiators).
+- Accepted design (user 2026-10-26): two electrically independent groups
+  PROPULSION and SHIP SERVICES; cross-link = emergency thermal coupling only,
+  bounded by real hardware, gradients and sink headroom; no free / doubled heat.
+  Installed since 2026-10-29: module `propulsion_emergency_heat_exchanger`
+  (ER-5 surplus -> service coolant, bounded, energy exact).
+
+### Universe
+- 61 stellar systems at real ICRS positions (identity audit), deterministic
+  generator `src/world/generation/` (UniverseSeed 0x454C495445303031; stellar /
+  body / satellites v1, resources v1, interstellar v4), physical catalog under
+  `galaxy_details/systems/<NNN>_<slug>/`, StarAtlas schema 2, Kepler orbits on
+  the UniverseClock, `CelestialEphemerisService` (read-only states, not yet
+  used by gameplay), gravity from catalog mu / radius / atmosphere radius.
+- Navigation domain (`GalacticGrids.h`): 140-ly envelope + remote 20-ly balls
+  and corridors (313 root cells, 1 component); grids 1 ly / 40.32 ly root /
+  25 ly interstellar generation cell.
+- Interstellar layer v4 (see the stage section): cavity / shell substrate,
+  causal structures, irregular density lattices (`DensityLattice.h`), compact
+  objects (rogues, brown dwarfs, remnants, comets, debris), ISM extraction
+  profiles. Resource layers (NaturalResource / IndustrialSuitability /
+  Habitability / FuelPotential), no prices. System Map presentation levels
+  (Margot Pi). Physical vs political system ids validated
+  (`check_system_id_namespaces.py`).
+
+### Code layout (2026-10-29 decomposition, behaviour preserving)
+- `SpaceState`: core lifecycle / update / render in `SpaceState.cpp`, plus
+  `SpaceStateDocking.cpp` (docking + route-autopilot orchestration),
+  `SpaceStateMaps.cpp`, `SpaceStateHud.cpp`, `SpaceStateDevPanel.cpp`.
+- `ShipCore`: `ShipCore.cpp` (init, slots, services) + `Capability`,
+  `Propulsion`, `PowerThermal`, `Status`, `Damage` units.
+- `SystemMapRenderer`: + `Primitives`, `Navigation`, `Input`, `Background`.
+- `GameSimulation`: + `NavigationLab` (DEV), `DevScenarios` (DEV),
+  `Replication`, `Activation`, `ReferenceFrames`.
+- Shared file-level helpers: private `*Internal.h`. Source contracts read a
+  split class as one unit via `tests/source_units.py`.
+
+## Verified results (evidence)
+- Healthy real flights (nav-stress:simple): Newtonian I/Y/X, narrow I/X DONE,
+  0 corridor violations (`af7897ee`); Assisted-I failed=0.
+- Damage real flights (`9441ae9a`): main 50 %, 3/4 X mains, RCS nozzle 60 %,
+  reactors off/on, mid-route hand-back + replan - all PASS, 0 violations.
+  RCS gas tank (`138da7a3`): I/X DONE.
+- Offline scenario matrix (21 scenarios x I/X x delay 1/3/6 = 126):
+  0 violations healthy; 90/126 PASS by the strict criteria (micro-brakes etc.).
+  Reference result: `matrix_pre5.tsv` equivalent = matrix of `3435b220`.
+- Frame hitch (2026-10-29): periodic 85-115 ms frames every ~1.5 s were the
+  thrust-reversal coast recompute at each checkpoint; fixed bit-identically
+  (`b47d682b`), 0 in-flight frames > 80 ms. `core/HitchProfiler.h`
+  (ELITE_TRACE_RUNTIME=1 only; one bool test otherwise).
+- Decomposition (2026-10-29, `cf5f97ae`, `4e45618e`): matrix 126/126
+  identical to `3435b220`; real Newtonian-I flight COMPLETE, failures 0,
+  0 violations. SpaceState.cpp.obj 43.4k -> 19.4k COFF sections.
+
+## Baseline reds (pre-existing, not caused by current work)
+- client acceptance "first debounced Ctrl+F10 release emitted no flight-law
+  command"; feature contract "Ctrl+F11 coordinate-format route disappeared";
+  contracts universe_thermal_radiation, engine_unit_damage_model,
+  universe_material_engine_thermal, installed_engine_actuator, local_flight_control,
+  engine_six_axis_matrix (EngineThrustHudPresentation), physical_model_runtime_selection
+  (wire schema 13), ship_capability_layer (client prediction), ship_control_execution_gateway
+  (client attitude prediction); LocalPredictedPresentationContractTests does not
+  compile; tools/check_map_architecture.py misses a deleted .inl.
+- Re-measured 2026-11-03 against restore/pre-sol-network-2026-11-03: python
+  contract reds ship_capability_layer, ship_control_execution_gateway,
+  ship_physical_control_models, trajectory_generator, travel_frame_ownership,
+  wire_data_schema, client_acceptance, constellation_overlay,
+  debug_ui_compatibility, feature_contracts, interaction_activation are all
+  red at the restore point too. tests/system_map/check_architecture.py was red
+  (facade assigned Detail/Hub view cameras, commit 97b39d73) - FIXED in the
+  fourth pass.
+
+## Factual capability (current contract)
+- Server `ShipCore::controlAuthorityTelemetry()` is the one published fact,
+  wire schema 22: signed RCS / angular authority (24-nozzle allocator
+  samples, gas share, ER-5 power share), LIVE forward main
+  (`workingForwardAccelerationMps2` = installed x ER-5 power share), the
+  Assisted working thrust axis + emergency flag + drive-motor index, and
+  the combined two-axis RCS share (`rcsPairFeasibility01`).
+- The client (`applyAuthorityToControlParams`, MotherComputer adapter) takes
+  these values; it never re-derives the axis or main from replicated module
+  health. ER-5 power uses ONE law (`ShipCore::engineReactorAvailableMW`) in
+  the executor and in the capability.
+- The client still rebuilds a capability from the float module snapshot
+  (hybrid). Its threshold decisions are made bit-identical to the server:
+  main-engine switch-off law `plant::mainEngineCutoff` (a main engine
+  damaged > 94 % is OFF while its bank keeps an engine <= 94 %; otherwise
+  the bank keeps its real thrust), evaluated on float-rounded damage on both
+  sides and used by the server executor AND every capability projection;
+  failure threshold tolerance 1e-6 (> float rounding; 0.95f read as a live
+  5 % engine before). Assisted: execution speed profiles brake with the
+  planner's concurrent-turn share (1/3); pilot catch-up braking stays full.
+- Planned turns use min(0.5, combined RCS share) of the angular scalar.
+  Capability losses reprofile / hand back; recoveries (+10 %, 0.5 s)
+  reprofile up to the planned nominal (both laws stabilise and replan on a
+  failed or invalidated route: 5 attempts >= 5 s apart).
+
+## Map interaction contract
+- ONE pointer contract (`game::presentation::PointerClickTracker`,
+  `PointerInteractionSettings` 0.38 s / 12 px): hover never selects; a single
+  click acts at once and is never undone; a double click on the same target
+  adds its action; the cube trackers delegate to it.
+- Galaxy Map spatial frame (stage 2026-10-30 c, see below): the user is
+  always inside ONE current parent cube (overview = virtual cube of all
+  roots, then G0 / G1 / G2 cells); its children are the working cubes.
+  Double click = child becomes the parent; `[ ↑ ]` / breadcrumbs / LEVEL 0
+  go up (the cube left stays selected); the wheel only zooms. The parent is
+  fitted whole (sphere fit), its floor + far wall carry the coordinate
+  grid; hovered / selected points project onto them.
+- Galaxy Map pointer (stage 2026-10-30 b, see below): ONE resolver
+  (`GalaxyPointerResolver`) over what the last frame PRESENTED (renderer
+  publishes `presentedStars` with glyph radius and `presentedCubeMarkers`
+  exactly as drawn; SystemMapRenderer passes overlay glyphs + card-under-
+  cursor). Ranking: UI card > drawn controls (cursor inside a star glyph,
+  foreground first / cube marker / overlay glyph; else nearest drawn edge
+  within `glyphHitMarginPx` 4) > star proximity 32 px (nearest, 1 px ties
+  -> foreground, then id) > cloud shell (ray; a shell the camera is inside
+  is not a target) / icy field > empty. Gesture: press = PendingClick
+  (camera never moves), > 5 px = drag (rotation), release before = click on
+  the PRESS target; right press / wheel / zoom keys cancel a pending click.
+  The waypoint glyph of the selected cube, as the second click of that
+  cube's sequence, IS that cube (`cube_sequence_glyph`) -> refine. Hover of
+  clouds uses the same resolver. A star drawn exactly on a cube marker wins.
+- Galaxy Map clouds / icy fields: hover brightens; click selects (star
+  selection dropped) and opens ONE info card with physical data, provenance
+  and the derived ENVIRONMENTAL hazard (`world::interstellar::
+  environmentalHazard`); risk for a ship "not computed" (seam
+  `RouteRiskForShip`); star / cube / empty click drops it and the card;
+  double click flies to the navigation cube containing the clicked point.
+  Hover / selection / trackers / gesture are transient: reset on reset(),
+  onEntered(), resetNavigationToEntry().
+- System Map bodies (2026-10-31 b): single click selects (and its cube);
+  double click APPROACHES (its cube becomes the parent, camera centred on
+  it and following it); the info card comes from the context menu; a card
+  never outlives its body's selection.
+- Context menu (every map, 2026-10-31 b): right click (press + release
+  without a drag) or Ctrl + left press on an object / navigation cube ->
+  `MapContextMenu`: name + commands (INFO = card, the item's route / docking
+  panel actions, SHOW DETAILS = the object's next map, VIEW SURROUNDINGS =
+  enter the cube). It owns the pointer while open; any other press, Esc or
+  the wheel closes it.
+- Map buttons (every map): one row bottom right - back (previous map), up
+  (one level up), TRACK (System), LEVEL 0 - rounded wire bars
+  (`NavigationCoordinateOverlay::drawButtons`); an arrow exists only where
+  its command does. Back restores the previous map with its saved view
+  (`GalaxyMapBookmark` / `SystemMapBookmark` / Detail / Hub cameras).
+
+## Previous stage (2026-10-29, 24 points) - condensed
+- Decomposition (`cf5f97ae`, `4e45618e`, `7d62dfb3`), sizes before -> after:
+  SpaceState.cpp 410889 -> 96073, GameSimulation.cpp 402830 -> 119556,
+  SystemMapRenderer.cpp 156965 -> 15700, DedicatedClientRouteAutopilot.h
+  155185 -> 86035, ShipCore.cpp 153339 -> 23514; SpaceState.cpp.obj 43.4k ->
+  19.4k COFF sections (`-mbig-obj` kept as a safety net only).
+- Galaxy Map medium proxies (`0a49b731`): 59 -> 0.08 ms medium draw.
+- Interstellar v4 (`bbaf7b9e`): causal clouds, no Sol privilege, provenance,
+  icy fields, `InterstellarNavigationEnvironment` (see Universe).
+- CPU: docking corridor cache 7.5 -> 2.3 ms (`7d62dfb3`); pilot steps on
+  authoritative time (`d41d8284`); RelWithDebInfo perf path
+  (`tools/perf/build_relwithdebinfo.sh`): flight frame median 9.5 ms.
+- Emergency heat exchanger PROPULSION -> SERVICES (`a5314531`, `71c60818`):
+  60 MW rating, engage 1950 K / release 1700 K, energy exact
+  (`EliteShipThermalCheck` 9/9). Main / RCS nozzles conduct no heat into
+  `m_propulsionThermal` (own pads): that store is inert; the exchanger
+  relieves ER-5 surplus (pump-power limited ~5 MW in the tested state).
+- Capability: ER-5 power, RCS x/y/z node projection (`71c60818`).
+
+## Current stage (user order 2026-10-30): close the failed damage gates, residual capability, map interaction
+### Root causes fixed
+- A1 N1 ER-5 70 % (`afcd2f6e`): offline replay reproduced the game failure
+  (3 violations, 1034 m). First wrong layer: the server published main
+  11.37 m/s2 (= physics), but `applyAuthorityToControlParams` applied only
+  the RCS bounds for Newtonian and kept the main from the installed
+  capability cached per equipment revision (ER-5 damage does not change
+  it) -> watch / profile / compiler / pilot kept 36.77. Now main = min(rating,
+  live published). Replay delay 3 / 6: reprofiled 36.77 -> 11.37, 0
+  violations, terminal reached.
+- A2 A3 engine L lost (`a54b8f5d`): the client rebuilt a second axis from
+  replicated module health (nose) while the server executed the 49.5 deg
+  offset axis ("working thrust axis mismatch"); with the axis fixed the
+  doctrine still rejected the emergency axis because the drive-motor index
+  was the client's -1, which then read as "telemetry lost". Fix: the axis,
+  emergency flag and motor index come from the server telemetry; wire
+  schema had never carried `workingForwardAccelerationMps2` (local sessions
+  copy structs) - now serialised; an Assisted capability loss stabilises
+  and replans instead of failing.
+- B1 X one main lost -> 10 % forward: EXPLAINED, kept. The projection
+  balances every surviving aft main down to the weakest (95 %-damaged main
+  ~10 % -> 4 x 10 %). An experiment projecting the gimbal-trimmed sum
+  (~57-73 m/s2) let the planner fly fast while the asymmetry torque fell on
+  the RCS: angular authority collapsed 1.90 -> 0.87 by nozzle heating and the
+  flight had 6 violations (542 m). Reverted; the conservative projection is
+  what the plant can sustain.
+- B2 coupled RCS (`3975ff6b`): two axes at their single-axis limits deliver
+  ~50 % each (healthy 0.502, one nozzle lost 0.486): published share,
+  planned turns use min(0.5, share) - healthy plans unchanged.
+- B3 recovery (`3975ff6b`): replay main 50 % at 60 s, restored at 120 s:
+  main 18.39 -> 36.77 recovered-reprofiled, settled 232.7 s (no repair
+  260.9 s), 0 violations.
+- Maps (`ab9018f6`): see Map interaction contract. Verified: EliteMapPointerCheck
+  7/7 (E1-E4); in game (DEV pick test, own-framebuffer capture): G cloud
+  picked in 1.4 ms, card with all fields, double-click focus cube; Galaxy
+  Map open: medium 0.5-0.6 ms, frame ~20 ms, 0 frames > 50 ms.
+  Selected outline toned down after the first capture (alpha 0.10).
+- Offline matrix after every step: 90/126 PASS, 0 violations (identical to
+  the post-A1 state for B2 / B3).
+
+- A4 Assisted damage stack (user order 2026-10-30, second half):
+  - Root cause of the two thrust pictures: same capability function,
+    different inputs - server double damage 0.95 >= failure 0.95 (engine
+    failed, one-motor axis 49.5 deg, 36.77 m/s2), client 0.95f = 0.94999999
+    (engine alive 5 %, balanced bank, nose axis, 5.15 m/s2) -> "axis
+    mismatch"; plus min(client, server) forward would have cut the plan 7x.
+    Remaining divergent inputs (not yet seen in flight): client applies no
+    current mass / CoM, part of the engine operating state is not in the
+    snapshot. Analysis: D:/tmp/elite_client_server_thrust_analysis.md.
+  - Reverting the server axis (done earlier the same day on a mistaken
+    reading of the user's "return Assisted") was wrong: restored.
+  - Sway after a mid-route loss came from the hot-start replan at ~243 m/s,
+    not from the axis: Assisted now brakes to rest after a capability loss,
+    ALIGNs the emergency working axis onto the course flown (skipped without
+    turning authority), plans from rest with the working axis as first
+    course; infeasible Assisted plans retry slower (0.75 .. 0.20 cruise).
+  - Execution reference braked at (reverse - reserve) x 0.9 x 0.85 = 55
+    m/s2 while the plan assumed 21.8 (A3 L 93 %): late braking into
+    curves. One braking law now (see Factual capability).
+  - A general cruise cap sqrt(2 a D) was NOT added: the planner already
+    caps speed by curvature (lateral + hull rate), angular acceleration and
+    a backward braking pass; with D = 955 m it would cut healthy A3 400 ->
+    184 m/s. Note: `tunnel_radius_floor_m` 955 is the minimum TURN radius,
+    not the tunnel width.
+  - Offline: EliteNavigationCapabilityCheck PASS (new: client == server
+    engine decision / axis / forward at L 0, 0.93, 0.945, 0.95); scenario
+    matrix mx7 90/126 PASS, 0 violations (unchanged).
+
+### Acceptance A4 (real game, acc5..acc7, Debug; COMPLETE = corridor scenario, not docking)
+| flight | result | max cross-track |
+|---|---|---|
+| A3 healthy | COMPLETE | 27.7 m (acc6 25.9) |
+| A3 L 95 % before start | ALIGN 49.5 deg / 5 s, COMPLETE | 73 m (acc6 66) |
+| A3 L 95 % at 60 s | stop, ALIGN 3.5 s, replan, COMPLETE | 82 m (acc6 77; was 115-155 sway) |
+| A3 reactor 60 % at 60 s | flies (6 m on straights); harness FAILED: BLUE not reached in 180 s | 52 m |
+| A3 L 93 % before start (below cutoff) | harness FAILED (BLUE 180 s) | 180 m (acc5 288): mixer limited by the 7 % engine, delivered braking 4-37 m/s2 |
+| A3 L + fore R 95 % | honest refusal: no attitude control (0.0007 rad/s2) | - |
+
+### Acceptance (real game, nav-stress:simple, Debug, acceptance.sh run acc2)
+Runs acc2 (all) + acc3 (Assisted after `0287c7ea`); damage at t_moving 60 s;
+hitches = frames > 80 ms after start.
+| flight | result | violations | DONE (pilot s) | notes |
+|---|---|---|---|---|
+| N1 healthy | COMPLETE | 0 (19.1 m) | 234.9 | 0 hitches |
+| Newtonian-X healthy | COMPLETE | 0 | 187.6 | 0 hitches |
+| A3 healthy | COMPLETE | - (27.3 m) | 200-s window | 0 hitches |
+| N1 / X narrow fixture | DONE; harness FAILED only by its 30-s BLUE transit limit | 0 | 291.7 / 241.3 | 1 single 80.5 ms recompile frame (I) |
+| N1 main 50 % | reprofiled | 0 | 275.6 | |
+| N1 ER-5 70 % | reprofiled 36.77 -> 11.37 | 0 (28.2 m) | not in window (slow) | was 3 violations / 1034 m |
+| N1 RCS y-nozzle 60 % | reprofiled | 0 | 232.8 | |
+| N1 reactors off / on | coast, replan | 0 | 217.9 | |
+| N1 gas tank 60 % | COMPLETE | 0 | 233.0 | |
+| N1 main 50 % + RCS 70 % | reprofiled | 0 | 271.5 | |
+| X one main lost | hand-back, replan at 7.35 m/s2; harness BLUE 180-s timeout | 0 | - | 14 frames 110-130 ms (autopilot recompute on the slow profile) |
+| A3 engine L lost | recover + replan on the server axis, COMPLETE | 291 m max on the new plan (inside the 250-500 m corridor) | - | |
+| A3 reactor 60 % | loss detected, recover; Assisted optimizer finds NO feasible path (12 replans), ship held safe | 25.5 m | - | FAILED (harness timeout) - OPEN |
+| A3 aft L + fore R lost | honest refusal "no attitude control" after 5 attempts, held safe | 25.4 m | - | controlled refusal |
+
+### Galaxy Map pointer regression (user order 2026-10-30 b) - AUTOMATED PASS + scripted GAME PASS
+- User report: stars / cubes picked "every other time", a star under the
+  cursor gave a cube or nothing, cube double click unpredictable.
+- Root causes (source + trace verified):
+  R1 (old, `3975ff6b` and earlier) cube click tested only anchor + hovered
+     cell centres in an invisible 18 px circle; hovered cell = cursor ray x
+     plane through camera.target (not the drawn cube); the cube had first
+     refusal, so the 18 px circle (marker drawn 4-5 px) hid stars (32 px).
+  R2 (old) left press set camera.rotating at once: 1-4 px jitter rotated
+     the camera and re-synced the anchor cell before the release hit test.
+  R3 (old) waypoint-candidate glyph of the selected cube (cube +20,-2 px,
+     12 px) overlapped the 18 px cube circle; the overlay took the second
+     click -> no double click / refine.
+  R4 (old) star pick 2D distance only (no depth tie-break).
+  R5 (`ab9018f6`, the commit that made it user-visible) the cloud picker was
+     added as the fallback of every click that missed R1/R4 circles; the
+     camera sits INSIDE the Local Interstellar Cloud, so the ray hit its far
+     wall and EVERY such click selected the LIC (star selection dropped, a
+     card opened to the right of the click, covering the next targets). The
+     same hit drove cloud hover. Cloud hover / selection / tracker were not
+     reset on reset / re-entry; the DEV pick test kept static state in the
+     production input path (inert without its env var).
+- Changes: `GalaxyPointerResolver` (one resolver + `GalaxyPointerGesture`);
+  renderer publishes presented stars / cube markers (old unused
+  `screenPoints` removed); `GalaxyMapInteraction` resolves once per press,
+  dispatches one target (`applyClick` / `applyCubeClick` with the old cube
+  semantics unchanged / `applyMediumClick`); `pickNavigationCell`,
+  `pickSystem`, `pickMedium`, `navigationCellPickRadiusPx` (Galaxy) and
+  `ELITE_DEV_GALAXY_PICK_TEST` deleted; `PointerClickTracker::wouldComplete`;
+  `MapObjectOverlayState::panelUnderCursor` + `allowItemPick` (default true:
+  System Map unchanged); `GalaxyMapView::resetTransientPointerState`.
+  DEV: `ELITE_GALAXY_PICK_TRACE=1` -> D:/tmp/elite_galaxy_pick_trace.csv (one
+  row per sequence: press/release, movement, camera changed, candidates,
+  winner, reason, single/double, selection after); `ELITE_DEV_GALAXY_POINTER_
+  SCRIPT=1` scripted pointer through the production input path
+  (`tools/perf/galaxy_pointer_script.sh`, PHASES=... subset).
+- AUTOMATED: `EliteGalaxyPointerCheck` 29/29 PASS (G1 star vs cube, G2
+  jitter, G3 drag, G4 cube double click incl. waypoint-glyph second click
+  10/10, G5 depth, G6/G7 cloud behind star / cube + camera inside a cloud,
+  G8 re-entry); mutation (absorption disabled) -> G4 FAIL as expected.
+  `EliteMapPointerCheck` PASS, 0 failures (System Map card contract unchanged).
+- SCRIPTED GAME (real game, Debug, nav-stress:simple, Galaxy Map; synthetic
+  pointer, real presented geometry, production input path - NOT a human
+  mouse): Sol 10/10, Alpha Centauri (Proxima, nearest) 10/10, close stars
+  (15-21 px pair) 10/10, cube single 10/10, star after cube 10/10, cube
+  after star 10/10, cube double click marker 5/5 + glyph area 5/5, cloud
+  10/10, star after cloud 10/10 (cloud dropped 10/10), drag 5/5 (never
+  selects); 100 click rows camera_changed=no. Earlier script runs failed on
+  script defects (localised names, off-viewport second click, off-screen
+  star) - fixed in the script, not in production.
+- PERFORMANCE (same run): medium draw avg 0.53 ms (baseline 0.5-0.6), frame
+  avg 20.9 ms, max 49.9, 0 frames > 50 ms (baseline ~20 ms).
+
+### Galaxy Map spatial frame (user order 2026-10-30 c) - AUTOMATED PASS + scripted GAME PASS
+- Order: restore and develop the nested-cube model (not a flat map, no
+  reference plane): the user is always INSIDE one current parent cube; 25 per
+  axis, addresses, topology and generation unchanged.
+- OLD BEHAVIOUR / REGRESSION (source + git verified):
+  * up to `4734bd67` the top level showed the 5 whitelisted root cubes as
+    the visible boundary of the game space; `4734bd67` (connected domain,
+    ~275 roots) drew only the focused root + neighbours: the top-level
+    overview was lost;
+  * the camera range was clamped to `labelMaxCameraDistance` 155 render
+    units (~70 ly, checkpoint `c0a385b7`): a 40.3-ly root needs ~200 to fit,
+    so upper cubes could never be framed (edges outside the viewport);
+  * the working level was implicit: anchor = cell under camera.target,
+    re-synced on every rotate / pan / zoom (`syncNavigationAnchorToCameraTarget`),
+    and the wheel switched levels (`cubicNavigationWheelAction`) - the
+    "parent" drifted with the camera; hover = ray x invisible plane through
+    camera.target; current-level cells hidden below 56 px.
+- RESTORED MODEL (`GalaxyHierarchy.h/.cpp`): explicit `hierarchyParent`
+  (level -1 = virtual galaxy overview: a cube on the root lattice holding
+  every navigable root, NOT a navigation cell; its children are the roots;
+  levels 0..2 = real cells, children = level + 1). The grid works on the
+  child level (Galaxy minimumLevel 0 so roots are children; config loader
+  allowed `std::max(0, ..)`). It changes only by command: double click
+  down, up button, breadcrumb, LEVEL 0, object double click; never by the
+  camera or the wheel.
+- CURRENT PARENT CUBE: camera fit = circumscribed sphere of the parent in the
+  narrower FOV, margin 1.06 (`galaxyHierarchyFitDistance`): whole cube from
+  any orbit angle. Wheel range = [0.035, 1.8] x fit of the parent. Far plane
+  follows the distance; the pointer ray is built from the camera basis (an
+  overview mvp's near/far ratio is beyond float precision - un-projecting
+  its far plane gave no ray). Nested flights: 0.95 s, target coupled to the
+  log scale (the entered cube moves monotonically to the centre, never
+  leaves the view), the old parent fades, the new grids fade in; a press
+  during such a flight finishes it.
+- COORDINATE FACES: the floor (ceiling when below) and the far wall across
+  X or Z the view looks into, chosen with hysteresis (10 % edge dead band,
+  0.15 axis margin); major lines every 5 children (all lines for the
+  overview's root lattice), minor faint; labels at major children (offsets
+  -10..10 from the centre child; root indices in the overview) along the
+  floor-wall junction, the floor side edge and the far vertical edge; X / Y /
+  Z axis names; XYZ triad top-right.
+- PROJECTIONS: hovered and selected point (star / cloud hit = exact point,
+  cube = centre): guide lines to floor and wall, rulers to the labelled
+  edges, the child's footprint (one grid cell) on both faces, a cross at
+  the exact feet; "x y z" child coordinates next to the cube (G0 [..] in
+  the overview). Not drawn for other objects.
+- HIERARCHY NAVIGATION: single click selects a child (parent unchanged);
+  double click = the child becomes the parent (terminal G3 child: System
+  Map, unchanged); up `[ ↑ ]` left of LEVEL 0: parent of the parent, the
+  cube left stays selected; breadcrumbs `ГАЛАКТИКА › G0 [x,y,z] › G1 ..`
+  above the footer (click = jump to that ancestor); LEVEL 0 = overview with
+  the player's root selected; the map opens on the overview.
+- OBJECT LOD: compact interstellar objects only from the parent level where
+  they matter and in / near the parent (brown dwarfs, remnants from a root
+  parent; rogue bodies, comets, icy fields from a G1 parent); medium
+  structures below 1.5 px not drawn (overview: below 6 px - no blobs; the
+  overview framed ~1700 blobs = 6 ms/frame); selected / hovered always.
+  Picking LOD: star proximity ring = clamp(0.6 child px, 8, 32) (glyph only
+  in the overview), icy fields likewise, clouds below 4 px are not targets.
+  Star halos of the selected / hovered cube only below the overview.
+- POINTER INTERACTION: the ONE resolver gained tier 5: empty space inside
+  the parent = the child where the cursor ray meets the hover layer (the
+  child layer perpendicular to the axis most aligned with the view, through
+  the selected child, else the selected object, else the centre; hysteresis
+  0.10), drawn as the parent's cross-section while hovered. Hover = the
+  resolver's winner + the child holding its semantic point (WYSIWYG: the
+  highlighted cube IS the press target). Only the SELECTED child's marker
+  is a pointer target, and only for a cube selection (a hover marker or the
+  cube of a selected star / cloud never takes the object's click). Star:
+  click selects star + its cube; double click = one level down into the
+  star's cube (System Map from the terminal level). Cloud: click selects +
+  card (unchanged); double click = into the cube of the clicked point,
+  cloud kept. Alt + click: "What is here?" list of the resolver candidates
+  (star / cloud / cube, de-duplicated), drawn above the cards, owns the
+  pointer while open; a row = a normal single click. Fixed on the way: the
+  selected cloud outline began its own line batch and erased the frame
+  drawn before it.
+- AUTOMATED: `EliteGalaxyPointerCheck` 41/41 PASS (G1-G8 rewritten for the
+  child-cube model + H1 overview / fit at 48 angle x level cases, worst
+  corner margin 34 px; H2 hover == press target 30/30; H3 wheel; H4 enter /
+  up / breadcrumb; H5 star descent + terminal System Map; H6 cloud vs hover
+  marker; H7 face hysteresis); mutations (no cloud descent, no face dead
+  band) -> H6 / H7 FAIL as expected. `EliteMapPointerCheck` PASS (System
+  Map unchanged). Run from the repo root (the check copy in
+  build/headless_server/assets is stale).
+- SCRIPTED GAME (real game, Debug, nav-stress:simple; synthetic pointer
+  through the production input path, real presented geometry - NOT a
+  human mouse): `ELITE_DEV_GALAXY_HIERARCHY_SCRIPT=1`
+  (`tools/perf/galaxy_map_capture.sh "" 300`) 78/78 PASS: overview fits;
+  branches A (overview -> G0 -> G1 -> G2), C, D through empty space (hover
+  x3 with camera still, click, double click, fit after every entry); up x2
+  by the button and breadcrumb GALAXY (cube left selected); star branch
+  (click, 3 double clicks down to G2, star kept); cloud (click, double click
+  into its cube, up); Alt list (star / cloud / 2 cubes, row selects);
+  wheel; LEVEL 0; breadcrumb G0. Frames: D:/tmp/elite_gh_NN_*.png.
+  Pointer regression script (`galaxy_pointer_script.sh`, phases adapted: 0/1
+  in the entry G1 cube, 2/3 on empty-space cubes): Sol 10/10,
+  Alpha Centauri / Proxima 10/10, close stars 10/10, cube single 10/10,
+  star after cube 10/10, cube after star 10/10, cube double click same
+  point 5/5, glyph second click 3/5 in the full run (the script's second
+  click landed 23 px from the first - not a double click by contract;
+  script fixed to place the first click where the glyph appears) -> phase 3
+  rerun 5/5 + 5/5, cloud 10/10, star after cloud 10/10, drag 5/5.
+- PERFORMANCE (Debug, same runs): medium draw window avg 0.86-0.95 ms (worst 2-second
+  window 2.1 ms = the galaxy overview: 179 shells, no blobs; before the
+  overview LOD it was 6.1 ms with 1721 blobs); hover resolve avg 0.20-0.25
+  ms, max 0.84 ms (only when cursor / camera / frame change); frame avg
+  15.5-15.7 ms (previous stage 20.9). Frames > 50 ms: the hierarchy run's
+  36 include its 33 DEV frame captures (PNG write ~110 ms); the pointer run
+  had 7 (startup, map open, one 101 ms docking-autopilot frame of the
+  scenario flight), none from the map.
+
+### Galaxy Map overview framing + neighbour cubes (user follow-up 2026-10-30 d)
+- User: the top level was "moved too far" - the overview framed the whole
+  navigation domain (275 roots, 282 ly) while the star systems lie within
+  ~97 ly (most within 25 ly): they shrank to a dot. And the cubes next to
+  the current parent could not be chosen.
+- Overview now frames the roots holding star systems + the player's root
+  (`overviewRoots`, `galaxyHierarchyBox(.., overviewRoots)`): 5 roots, 201 ly
+  in the current catalogue (HD 102195 96.7 ly / HD 93083 90.9 ly set the
+  extent). Empty navigable roots outside it stay navigable (a point there
+  opens its own root as the parent - `focusHierarchyPoint`).
+- Neighbours (REMOVED by the order of 2026-10-31, see below): the up-to-26 navigable cubes of the parent's level around it
+  are pointer targets (resolver tier 5b `neighbour_cube`: ray x neighbour
+  boxes when the ray leaves the parent), drawn as faint ghosts, hovered /
+  selected like a child (address label, no projections); double click
+  moves the frame sideways into the neighbour (level unchanged, same nested
+  flight); up / breadcrumbs unchanged.
+- AUTOMATED: `EliteGalaxyPointerCheck` 44/44 (H1 now: overview frames the
+  star-system roots, 40 ly in the one-star test vs 282 ly domain; H8 new:
+  neighbour hover, sideways double click, up). SCRIPTED GAME 84/84
+  (+ 2 neighbour hover / sideways / fit). Medium draw avg 1.2 ms, worst
+  window 2.3 ms. Human mouse acceptance still open.
+- Incident: during this follow-up a manual (non-script) launch for a
+  screenshot ignored a running user game and the cleanup killed the user's
+  EliteGame. Rule kept: never start or stop a game while one is running;
+  only the guarded scripts launch the game.
+
+### One cube navigation for Galaxy + System maps (user order 2026-10-31)
+- User: the top cube must fill the screen and never get smaller; the wheel
+  must move between levels (a child filling the screen becomes the parent,
+  a parent smaller than the screen hands over up); nothing outside the
+  current parent drawn or interactive (clouds outside the giga-cube); the
+  SAME cube mouse control on the System Map; planet: single click selects
+  it and its cube (the selection follows the planet between cubes), double
+  click opens its info card.
+- Fit: the parent "on the whole screen" = its projected corners reach 0.98
+  of the viewport in the limiting direction (bisection on the camera
+  distance, current orbit angle; `GalaxyMapView::fillDistanceAt`,
+  `SystemMapView::fillHalfHeightAt`); the hand-over size test uses the
+  projected extent (perspective makes the cube asymmetric about the centre).
+- Wheel: zoom IN scales the camera rig about the point under the cursor
+  (the cube there grows); the child under the cursor (else at the view
+  centre) with extent >= 0.98 becomes the parent (no flight); a terminal
+  Galaxy cube filling the screen opens the System Map (its star / sector).
+  Zoom OUT drifts the view to the parent centre; a parent below 0.94
+  hands over to its parent (the cube left selected). Overview / S0 root:
+  the distance range never lets it get smaller than the screen.
+- Outside the parent: stars, labels, compact objects, the player marker,
+  medium structures (drawn and picked only when their sphere reaches into
+  the parent, a shell hit must lie inside it) on the Galaxy Map; bodies on
+  the System Map (`filterBodiesByPresentationLevel`). The neighbour-cube
+  targets of 2026-10-30 d were removed (they lie outside the parent; a
+  neighbour is reached by zooming out one level and in).
+- Shared code: `GalaxyHierarchy` works on any cubic grid
+  (`cubicHierarchyBox`, ascend / chain with a top level: Galaxy -1, System
+  0); `HierarchyFramePainter` (frame, inner faces, labels, projections,
+  child cubes, hover layer, texts + triad, hover fade) draws BOTH maps.
+- System Map (`SystemMapInteraction` rewritten): explicit `hierarchyParent`
+  (S0 root on open / LEVEL 0), `GalaxyPointerGesture` (press never moves
+  the camera), one resolver hub > body > selected-cube marker > hover-layer
+  child (bodies / hubs outside the parent are no targets), hover = winner +
+  its child, cube click selects / double click enters, body click selects
+  + its cube, body double click toggles the card, the body's cube follows
+  the body every frame, `[ ↑ ]` left of TRACK, breadcrumbs `СИСТЕМА › S1
+  [..]`. Old anchor-follows-cursor / wheel-level / invisible cube circle /
+  rotate-on-press code removed.
+- AUTOMATED: `EliteGalaxyPointerCheck` PASS (H1 fill at 48 angle x level
+  cases, min corner margin 7 px; H3 wheel: 2 levels in at ratio >= 0.98,
+  3 levels out with the cube left selected, overview min ratio 0.98);
+  `EliteMapPointerCheck` PASS. SCRIPTED GAME: Galaxy 79/79
+  (`ELITE_DEV_GALAXY_HIERARCHY_SCRIPT`), System 21/21
+  (`ELITE_DEV_SYSTEM_HIERARCHY_SCRIPT` + `ELITE_DEV_SYSTEM_MAP_AT`,
+  `tools/perf/galaxy_map_capture.sh "" 240`): S0 fills, cube hover / click /
+  double click x2, up x2 (button), Uranus click (selected + cube, no card),
+  double click (card), its cube followed for 4.5 s, wheel in one hand-over,
+  wheel out to S0. Frames D:/tmp/elite_gh_*.png, elite_sh_*.png.
+- PERFORMANCE (Debug): Galaxy medium avg 0.33 ms (worst window 0.43), frame
+  avg 12.2 ms; System frame avg 16.0 ms; frames > 50 ms only at startup and
+  the DEV frame captures.
+- OPEN: human mouse acceptance of both maps; the old Galaxy pointer script
+  (`galaxy_pointer_script.sh`) was not re-run after this order.
+
+### Map camera focus, context menu, back arrow, map buttons (user order 2026-10-31 b)
+- User: System Map navigation "chaotic" - zooming toward a planet the
+  parent-cube rule kept pulling the view to the cube centre, the planet
+  and its moons were hard to keep in view; rotations at high zoom sharp and
+  about an unclear point. Wanted: rotation about the object near the mouse,
+  else about the pressed point; System double click = approach (as on the
+  Galaxy Map); info via Ctrl + click / right click menu (name + commands:
+  info, route, details) - also for navigation cubes (info, route,
+  surroundings); a back arrow on Details (and the other maps) returning to
+  the remembered map position; buttons as rounded transparent wire bars
+  (text or arrow), no arrow where nothing is beyond.
+- Root causes: zoom-out mixed the target 18 % toward the parent centre per
+  notch; the zoom / rotation pivot fell back to the HOVERED CUBE CENTRE; a
+  cube press rotated about the cube centre; the hand-over measured the
+  cube's on-screen extent at its real position, so it depended on where
+  the user looked (and forced the centre drift); the moving planet left
+  the view (no follow), and once outside the parent it was hidden.
+- Camera (both maps): the wheel zooms in AND out about the object near the
+  cursor (`pivotPickRadiusPx` 36, disk distance), else the point under the
+  cursor (hover layer / target plane) - never a cube centre; only the top
+  cube (overview / S0) at >= 0.7 of its distance limit centres itself
+  (0.35 per notch) so it fills the screen; its limit = the centred fit.
+  Hand-over = `cubeSizeRatio` (the cube's size at the current zoom as if
+  centred on the camera target): down when the child under the cursor
+  reaches 0.98, up below 0.94. Rotation: about the object near the press
+  point (System: body / hub via `nearestSystemObject`; Galaxy: star), else
+  the pressed point (cloud hit / hover layer / target plane).
+- Focus object (System): a body the user zoomed / turned about or
+  double-clicked is FOLLOWED (`cameraFollowBodyId`: camera target, a
+  running flight and the orbit pivot move with it, like TRACK); when it
+  leaves the parent, the parent moves sideways to its cube
+  (`shiftHierarchyParentTo`); a pan or framing a cube ends the follow.
+- Double click on an object = approach (both maps): its child cube becomes
+  the parent without framing, the camera flies to the object itself at the
+  parent's fill size (`approachHierarchyPoint`); a terminal System cube:
+  just closer (0.35 x). Cube double click still frames the cube.
+- Context menu: `MapContextMenu` (data) + `SystemMapRendererContextMenu.cpp`
+  (open / execute / pointer / draw) + `NavigationCoordinateOverlay::
+  drawContextMenu`. Targets: overlay glyphs (every map), Galaxy star /
+  cloud / cube (the resolver), System body / hub / cube
+  (`SystemMapInteraction::resolvePointer`), Hub infrastructure module. The
+  target is selected on open (single-click semantics, no click tracking).
+  Galaxy star INFO = a star card (`galaxy-system:<id>`, route target = the
+  system position, closes with the star selection); SHOW DETAILS: star ->
+  System Map, body -> Details, hub -> Hub map, terminal System cube ->
+  Details; VIEW SURROUNDINGS: cube -> entered (terminal Galaxy cube -> the
+  System Map), cloud -> its cube approached. Labels localised
+  (`map.context.*`).
+- Back history: `SystemMapRenderer::setMode` records the map left
+  (`MapHistoryEntry`, 24 max) unless the change is the back navigation; the
+  back arrow emits `MapIntent::RestoreMap` -> `SpaceState::
+  restorePreviousSystemMapMode` (Galaxy / loaded or known System / loaded
+  Details / loaded Hub); the saved view is applied when the map is shown
+  (Galaxy after `onGalaxyMapEntered`, System in the presentation builder
+  after the fit, Details / Hub in `setMode`). Found by the scripted run: a
+  press held across the map change hit LEVEL 0 of the next map (same
+  screen slot) - a press that starts before a map change now belongs to
+  the old map until released.
+- Buttons: `NavigationOverlayButton` rows drawn with `HudPrimitiveBatch`
+  (rounded wire outline, faint fill on hover / active), raised 34 px above
+  the bottom (the game's hint bar covered them). `SystemMapView::
+  suppressCameraGesture` now also suppresses the System pointer gesture.
+- AUTOMATED: `EliteGalaxyPointerCheck` PASS 44/44 (H3 now measures the
+  size ratio); `EliteMapPointerCheck` PASS. SCRIPTED GAME (Debug):
+  System 29/29 - S0 fill, cube hover / click / double click x2, up x2,
+  Uranus click (no card), right click menu (name, INFO, DETAILS) -> INFO
+  opens the card, cube follows 4.5 s, double click approaches (deeper
+  parent, centred 0 px, followed), still centred 3 s later, rotation drag
+  near it (moved 0.01 px), wheel on it (stays under the cursor), menu
+  DETAILS -> Details with a back arrow -> back: same parent and camera,
+  wheel in / out to S0. Galaxy 83/83 - incl. star / cloud double click =
+  approach (centred, parent size 0.90), star right click menu (name, INFO,
+  route, DETAILS) -> INFO opens the star card, cube right click ->
+  SURROUNDINGS enters it, wheel in / out, overview fills.
+  OLD Galaxy pointer script (`galaxy_pointer_script.sh`, first re-run
+  since 2026-10-30 c): first run 8 PASS / 3 FAIL - all three stale test
+  expectations, not product faults: "2 Alpha Centauri" 0/10 (Proxima lies
+  outside the Sol G1 parent -> by the 2026-10-31 rule not drawn / no
+  target: now skipped when outside the parent), "9 cloud single click"
+  0/10 (the script searched clouds without the parent clip; with the
+  production scene no cloud reaches into that parent: now skipped - cloud
+  click is covered by the hierarchy script), "8 cube double click (same
+  point)" 4/5 (trace: the probe point lay on a cube border, the +1 px
+  second click hit the neighbour cube - correct; the probe now avoids
+  borders). Re-run: all rows PASS (phase 3 re-run 10/10).
+- OPEN: human mouse acceptance of both maps; Detail / Hub maps: the menu
+  covers overlay glyphs and Hub modules only (no body picking there).
+
+### Procedural planet / asteroid / cloud surfaces + Planet Lab (user order 2026-10-31 c)
+- User: deterministic procedural visual generation of planets, rocky surfaces,
+  asteroids, cloud layers, climate-driven appearance, LOD from map to
+  landing; maximum reproducibility (same identity -> same continents,
+  ranges, craters, lakes; LOD adds detail, never re-generates); appearance
+  derived from the generated physical descriptor; curated real data kept as
+  a provider; deterministic weather; detail budget by reachability; a
+  visual demo; a reproducibility regression check; plus "Earth not found on
+  the Solar System map".
+- Found in the old system (audit): CelestialTextureBaker is offline-only
+  (`EliteGame --bake-celestial-textures`), seeds are literal JSON values,
+  equirect global maps + a tile pyramid nobody reads; every Sol body is
+  ImportedRealData; the runtime draws one equirect texture per body (no
+  geometric LOD); CPU weather / cloud generators unused; map clouds got a
+  clock-based random seed per map opening (`random_on_*`). No C++ reads the
+  descriptor's terrain_profile / surface_materials / weather_potential /
+  orbital_access_index.
+- NEW `src/world/celestial/surface` (library EliteCelestialSurface, -O2,
+  no GL; contract `PLANET_GENERATOR_ALGORITHM.md`): coordinate-addressed
+  seeds (GeneratorVersion 1, one tag per layer), exponential-gradient noise
+  with macro / LOD-detail band split, PlanetSurfaceField (continents with
+  descriptor ocean coverage, range belts, uplands, damped hills, crater
+  classes, volcanoes, lakes, ice caps, boulders, climate, biomes,
+  materials from surface_materials), GasGiantField (bands, eddies, storms;
+  no ground), SmallBodyField (ellipsoid + fracture planes + crater list +
+  lattice craters), CloudWeatherField (layers from pressure, f(seed, world
+  time)), cube-sphere patches with skirts, threaded streamer, reachability
+  policy (ground 0.25 m / overflight 250 m / cloud deck).
+- Reused / unified: GenerationRandom deriveSeed; generated body + reservoir
+  JSON; the baker gets source kind ProceduralFromBodyDescriptor (equirect
+  maps sampled from the same field -> existing normal / material / LOD set;
+  verified by a scratch bake 1024x512 of the Earth descriptor); map clouds:
+  identity seed only (random_on_* -> world_time, 49 asset JSONs migrated,
+  clock seed removed); motion was already universe time.
+- System Map Earth: root cause - the hierarchy filter hid a body whose
+  CENTRE was outside the current parent cube (Earth leaves a small parent in
+  minutes, its hub / ships stayed drawn), and a followed / selected body was
+  dropped from the frame so the follow could not move the parent. Fix: a
+  body stays when its sphere reaches the cube, when it is selected or
+  followed, or when an object (hub, ship) inside the cube orbits it.
+- Planet Lab `tools/planet_lab` (ElitePlanetLab): viewer (bodies 1..6:
+  earth_like = Sol Earth descriptor through the procedural provider, rocky =
+  Mercury, asteroid = Sol belt candidate, gas_giant = Jupiter, dry = Mars,
+  hostile = Alpha Centauri A i 180 bar; F1..F5 far orbit / low orbit /
+  regional / approach / ground; L LOD cap; C clouds; W wireframe; T / Space
+  weather time; title + stdout telemetry), camera-relative + log-depth
+  rendering, screen-space-error quadtree (5 px), per-pixel coastline from
+  the macro field, seamless 1024-m periodic micro detail, `--capture DIR`
+  (PNG per body / viewpoint + LOD-cap 3 / 6 pairs).
+- CHECKS (`ElitePlanetLab --check`, all PASS): restart reproducibility (86
+  checksums recorded, verified by a separate process: 0 differ); patch
+  order / threads identical; parent/child (water, landmark id, macro height
+  identical at coincident vertices; height diff <= detail bound); coastline
+  (20000 directions x 6 band limits 50 km .. 0.25 m: 0 water / landmark /
+  macro changes); seams (same face < 1 mm, across faces < 1 cm, T-junction
+  gap <= 0.03 skirt); Earth climate (polar ice 1.0 vs tropics 0, desert
+  peak 20-30 deg, 7-8 biomes along a latitude); clouds same time -> same
+  sky, 6 h -> change; policy (gas giant no ground, 180-bar no ground);
+  asteroid silhouette LOD-independent. Perf (one thread, -O2): 15-19 us /
+  ground sample, 15-17 ms / patch; streaming 35-45 ms / patch on 14 workers.
+- GAME (Debug): EliteGame builds; System Map script 30/30 incl. "all 8
+  major planets presented" (Earth); EliteGalaxyPointerCheck PASS,
+  EliteMapPointerCheck PASS.
+- Not done / OPEN (superseded by 2026-10-31 d: flight renderer done, the
+  patch streamer is NOT the production path): the game's map renderers
+  still draw equirect textures; no
+  procedural body is configured in the game data (baker path verified on a
+  scratch root only); human visual review of the Lab pending. Journal of
+  decisions, doubts and proposals: D:/tmp/PROCEDURAL_PLANET_NOTES.md (e.g.
+  every generated temperate planet has ocean_coverage 1.0; no biosphere fact
+  in the descriptor).
+
+### Celestial runtime renderer: continuous field, local terrain, 3 styles (user order 2026-10-31 d)
+- User: drop the patch / quadtree / pyramid as the production model of a
+  planet; a planet = one continuous procedural field; LOD only changes how
+  precisely the same world is asked; a correct runtime renderer of all
+  bodies (positions, sizes, angular sizes, orientation, spin, motion, fly
+  from body to body, LOD by distance, streaming); 3 styles (Elite /
+  Modern / Anime) with a user setting; performance per style +
+  recommendations; generator fixes (ocean coverage 1.0, alpine airless,
+  blurry gas giant, default vegetation); game-grade, not scientific.
+- FOUND: the flight view drew NO celestial bodies at all (only the
+  starfield and the far hub proxy; `drawCelestial` filtered an object type
+  nothing used). The patch pyramid existed only in Planet Lab.
+- Patch pyramid -> `tools/planet_lab/experimental/` (SurfacePatch,
+  CubeSphere; Lab viewer + old --check only).
+- NEW production representation (`src/world/celestial/surface`):
+  `GlobeBake` (cube-map cache of the field, texel = sample at 2 x texel),
+  `LocalTerrain` (camera-centred clipmap on a planet-fixed equal-angle
+  lattice, 128 cells per level, vertex = field at its lattice point,
+  morph to level k+1 in the vertex shader, no skirts / no patch identity),
+  `ImportedSurfaceField` (Sol curated maps as macro + procedural detail
+  below the source texel).
+- NEW renderer `src/render/celestial/flight` (EliteCelestialFlightRender,
+  contract CELESTIAL_RUNTIME_RENDERER.md): sprites -> globe (displacement,
+  albedo / normal / relief cubes 32..1024, sliced uploads) -> local terrain
+  (stencil over the globe, depth copy in the near pass for ships / hubs),
+  clouds (CloudWeatherField at world time, cross-fade), single-scattering
+  atmosphere, rings with planet shadow, star discs + glow, asteroid belt
+  lattice (SmallBodyField meshes), log depth per fragment, worker pool,
+  512 MB texture budget (LRU), GPU timestamp stats.
+  `FlightFrameBuilder` builds the frame from the SAME celestial snapshot
+  and `makePlanetTextureOrientation` the maps use.
+- GAME: `SceneRenderer` pass 0.25 (after the starfield, before the far
+  proxy); `PreparedScene` carries the client celestial snapshot + system
+  definition; atlas bodies carry `sourcePath`, stars teff / luminosity.
+  Style setting: `ClientModeState::celestialRenderStyleId`, persisted
+  (`celestial_render_style`), main menu SETTINGS dialog (button was
+  disabled), Ctrl+F7 in flight, DEV `ELITE_DEV_CELESTIAL_STYLE`.
+- GENERATOR: ocean coverage = 1 - exp(-4.6 D / max(H, 6 km)) from the water
+  layer (generated bulk water mostly in the mantle); `geophysics.biosphere`
+  (generated "none", Sol Earth observed "complex"); vegetation only for
+  complex. Catalog re-materialized (determinism: 61 systems, 0 differ;
+  only ocean_coverage / biosphere / 2 presets changed); temperate surface
+  oceans now 0.42 .. 1.0 (Earth 0.75). Airless rocky / icy: smooth low
+  hills, craters carry relief. Gas giant: band-limited shear filaments;
+  no weather shell over the bands.
+- CHECKS: `ElitePlanetLab --flight-check` 22/22 PASS (silhouette of Moon /
+  Mars / Jupiter at 4 / 15 / 60 R on / off axis within 0.5 px of
+  asin(R/d); Earth drift vs velocity 11 m / 60 s; Earth spin 15.04 deg/h
+  east; terrain lattice rebuild 2793 shared vertices 0 differ; level k vs
+  k+1 1089 points 0 water/land differences). `ElitePlanetLab --check` PASS
+  (old field checks). EliteMapPointerCheck PASS, EliteGalaxyPointerCheck
+  PASS. EliteGame + ElitePlanetLab build (Debug).
+- GAME START (scripted, nav-stress:simple, `tools/perf/galaxy_map_capture.sh`
+  + ELITE_DEV_CELESTIAL_STYLE): Earth drawn below the hub (Modern), rear
+  monitor Elite (coast + grid) and Anime frames; no crash after the
+  locale-safe asset path fix (first run: fatal filesystem conversion).
+- PERF (`--flight-bench`, Intel UHD 630, 1600x900): far 1-2 ms; near
+  orbit Elite 9.5 / Modern 11.3 / Anime 11.3 ms; approach + surface Elite
+  4.7-5.4 / Modern 15.4-15.9 / Anime 16.0-16.2 ms; atmosphere from inside
+  8.5-9 ms is the bottleneck; worst single frames 50-64 ms (open).
+  Recommendations in CELESTIAL_RUNTIME_RENDERER.md section 7.
+- Captures: D:/tmp/elite_flight_capture/ (10 bodies x 4 distances x 3
+  styles + Earth->Moon travel), game frames D:/tmp/elite_game_*.png.
+- Diagnosed during the work: sphere winding inverted (far hemisphere drawn,
+  night crescent, no sky from inside); log depth in the vertex shader
+  clipped primitives behind the camera; missing gamma encode (dark Earth);
+  terrain morph window overlapping the coarse hole edge (cracks); texture
+  budget never evicting (every body marked used).
+- Late fixes (same stage): Earth curated maps disagree (DEM has no zero
+  sea) -> water from the albedo ocean colour, DEM aligned by correlation,
+  sea level = land 5th percentile; atmosphere over the ground additive only
+  (Jupiter / Earth no longer greyed); gas giant atmosphere thinner; Elite
+  atmosphere outline only for rays missing the body (in the game it filled
+  the disc green). DEV `ELITE_DEV_CELESTIAL_FLAGS=noatm,noclouds,norings,
+  nodetail` in the game. Re-run after them: --flight-check 22/22, in-game
+  Elite / Modern / Anime frames OK.
+- OPEN: Earth / Mars close-up limited by the curated sources (~20 km
+  texels); worst-frame spikes; hub proxy not depth-tested against bodies;
+  eclipses; map clouds and flight clouds are different functions; human
+  visual review pending. Notes: D:/tmp/PROCEDURAL_PLANET_NOTES.md.
+
+### Renderer stabilisation, scene-wide styles, System Map planets / moons (user order 2026-10-31 e)
+- User: jitter / double image; freezes after one Venus planet marker;
+  Modern = calm grey volumetric planet (reference D:/tmp/152905.png, no
+  day / night show); water detail scale wrong from ~400 km; Elite Classic
+  not green, retro sun with a living corona; styles for the WHOLE scene
+  (ships, stations, sky, asteroids, rings, sun); small objects readable on
+  big ones; System Map: Earth vanishes while its hubs show, moons flicker;
+  map and flight one world.
+- ROOT CAUSE (jitter AND load): the main camera and the rear monitor both
+  planned celestial resources every frame with different pixel sizes (Earth
+  717 vs 128 px, Moon 2.5 vs 0.45 px): globe tiers 1024 <-> 256/512 and the
+  local terrain level set flip-flopped (each view re-requested its own);
+  different tiers / levels displace the surface differently -> two nearly
+  coincident images, plus continuous bakes / uploads. Fix: only the primary
+  view plans resources (render(..., primaryView)); secondary views draw what
+  exists. A/B (ELITE_DEV_CELESTIAL_SHARED_VIEWS=1, same 45-s scene, Venus
+  marker): globe bakes 54 -> 2, terrain level builds 673 -> 12, uploads
+  956 -> 38, mip generations 161 -> 8, celestial CPU 3.39 -> 0.33 ms avg
+  (max 10.8 -> 3.6), worst frame 93 -> 51 ms. Coordinate path checked
+  (ELITE_TRACE_CELESTIAL): Earth relative velocity frame-to-frame change
+  median 21 m/s = ~0.4 m/frame at 422 km (no visible jitter).
+- MARKERS: a HUD planet marker (map info card -> rememberCelestialBody ->
+  NavigationHudMarker) never touches the celestial renderer. Measured with
+  ELITE_DEV_CELESTIAL_MARKERS (none / +venus / +mars / +jupiter / all):
+  identical resource work (2 loads, 2 globe bakes, 13 level builds, ~38
+  uploads), celestial CPU 0.35 ms, GPU ~3 ms; Venus stays a point. Steady
+  280-ms frames in those runs = the DEV PNG capture itself.
+- Activation levels (screen size only): point < 1.5 px (sprite, nothing
+  loaded) / disc 1.5-24 px (field + small tier, no weather) / globe >= 24 px
+  (clouds) / detailed (local terrain, altitude < 0.6 R).
+- DIAGNOSTICS: ELITE_CELESTIAL_DIAG=1|path (D:/tmp/elite_celestial_diag.log):
+  FRAME line per primary frame (CPU / GPU per pass, loads, globe / cloud
+  bakes, terrain builds, uploads + bytes, mips, evictions, cache hit / miss,
+  memory) + EVENT lines (level changes, bakes, tiers live, evictions).
+- STYLES: render::sceneStyle (uSceneStyle) in ship / station fill + edges,
+  starfield, Milky Way haze, scoped to the flight scene (maps unchanged).
+  Elite Classic: black opaque hulls, light grey edges, white point stars, no
+  Milky Way colour, grey-white celestial lines, sun = white disc with an
+  unstable edge + flickering ray corona (sprite, min ~10 px). Modern:
+  ships / stations unchanged; bodies calm grey (land lighter than sea,
+  wrap light, no night emission, grey limb / clouds / haze, coast and limb
+  as faint light edges, less contrast far away). Anime: three flat bands +
+  ink silhouette on hulls, heavier ink edges, neutral shadow tones, stepped
+  desaturated sky.
+- WATER LOD: sea surface smooth from the globe distance (no micro relief on
+  water); terrain water gets wave normals of a 40-m wavelength faded by
+  the pixel footprint (none at 422 km, gradual on approach).
+- SYSTEM MAP: Earth vanished because bodies were cube-filtered while hubs /
+  ships are always drawn, and Earth was kept only by objects INSIDE the
+  cube. Moons flickered because each moon was cube-filtered on its own
+  instantaneous position. Policy (presentation only, physics unchanged):
+  the planet of any drawn hub / ship, of the selected / followed body, or
+  of a moon reaching the cube is presented; a presented planet presents
+  all its moons; any presented body is pickable. Script audit on every
+  navigation state: SystemHierarchyScript 31/31 (new: moons + Earth with
+  its hub, 14 states); the OLD policy fails it (cube0_entered: Earth not
+  presented).
+- CHECKS: --flight-check 22/22, EliteMapPointerCheck PASS,
+  EliteGalaxyPointerCheck PASS, game builds; in-game captures
+  D:/tmp/elite_v2_{modern,elite,anime}_*.png, Lab D:/tmp/elite_flight_v2.
+- OPEN: drone-view capture (DEV ELITE_DEV_DRONE_VIEW_AT) did not switch
+  the view in the nav-stress session, so no close-up player ship frame;
+  HUD keeps its look; Modern limb a little bright; prediction offset of the
+  player ship vs interpolated world (pre-existing) not examined.
+
+### One main camera, Model Asset audit + presentation, station v4, thrust glow, sun (user order 2026-10-31 f)
+- Scope: remove the rear monitor (F1 front / F2 rear / F3 recon drone / F4
+  reserved, ONE full world render per frame); audit Model Asset Editor /
+  ModelAsset v4 / legacy ObjectAssembly (review: D:/tmp/MODEL_ASSET_
+  ARCHITECTURE_REVIEW.md, notes: D:/tmp/MODEL_ASSET_NOTES.md); station with
+  all components and 5 LODs through ModelAsset v4; representation ladder,
+  per-component LOD, HLOD, compartments / portals, damage variants,
+  structural graph, animation foundation, thrust glow, sun by real size.
+- CAMERA (source + compiled + in-game frames): UICameraView rear monitor and
+  its second SceneRenderer pass deleted (DebugSettings renderRearCamera,
+  forceAssemblyLod1, secondCam branches, SHARED_VIEWS DEV switch removed).
+  FlightPresentationView = Front / Rear / Drone; F4 -> std::nullopt
+  (reserved). SpaceState::setFlightCameraMode(ShipCameraMode) uses the
+  existing ShipCameraMode; celestial / object LOD always plan for the one
+  main camera. Recon drone: external camera behind / above the ship (min
+  90 m; the 9 m descriptor attachment sat inside the hull), no cockpit frame.
+  Contracts updated: check_function_key_presentation_route (F4 reserved),
+  check_render_surface_ownership, PresentationCoordinatorContractTests,
+  feature contract list. Evidence: D:/tmp/elite_cam_drone.png,
+  elite_drone_*_{a,b}.png.
+- STATION ROOT CAUSE (audit, evidence in the review): runtime never consumed
+  ModelAsset (RuntimeModelAssetLibrary::useBinary had no callers); the legacy
+  registry listed 6 of 29 LOD0 parts (no SolPet_* petals, no habitat
+  external modules); legacy LOD is a binary lod0/lod1 switch at 10 km and
+  the LOD1 OBJs exist only as stale build copies; tracked
+  src/assets/compiled/models/station.elmodel is a v2 dump of the legacy
+  registry (2 LODs, LOD1 RGE -1). The real 5-LOD / 29-component package
+  lives ONLY in build/tools/model_asset_editor/workspaces/station/working
+  (untracked) - never BUILT. Its LODs are the same 29-part assembly at
+  decreasing density (577k / 538k / 240k / 76k / 51k tris; RGE 0 / .00238 /
+  .00954 / .0382 / .153); no shell / proxy exists in any source.
+- MODEL ASSET (compiled + EliteModelAssetPresentationCheck PASS, synthetic
+  ship + real station): schema adds RenderLodRole (Component / ModuleProxy /
+  Shell / Proxy), Compartment, CompartmentPortal, SurfaceEffectBinding,
+  JointType::Prismatic + travel (chunks CMPT / PRES, older readers skip
+  them); shared BUILD src/model_asset/ModelAssetBuild (editor uses it) +
+  headless EliteModelAssetBuild; pure src/model_asset/ModelAssetPresentation:
+  ladder CULLED/POINT/PROXY/SHELL/COMPONENT/FULL by projected diameter
+  (1 / 6 / 40 / 180 / 700 px, hysteresis 1.2), per-component SSE LOD
+  (coarsen 1.8 / refine 2.2 px, component cull 2 px, FULL 1 px), module
+  HLOD collapse < 90 px, interiors only in FULL via BFS from visible open
+  exterior portals (frustum, >= 8 px, facing; depth 2), structural islands,
+  atomic ActiveSets, telemetry formatFrame. Check: 22 m ship approach /
+  retreat POINT 20.6 km, PROXY 3.5 km, SHELL 524 m, COMPONENT 126 m, FULL
+  40 m, 0 flips under +-1.5 % jitter; intact hull 0 interiors, breach ->
+  engineering only, hatch open -> + cockpit, breach facing away -> none;
+  detached engine = own island / object; intact -> breached switches
+  collision / hit / opening / repair together. Real station: 60 m off one
+  end all LOD0 (LOD1 error 13 m = 2.4 px at 5 km, honest SSE); 25 km off
+  one end: near LOD1 / far LOD2 (worst 1.68 px); 30 km: LOD2 = 43 % of
+  LOD0 tris; select() 55-70 us.
+- STATION IN GAME (compiled + in-game frame + LOD log): ObjectType::Station
+  renders from assets/compiled/models/station/station.elmodel (BUILT by
+  EliteModelAssetBuild from the working package; untracked, see notes)
+  through render::geometry::ModelAssetGpuLibrary: lazy GPU upload per
+  (LOD, geometry), descriptor basis + logical length (scale 0.905 -> 4937 x
+  4525 x 5021 m = legacy frame of hit volumes / docking), habitat ring spins
+  with replicated legacy module angles. ELITE_MODEL_ASSET_LOD_LOG=<path>
+  telemetry; ELITE_LEGACY_MODEL_ASSETS=1 = old path. Perf (nav-stress, same
+  run length): objects CPU 1.6-2.5 ms vs 0.33 ms legacy (29 components
+  instead of 6), slow-frame main_ms median 9.1 vs 8.5 ms; first lazy LOD
+  upload hitch 161 ms (open). Collision / hits stay legacy (6 parts).
+- THRUST GLOW (in-game frames, three styles, forced thrust): mesh part ->
+  descriptor module -> physical-control slot -> executed thrust01
+  (readEngineMotorLiveView); a visual engine without its own slot glows with
+  the mesh-less aft main motor (Newtonian-I ship_newtonian_i_main_center).
+  Pad = aft end zone of the engine part (Cobra nozzle caps face forward in
+  the OBJ, so the facing term is two-sided). Modern emissive + white-hot core,
+  Elite white plate, Anime flat cel. DEV ELITE_DEV_FORCE_THRUST01.
+- SUN (Lab captures 1 / 0.2 / 0.05 / 0.015 AU, three styles): true projected
+  disc on a screen quad (no GL point-size limit, no 10 px inflation);
+  activity from projected size only (edge wobble from ~6 px, corona from
+  ~25 px); Elite flickering vector rays, Modern limb-darkened disc +
+  streamers, Anime flat core + posterised petals.
+- OPEN: authored SHELL / PROXY / module proxies for station and ship;
+  Cobra still legacy render path; hits / collision from asset (high risk,
+  needs flight gates); station damage states / hidden parts not mapped to
+  the v4 components; lazy-upload hitch (prewarm next LOD); visual ships /
+  traffic proxies have no thrust glow; Blender zone import not written;
+  editor UI does not author roles / compartments / portals / effects yet;
+  station working package must move out of build/ (storage decision).
+
+### Station LOD: moving parts + measured per-part error (2026-10-31 g)
+- MOVING PARTS (compiled + check + in-game LOD log): the game passed an empty
+  ObjectState to presentation::select, so the spinning habitat ring was
+  LOD-selected / frustum-culled / HLOD-grouped at its rest pose. Now the
+  replicated module angles go in as asset-space nodeMotion (SceneRenderer);
+  component, module-group and object bounds are taken where the parts are
+  now; draw matrix = assetModel x DrawItem.assetTransform (motion included).
+  Translation / rotation of the whole object was already covered (camera is
+  re-expressed in asset space each frame).
+- MEASURED PER-PART ERROR (compiled + check): RenderLod::nodeGeometricErrorM
+  (PRES trailing section; older files read without it). BUILD
+  (makeProductionCopy -> ModelAssetLodError, editor BUILD now uses the same
+  function) measures, per semantic node and component LOD, the two-sided
+  distance LOD0 <-> LODk (vertex + centroid samples, BVH nearest triangle,
+  identical parts = 0, instances measured once, monotone along the chain).
+  select() uses it, LOD-wide ratio is the fallback. Also fixed: loading a LOD
+  payload reset the PRES role of that RenderLod.
+- FINDING: the editor LOD-wide errors were understated. LOD-wide LOD1 =
+  10.8 m; measured LOD1: Solar_Panels 452 m (panels dropped), Core_Front
+  60 m, Core_Rear 36 m, habitat 18 m, petals 0 (identical). Selection is now
+  honest, so it is NOT cheaper: in game at ~550 px 579.6k tris (was 583.6k),
+  30 km 491k (was 269k with up to ~11 px popping). Core_Front alone =
+  201k tris at LOD0, 188k at LOD1: the real fix is decimation in the editor.
+- BUILD of the station takes ~2 min (measurement). Check:
+  EliteModelAssetPresentationCheck failures=0 incl. new moving-part and
+  measured-error cases.
+
+### ModelAsset station: GPU instancing (user order 2026-10-31 h, stage 1)
+- Scope (order h): instancing on the ModelAsset path, real mesh
+  simplification in the editor LOD generator (component cull stays), manual
+  UI pass + Quick Start. ModelAsset / ladder / five LODs / measured per-node
+  error are the fixed base.
+- INSTANCING (compiled + in-game A/B, same build, ELITE_MODEL_ASSET_INSTANCING
+  =0|1|alt): SceneRenderer queues ModelAsset draws separately and
+  drawQueuedMeshPassesInstanced() groups them by MeshGPU (= LOD geometry +
+  state variant; one lighting / shader set per queue): one fill + one edge
+  submission per group, per-instance current model matrix (spinning ring
+  included), fill of all groups before edges. Existing MeshGPU::drawInstanced
+  / drawEdgesInstanced reused; new programs large_object_shader_instanced
+  (large_object_fill.frag) and edge_shader_thick_instanced (edge.geom +
+  edge.frag = the production thick / faded edges); MeshRenderer::
+  drawInstanced picks large-object uniforms by shader type,
+  drawEdgesInstancedThick mirrors setupEdgePass state.
+- Visual equivalence (3 styles): alternating-mode consecutive frames
+  (DEV capture now takes one request per frame) - adjacent mixed-mode diffs
+  are smaller than same-mode diffs two frames apart, i.e. scene motion only.
+- A/B (nav-stress station ~600 px, 45 samples / mode): instances 29, unique
+  meshes 6; fill + edge draws 58 -> 12; CPU submission 0.764 -> 0.278 ms; GPU
+  (timestamp queries) 5.79 -> 5.73 ms; tris 579.6k both; frame main_ms median
+  9.15 -> 8.68 (noisy). Telemetry: DRAW line in ELITE_MODEL_ASSET_LOD_LOG,
+  ma_* fields in [ScenePerf]; drawCalls now counts real submissions there.
+
+### Generated LOD: surface simplification + editor UI pass (user order 2026-10-31 h, stage 2)
+- GENERATOR (compiled + headless + UI): every generated level = component
+  cull (unchanged, generated_lod_component_cull_v1) THEN surface
+  simplification of the remaining geometry (tools/model_asset_editor/
+  LodMeshSimplifier, lod_surface_qem_region_constrained_v1): libigl
+  igl::decimate with own unweighted plane quadrics (cost = sum of squared
+  distances to the original planes; an edge above target^2 never collapses),
+  smoothing regions (crease > 25 deg / material / smoothing group / boundary)
+  never crossed, border lines kept by constraint planes, corners and authored
+  edge vertices pinned, no face flips, canonical edge topology (no
+  positional welding of separate sheets), textured / non-edge-manifold
+  components untouched, result re-canonicalized. Target per geometry =
+  max(factor x feature threshold, measured cull deviation). Each level from
+  LOD0, each geometry once (instance families stay shared), geometries in
+  parallel. Measured two-sided deviation (ModelAssetLodError::meshDeviation)
+  is reported per geometry; BUILD re-measures per semantic part (authority).
+  libigl's own qslim placement was not usable (A.inverse() -> inf on planar
+  regions). Geometry kernels compiled -O2 in Debug trees (72 s -> 2 s).
+- UI: LODS stage gains SURFACE SIMPLIFY + tolerance factor, PREVIEW
+  GENERATION (non-destructive, cached; APPLY reuses it) and a per-level /
+  per-mesh report table; apply carries the options; per-geometry
+  regeneration uses the same generator. Localization keys added (5 locales).
+- STATION (editor UI, saved WORKING r4, BUILD from the UI): rendered tris
+  LOD0 623.7k; LOD1 583.6k -> 86.7k, LOD2 269.1k -> 27.7k, LOD3 92.9k -> 3.7k,
+  LOD4 67.3k -> 1.5k. Core_Front 201,332 / 18,480 / 8,824 / 911 / 448 tris,
+  measured per-part error 0 / 64.0 / 132.1 / 377.5 / 377.5 m. Canonical
+  failures 0. EliteLodSimplifyCheck --synthetic: box 768 -> 12 T, error 0,
+  material seam kept; open sheet -> 2 T; bump within 2x target: PASS.
+- RUNTIME FIX: SHELL / PROXY without an authored shell / proxy fell back to
+  the coarsest component LOD with no error check (station at 30 km: LOD4,
+  ~9 px for a 1.8 px budget). Now it stays on the per-component SSE path.
+- IN-GAME (instancing on, same build, package swapped): scene ~620 px:
+  580k -> 286k tris, GPU 4.89 -> 2.58 ms; 30 km (per-component SSE): 378.5k
+  -> 56.3k tris, GPU 3.42 -> 0.63 ms; 60 m off the bounds: 616k / 607k tris
+  (big parts must stay LOD0), GPU 15.9 / 14.0 ms median, noise 6-47 ms.
+  First LOD upload hitch 241 -> 148 ms (scene), 152 -> 31 ms (30 km).
+  DEV ELITE_DEV_MODEL_ASSET_PLACE_M=<m> places the station in front of the
+  main camera for such measurements.
+- EDITOR WORKFLOW BREAKAGES found in the manual pass and fixed: (1) package
+  stamp compared raw mtimes; MinGW's last_write_time shifts by exactly 1 h at
+  a DST change, so all authoring evidence was dropped on load ("editor_state
+  unavailable or mismatched") - now +-1 h tolerated; (2) meshes certified by
+  a retired canonical algorithm stayed green while their records were
+  dropped -> PREPARE skipped them, generator blocked ("no canonical SOURCE
+  record") - now demoted to pending; (3) BUILD's own stage status change
+  marked WORKING dirty, so "save before BUILD" refused every attempt - BUILD
+  status no longer dirties WORKING.
+- Contracts: 79 reds before and after (same set; none added).
+- OPEN: Core_Front stays LOD0 below ~33 km because the component cull
+  removes long thin parts (LOD1 cull error 60 m). What-if without cull:
+  Core_Front 42k T at 28 m, Core_Rear 18.5k T at 4 m, habitat 21k T at 12 m
+  -> a Hausdorff-consistent cull criterion (or a simplify-only first level)
+  would make the near station cheap at the same budget: user decision.
+  Lazy-upload prefetch, authored shell / proxy still open.
+
+### OPEN
+- Galaxy spatial frame: HUMAN acceptance with a real mouse not done (the
+  scripted runs drive the production input path, not a hand). Known: the
+  cloud info card opens near the clicked point and covers the centre of the
+  entered cube (card placement unchanged, user can close / minimise it);
+  dense star labels in a root parent; "What is here?" texts are English
+  (not in the localisation profile); empty-space depth = the hover layer
+  (through the selected child / view axis) - no explicit layer stepping
+  and no precise point cursor inside a terminal cube yet (targets already
+  carry the exact point `hitLy`); children holding notable objects are not
+  outlined (stars / clouds themselves are).
+- Galaxy pointer: HUMAN repeated-click acceptance with a real mouse not
+  done (incl. return from System Map); the LIC cannot be selected by click
+  while the camera is inside it (by design of R5 fix); a cube whose marker
+  is covered by a star glyph (entry cube on Sol) refines via wheel / the
+  waypoint glyph only; star labels are not click targets.
+- A3 below the 94 % cutoff (93 %): balanced bank 5.15 m/s2 vs 36.77 on one
+  motor, 180 m on a curve. Candidate law (user decision): switch off when
+  the one-motor axis gives more thrust than the balanced bank.
+- Client capability still hybrid (re-derived from snapshot): mass / CoM and
+  part of the operating state differ; target: control facts only from the
+  server telemetry.
+- Harness: 180-s BLUE limit fails slower damaged Assisted flights; no flight
+  reaches the dock in the window (49 km route).
+- A3 reactor 60 %: planner side solved (stop-before-replan: plan from rest
+  found first time, A4); the gate is not formally closed - the harness 180-s
+  BLUE limit fails the slower flight.
+- X one main lost: 110-130 ms autopilot frames on the slow replanned profile.
+- `updateDockingAdvisory` (3.8k lines) still one member function (debt: no
+  behaviour-neutral seam taken during the acceptance run).
+- Assisted after an engine loss tracks curves poorly (185 m cross-track on
+  the replanned route; inside the 250-500 m route corridor, healthy <= 20 m).
+- Combined RCS share is used by planned turns only; translation + rotation
+  in narrow zones is not separately bounded (small attitude-hold torque).
+- Exact 180 deg docking vertex: explicit refusal, no production route hits it.
+- NOT visually reviewed by the user: Galaxy Map clouds / cards, System Map.
+- Baseline reds above unchanged.
+
+### Hub dock traffic + colonization canon (user order 2026-11-01, overnight)
+Status levels: dispatcher / traffic = AUTOMATED PASS (offline, production
+code); in game = GAME START + traffic live; player station capture = see
+"Player dock smoke" below. Nothing here is user-ACCEPTED.
+- Dock: `hub_hex_dock_a` = rotating hexagonal cylinder (apothem 150 m,
+  400 m long, spin 2 deg/s about its own Z = entry axis), front slot
+  160 x 60 m, apron, guide pylons, chamber with 6 pads (one per inner wall,
+  "down" = wall normal). `hub_hex_dock_base` = fixed coaxial service block
+  (600 x 240 x 240 m) behind it with a real tunnel (collision = 4 walls,
+  no solid core). Geometry contract: `src/game/docking/model/HexDockFacility.h`;
+  meshes + collision headers generated by `tools/hub_meshes/generate_hub_dock_meshes.py`.
+  Replaces `guidance_dock_cube_a` (scene, semantic anchors, runtime test
+  ports, BLUE route graph portal `hex_dock_a.dock_front`).
+- Dispatcher: `DockTrafficController` extended with the full lifecycle
+  (queue -> hold -> entry clearance -> station control -> docked ->
+  departure queue -> cleared -> departed), 6 holds (station FIXED frame,
+  flower at r 450 m, z -1600), 6 pads, shared resources outer_lane +
+  chamber_lane (one ship in the critical section), departure priority when
+  arrivals lack pads, directEntry (pilot at the portal, no hold).
+- Traffic: `src/game/traffic/DockServiceTraffic` (deterministic, FIXED-frame
+  kinematics that look Newtonian: burn - coast - flip - main-engine brake;
+  roll sync with the dock spin on the axis; station-assisted transfer /
+  descend / latch; departure lift -> corridor -> axis -> dispersal).
+  Ships: new OCS-4 "Lastochka" cargo shuttle (Orbital Freight Union; passport
+  `ofu.ship.ocs-4.lastochka`, Provisional; descriptor + catalog products),
+  Earth <-> Hub manifests, 1 flight / 10 min (dock capacity ~12 cycles/h),
+  Cobretts looping dock -> 20 km -> return. Game: TrafficShell ships
+  (`GameSimulationDockTraffic.cpp`), env ELITE_DOCK_TRAFFIC=0 /
+  _COBRETTS / _INTERVAL / _LOG.
+- Offline gate `EliteDockTrafficCheck` (6 h, production code): 4 Cobretts:
+  70 arrivals, 0 invariant / separation / structure violations, min gap
+  38.6 m (neighbouring pads); 9 Cobretts (saturation): 72 arrivals, queue max
+  7, wait max 1830 s, 0 violations. Logs: D:/tmp/elite_dock_dispatcher_c4.log, _c9.log.
+- Player: server requests docking (directEntry) when a player ship enters
+  the axis approach zone (z -1500..-150, r < 260 m, < 40 m/s); station
+  capture when cleared, on the axis (r < 60, z -800..-150, < 15 m/s);
+  captured ships are excluded from the physics loops and posed by the
+  traffic model; L = departure request (ClientShipCommand
+  RequestDockDeparture); released at the portal, lane released at z -2400.
+  Status replicated in ShipSnapshot.dockDispatcher -> docking terminal.
+  Root cause of the first failed smoke (run3/run4): nav route stops at
+  z = -500 (gate volume front face), the capture radius was 160 m around
+  -200 -> capture never fired; now the capture zone is the approach axis.
+- Player dock smoke (run5, nav-stress:simple, Newtonian-I, game build of
+  this commit): request accepted at z -1163 (t 198 s); direct entry cleared
+  to P1 (322 s); station capture at z -500 -> corridor -> handoff at the
+  chamber gate (435 s) -> latched on P1 (492 s), rotating with the dock;
+  DEV auto-departure request (552 s) -> DEPARTURE QUEUED position 2; the
+  720-s window ended before clearance -> player departure / release at the
+  portal NOT yet seen in game (offline traffic departures are). Terminal
+  shows REQUEST ACCEPTED / ENTRY CLEARED / STATION CONTROL / DOCKED / L.
+  Frames: D:/tmp/elite_dock_run5/f*.png, log traffic.log.
+- Tests: route_stage_compiler / route_volume_containment / docking_* PASS;
+  contracts check_hub_guidance_test_geometry PASS (now pins the hex dock and
+  the non-rotating service block). Pre-existing reds (not from this work):
+  traffic_route_graph_tests (expects 700 m exit straight, data 150 m since
+  e2dc2dc5), check_navigation_stress_field ("Hub visual/navigation basis
+  sign contract changed", red at HEAD before this work).
+- Colonization (Part B, PROPOSAL, offline-verified, not author-accepted):
+  `Notes/History/COLONIZATION_CANON_3126.md`, `Notes/Colonycore/COLONYCORE_V2.md`,
+  `tools/colonization_lab/` (python lab.py; deterministic: two runs and the
+  committed out/ identical; --check-dataset OK), generation_ships.json now
+  valid JSON with canon blocks (no code reads it). Reports in D:/tmp:
+  COLONIZATION_CANON_RECONCILIATION.md, GENERATION_SHIP_SANITY.md,
+  COLONY_PSYCHOLOGY_REVIEW.md, COLONY_ECONOMY_REVIEW.md. Open author
+  questions: arrival dates, GENESIS-1, Earth 3126 anchor (5.5 bn), hidden
+  answers, NOMAD-1 timer, Icy Faith, names, remote concessions.
+- Next: user visual review of the dock + traffic; manual (non-autopilot)
+  docking request via comm UI; traffic shells as physical obstacles for the
+  player planner; dock collision vs captured ship path audit.
+
+### Colonization: causal demography + Notes/Lore reference (user order 2026-11-02)
+Status: PROPOSAL, offline-verified (deterministic lab), NOT author-accepted.
+- Demography (`tools/colonization_lab/demography.py`): population is no longer
+  a target. Yearly 5-year age groups; fertility from child economics (living
+  space = built volume in 3 tiers: domes/lava tubes, moon/belt workings,
+  rotating cylinders; child labour value = (1 - automation) x labour shortage;
+  pensions, education cost, child mortality), family norm lagging ~45 y,
+  religious subculture, regime policy, birth licences, tech capability in 12
+  domains (critical mass of specialists, degradation, cannibalisation),
+  migration only after 2750 over the beacon graph (Earth windows).
+  Result: Earth 3126 6.0 bn (peak 13.35 bn 2100, collapse 2470-2540), off-Sol
+  183.4 M (old targets 26.8 M); largest polities 15-33 M (New Karma 32.7,
+  Citadel 23.4, Strife Belt 21.5, Lal Kot 20.6, Harmony 18.7). Strong
+  sensitivity: without assumptions F9 (inherited family propensity) + F10
+  (automated childcare) off-Sol 28 M, Earth 0.22 bn. 18 colonies differ from
+  the author's numbers by > 2x (kept as `pop_3126_authored`, decision open).
+  Weak spots: e0 saturates at 94 and automation at 0.95 everywhere (late
+  colonies too uniform); research notes written from memory, no live web search.
+- Economy: freight priced by mass; interstellar bulk share 51.1 % -> 15.8 %
+  of trade value; 112 flows vanished (water/metal mostly pointless: 1e22-1e25
+  kg volatiles per system), 179 appeared (electronics, He-3 into giant-less
+  systems, precision equipment, isotopes, jump cores, biotech). Earth Return:
+  Earth 33x population, 58x industrial index, but no own jump cores; Cognium
+  controls the beacon network -> the war is about the network.
+- Knowledge model: CANON / PROPOSAL x PUBLIC_RECORD / AUTHOR_TRUTH + UNKNOWN on
+  every record (615 + 153 settlement proposals); list `out/proposals.md`,
+  `Notes/Lore/AUTHOR/PROPOSALS.md`.
+- `Notes/Lore/` (117 generated + RESEARCH.md): 35 ship dossiers (+ hidden
+  LAST-LIGHT-1 in AUTHOR/), 34 colony dossiers, 25 settlement system files
+  (152 public settlement records), ECONOMY (assets, mines, shipyards, trade
+  routes, dependencies, technology), DEMOGRAPHY, POLITICS, TIMELINE, AUTHOR
+  (hidden canon, missing ships, quest truths). All number tables are
+  generated from `out/lore_facts.json` by `tools/colonization_lab/lore_md.py`
+  (--write / --check: stale blocks, unknown ids, broken links, conflicting
+  population numbers in prose, hidden missions in public files); narrative by
+  hand with ~734 inline [PROPOSAL] tags. `Notes/History/COLONIZATION_CANON_3126.md`
+  marked superseded.
+- Fixed after writing: hidden-truth leaks in generated public rows
+  (MAYFLOWER-2 2180 cause, GREEN-ARK-1 2480 symbiont origin, UHURU-2 sponsor
+  field stating the PROPOSAL dock fire, public asset named after LAST-LIGHT).
+- Gates: lab two runs byte-identical and equal to committed out/,
+  --check-dataset OK, --check-lore OK, lore_md --check OK, second --write
+  changes nothing.
+- Open author decisions: accept F9/F10; model vs author populations (18
+  conflicts); Earth peak / 10 bn in 2500 checkpoints; can Earth make jump
+  cores; Citadel as main jump-core seller; settlement names; catalog vs old
+  notes (habitable "super-earths" mostly hot/sub-Neptune -> colonies on moons,
+  ice worlds, workings); [PROPOSAL] tag style (start vs end of sentence).
+
+### Live hub traffic + map ownership + Anime render (user order 2026-11-02, evening)
+Status: live-game verified on this machine (target Windows box); NOT yet
+user-accepted.
+
+**Why the user saw no traffic (diagnosed in the real runtime, not offline):**
+1. The traffic itself ran: a headless probe (`EliteServer --dock-traffic-probe
+   SECONDS LOG`, real ServerRuntime + attached session, reads the CANONICAL
+   client snapshot) showed 6-8 traffic ships replicated with their
+   ShipInstanceIds from t=0.
+2. The default player start is 10.7 km from the dock and BEHIND the hub
+   (dock FIXED z = +7548; the entry/holds face -Z). From there the docked ships
+   are hidden inside the dock, the holds are 11.6 km away and a 22 m Cobrett is
+   sub-pixel.
+3. The server radar collected contacts only from materialized ships
+   (`m_ships`); TrafficShell ships were never radar contacts -> invisible on the
+   radar/HUD. FIXED: shells in the same system are radar inputs
+   (`GameSimulation.cpp`, perception loop).
+4. When the motion-fidelity LOD materialized a traffic shell near the player
+   (350 m / aimed 3 km), `updateDockServiceTraffic` lost it (only `m_shipShells`
+   was updated): the ship froze/drifted under physics and was orphaned when the
+   actor ended. FIXED: the traffic model keeps writing the pose into the
+   materialized Ship (same EntityId/ShipInstanceId); traffic ships are kinematic
+   (`isDockStationControlledShip` covers them -> skipped by physics/AI loops);
+   an ended actor's materialized ship is dematerialized then removed. Live
+   evidence: CBR-13 materialized at 272 m and kept flying its route to hold H2,
+   CBR-11 the same on the departure axis.
+6. Elite Classic (the default look) drew every traffic ship invisibly: hub
+   traffic renders through the instanced whole-ship PROXY lane, whose edge pass
+   had been commented out ("jellyfish"), and Elite's hull fill is black - black
+   on black. FIXED: Elite draws instanced proxy edges out to 4 km (fade from
+   1.5 km); Modern/Anime keep fill only. Live evidence:
+   `D:/tmp/hub_traffic_07_elite_cobrett_at_hold_now_visible.png`.
+7. A client-only decorative system (`StationTrafficSystem`, 1500 "Cobra MK1"
+   visual ships orbiting the station, no server entity) was still running in
+   gameplay - exactly the decoration the order forbids, and it shared the
+   traffic render lane. REMOVED (source, CMake, SpaceState); contracts
+   `check_client_spatial_domain` (passes) and `check_feature_contracts` now
+   point the traffic-visibility tag at the replicated shells. Elite frame time
+   on the same scene 13.45 -> 12.05 ms. Note: `[ScenePerf] visual_ships_ms`
+   ~12 ms after the removal is the GPU sync point moving into the instance
+   upload, not cost (total frame time fell).
+8. Throughput was low: one movement through outer+chamber lanes at a time;
+   the next entry waited for the previous ship to LATCH. FIXED: arrival
+   pipelining in `DockTrafficController::update` - while the previous arrival
+   is under station control in the chamber (outer lane released), the next
+   arrival may leave its hold (approach >= ~100 s > station transfer < 60 s);
+   `chamber_lane` is handed over on latch. Older departures are never
+   overtaken. Offline gate (6 h, 4 Cobretts): arrivals 70 -> 78, 31 pipelined
+   entries, invariant/separation/structure violations 0, min gap 38.6 m.
+   6 Cobretts saturate the 6 pads (73 arrivals) -> kept 4 Cobretts + shuttle
+   every 600 s.
+
+**Telemetry:** `ELITE_DOCK_TRAFFIC_LOG=<path>` now also writes a `[status]`
+row per actor every 10 s (phase, tier shell/MATERIALIZED, fidelity, FIXED
+position, dock and player distance) and the client prints `[TrafficRender]`
+(shells in the flight scene, hydrated assemblies, nearest distance) every 5 s.
+`ELITE_DEV_DOCK_OBSERVER=1|2|3` parks the player at a dock viewpoint
+(2 = hold the view; 3 = near the hold flower). `ELITE_DEV_MAP_SCRIPT=
+"SEC:f1|f3|f10|f11|f12|lanes|select:CALLSIGN;..."` drives views for captures.
+
+**Live acceptance run** (`D:/tmp/elite_live_hub_traffic.log`, 41 min real
+time, RelWithDebInfo client + local server, frames `D:/tmp/elite_live_hub/`):
+- Shuttle ORB-1702 full cycle: materialised 25 km Earth-side t=30 -> queue
+  gate + docking request t=180 -> hold H5 -> entry cleared t=428 (pipelined
+  chamber hand-over t=485) -> station handoff t=555 -> latched P3 t=612 ->
+  900 s unload/load -> departure request t=1512 (queue position 3) ->
+  cleared t=1803 -> clear of the controlled zone t=1941 -> crossed the 11 km
+  hub boundary ~t=2080 -> Earth burn t=2180 -> left the local zone t=2348.
+- Cobrett CBR-12 full cycle: far point -> request t=205 -> hold H1 ->
+  docked P1 t=485 -> service -> departure request t=725 -> departed t=1248.
+- `[TrafficRender]`: all traffic shells are in the flight scene with
+  assemblies; close views show them (`D:/tmp/hub_traffic_*.png`).
+
+**Maps (one ShipInstanceId, one owning level):**
+- Ownership rule: the server binds a traffic ship to the hub
+  (`motion.hubId`) while it is inside the dock's controlled zone =
+  `DockServiceTraffic::controlledZoneRadius()` = max(outermost queue gate,
+  departure turn) = 11 000 m (HexDockFacility data, not a new constant).
+  Hub Map shows only ships of that hub (existing rule); System and Detail maps
+  now skip non-player ships with a hubId (the hub represents them). The local
+  player keeps its marker on every level.
+- Routes: `ShipSnapshot.traffic` (callsign, phase, destination, remaining
+  route as world offsets) is the traffic model's real remaining plan
+  (`DockServiceTraffic::plannedPath`, same segments `pose()` evaluates).
+  Hub/Detail maps draw the SELECTED traffic ship's route; `T` on an open map
+  shows all routes plus the authored dock lanes (holds, hold->axis join,
+  arrival axis, departure clear/turn) from HexDockFacility. System Map: no
+  per-ship route (a 20 km route is sub-pixel at AU scale).
+- Known limit: the Earth Detail map is planet-scale, so a ship 11-25 km from
+  the hub draws on the hub icon (selection ring confirms ownership).
+
+**Anime render (same renderer, Anime branches + composite):**
+- Ships/stations: colour masses (base, cool blue-violet shadow tone, narrow
+  warm highlight, AA terminator); distance merges the bands and sinks the
+  hull into a painted depth tone; ships use an own light steel tone (the
+  Modern ramp starts near black). The old N.V "ink" blocks are gone.
+- Contour: silhouette/fold ink in the cinematic composite from scene depth
+  (MSAA depth is now a multisample texture read at sample 0; a depth resolve
+  blit cost 1.4 ms). Only mesh pixels (1-depth < 0.06, > ~15 m) are inked -
+  planets/Sun/space are backdrop; a planarity test (2nd difference) rejects
+  grazing planes/near terrain; sub-3-px objects stay colour dots. Geometry
+  edges in Anime are thin, slate, fading with distance (detail, not blueprint).
+- Planets: posterise 6 levels without the x1.35 saturation, sphere normal
+  dominant (less relief noise), soft terminator + half-tone, blue-violet night,
+  bright atmospheric limb instead of an ink ring, no coastline ink; clouds with
+  a soft brush edge and lavender shade. Sun: same physical disc/activity, clean
+  core + warm rim + soft broad corona. Milky Way: soft wash, no hard steps.
+  Composite in Anime: no grain/softening, half bloom, blue-violet shadow / warm
+  highlight grade, faint painted wash on empty space only.
+- Performance, same live scene, same 90-320 s window (RelWithDebInfo):
+  Elite 13.4 ms, Modern 16.8 ms, Anime 17.1 ms per frame (before the MS-depth
+  change Anime was 17.6-17.8; A/B without ink 16.2). Celestial GPU passes are
+  identical in Modern and Anime (5.06 ms).
+- Still open (artistic): Anime station palette is a single lavender-grey (no
+  material accents), faint residual terrain contours very near the surface,
+  thrust plume does not exist in any style (nozzle pad only); authored dock
+  lanes on the Hub Map are tiny at the auto-fitted 11 km extent (zoom-in not
+  verified in a capture).
+- Baseline red still present: `check_feature_contracts` stops at "Debug
+  Control checkbox renderShipUi has no verified runtime consumer" (its earlier
+  stale read of `pushDebugControlState` from SpaceState.cpp was fixed: the
+  function lives in SpaceStateDevPanel.cpp).
+
+**Gates:** builds RelWithDebInfo + Debug OK; `docking_infrastructure_api`,
+`route_stage_compiler` PASS; EliteDockTrafficCheck 6 h 0 violations;
+architecture checks touched by this work identical to HEAD (pre-existing reds:
+docking_module_boundaries, hub_motion_lab, multiplayer_client_local_identity,
+navigation_api_purity, navigation_foundation_lock, navigation_guidance_layer,
+client_acceptance architecture, system_map object_overlay).
+
+### Anime v2 by the user's references + material baseColor (user order 2026-11-02, night)
+Status: implemented, live-captured; NOT user-accepted.
+- References `D:/tmp/anime-1..4.jpg` analysed in `D:/tmp/ANIME_REFERENCE_ANALYSIS.md`
+  (measured palettes, sky structure, ANIME STYLE TARGET, self-comparison).
+- **Material baseColor is model data now** (user rule: model/material ->
+  baseColor -> each style interprets it; no animeColor). `MeshTriangle.baseColor`
+  carries the face's material colour into vertex attribute 3 (MeshGPU no longer
+  overwrites it): ModelAsset `MaterialDefinition.baseColor` per triangle
+  (station, already editable in EliteAssetEditor SURFACES), OBJ MTL `Kd` per
+  face, otherwise `ObjectAssemblyDesc::defaultBaseColor` (Cobrett 0.42/0.47/0.50,
+  hex dock 0.62/0.64/0.66, service block 0.52/0.54/0.56, OCS-4 0.66/0.64/0.58,
+  generic default 0.55/0.57/0.60). Shaders: near colour = material colour
+  (Modern albedo, Anime tonal masses), LightingParams mid/far stay as the style's
+  distance fade; `hullColorNear` is no longer used; Elite ignores colour.
+- Anime: shadow = own colour darkened with a slight steel-blue shift (no
+  lavender), highlight = lighter own colour; stations use a gentler shadow step
+  and a shifted terminator so small parts merge; deep space = world-fixed
+  painted sky (deep blue <-> violet) BAKED once into a 256^2 RGB16 cubemap
+  (per-pixel procedural noise cost ~17 ms at 1920 px - measured 33.4 ms frame);
+  planet limb glow (anime-2) as a separate cheap pass over a 1.9 R sphere,
+  continued inside the air shell (no dark ring), dithered; soft stars; clouds
+  cream/blue-grey; sea deeper blue.
+- Performance (live, same scene, 1920 px): Elite 12.4, Modern 15.9 ms; Anime
+  with the procedural sky 33.4 ms -> baked sky 18.0 ms -> two-pass limb glow
+  17.6 ms (+1.7 ms / +11 % over Modern: depth ink at 1920 px, glow pass, sky
+  fetch). Ink is limited to mesh pixels ~15 m..30 km, so the near-terrain depth
+  pass seen from orbit gets no false contour lines (they were visible in drone
+  views). PlanetLab GPU atmosphere timers in Anime read 10-20 ms
+  even with the glow pass disabled while Modern reads ~0.6 (0.00 inside the
+  air): those timers are not trustworthy here; end-to-end frame time is the
+  measure. Open: profile the Anime atmosphere pass properly.
+- Adaptive scene palette (user idea): evaluated, NOT implemented now (the
+  references show own-colour shadows; gain only with other environments).
+  Minimal ScenePalette design recorded in the analysis file.
+
+### Anime objects + planets pass; Modern renamed Cinematic (user order 2026-11-03)
+Status: implemented, live + PlanetLab captured; NOT user-accepted.
+- UI: the style is "CINEMATIC" (main menu + localisation; `cinematic` accepted
+  as an id alias); the persisted id stays `modern` (no preference churn).
+- Anime objects: paleness came from the distance ramp (material mixed toward
+  hullColorMid/Far greys + a depth tone; stations also toward the horizon
+  colour) and a softened station shadow. Now: own material colour only, three
+  values (light / base / shadow) with light materials compressed (no white
+  clay), distance = less chroma + base band merged into light, never lighter.
+  Silhouette = composite depth ink 2 px, near-black (object colour x0.10);
+  internal depth folds 0.75. Geometry lines are RANKED: `MeshEdge.weight`
+  (boundary 1, material boundary 0.85, crease 25..75 deg -> 0.35..1; OBJ and
+  ModelAsset), attribute 1 of the edge VAO; Anime draws major lines near-black
+  to ~2.2 km, minor lines faint and only within ~300 m.
+- Olive calibration: Cobrett temporarily olive (0.36, 0.42, 0.18) for two
+  calibration runs, then reverted to 0.42/0.47/0.50.
+- A composite-shader name clash (`fold`) silently disabled the whole post
+  chain in one calibration run ("[PostProcess] shader initialization
+  failed"): fixed; every run is now grepped for ShaderUtils errors.
+- Planets (both styles, separate palettes): natural zones from existing data
+  (`planetZones`: vegetation = albedo greenness, dry = warm bright albedo,
+  snow = bright low-saturation, mountains = relief > 3..5 km; sea depth from
+  coast distance), read from a coarse albedo mip (`uZoneBias` Anime 3,
+  Cinematic 1.5) -> continental masses, no biome noise. Anime: sharpened
+  dominant zone, painted palette, cloud shadows, narrow soft limb; Cinematic:
+  natural palette blended 35 % with the real albedo, deep-blue ocean with a
+  fresnel glint, cloud shadows, blue aerial haze, scattered blue limb with a
+  gentler exposure (no grey "LED strip"). Anime clouds: coarse cover mip,
+  cream / blue-grey. Anime atmosphere: smooth (no stepped bands), limb glow
+  = narrow halo + wide faint wash (keeps the blue sky of anime-2). Anime sky
+  x0.92 (x0.82 lost the blue; the earlier blue partly came from the wide glow).
+- Performance, same live scene, 1920 px: Elite 12.2, Cinematic 16.5, Anime
+  17.9 ms (before this pass 12.4 / 15.9 / 17.6). Elite regression: unchanged
+  look (`D:/tmp/elite_regression*.png`).
+- Gates: RelWithDebInfo + Debug build; docking_infrastructure_api,
+  route_stage_compiler PASS; client_spatial_domain, client_system_map_ships,
+  hub_guidance_test_geometry PASS; no ShaderUtils errors in the final runs.
+- Open: 8-bit banding in the wide limb glow at grazing view; Earth mountain
+  threshold is a fixed 3..5 km (DEM-scaled heights); station dense geometry
+  still busy at close range; no thrust plume.
+
+### World economy architecture research (user order 2026-11-03)
+Status: research documents + offline logistics reference implemented; PROPOSAL,
+NOT user-accepted; no runtime change.
+- Documents (D:/tmp): `WORLD_ECONOMY_ARCHITECTURE_REVIEW.md` (stocks / flows /
+  decisions instead of themed layers; logistics = mandatory capacity filter
+  between decision and effect; event/cause log; strategic / operational /
+  physical levels with one persistent ShipInstanceId; motives instead of a
+  relation number; SupportProgram pledged->allocated->shipped->arrived->absorbed;
+  war trade channels official / sanctioned / re_export / smuggling /
+  covert_state; 14 commodity categories + separate serialized parts catalogue;
+  sealed containers; minimal primary data; lab keep/extend/delete; order),
+  `REFERENCE_GAME_ECONOMIES.md` (sources: `elite_research_games_aid.md`),
+  `WORLD_DATA_GRAPH.md`, `PLAYER_ECONOMY_BALANCE.md`.
+- New offline tool `tools/colonization_lab/logistics.py` +
+  `canon/ship_economics.json` (all money numbers PROPOSAL; ship physics from
+  runtime descriptors): network stats, jump-fuel calibration, build cost,
+  trip cost per tonne, yard replacement demand, fleet-from-flow. Output
+  `out/logistics.json` / `out/logistics_report.md`; `--check` mode;
+  deterministic (two runs, identical hashes).
+- Results (3126 net: 24 beacons, 140 edges): mean edge 19.0 ly, hops real
+  trips use 20.06 ly, mean trip 29.4 ly / 1.47 jumps. Jump fuel
+  `k*(M/M_ref)*d`, k = 0.0544 t/ly: Cobrett full tank = 3.02 / 2.76 / 2.54
+  mean jumps (empty / half / full cargo) -> author rule 2.5-3 met. Jump
+  charge price derived from "mean jump = 2.5 x in-system leg" (leg 2216 Cr,
+  jump 5539 Cr). Cobrett list 3.39 M Cr; trip Sol->19.7 ly with 50 t cheap
+  cargo 31.8 k Cr = 637 Cr/t; heavy carrier 75.5 Cr/t; OCS-4 in-system
+  75 Cr/t. Yard demand fleet 12000 / 35 y: 343 + 72 losses = 415 hulls/y
+  (703 at 3 % war losses). 100 Mt/y needs 192 heavy carriers.
+- Population vs author targets: targets need 1.1-1.8 %/y sustained since
+  founding (late colonies 1.8-2.4 %/y), the model gives 0.4-1.25 %/y
+  (off-Sol 183 M vs ~10 bn; lab Earth 5.5 bn vs 10 bn). Proposed causes, not
+  multipliers: housing-cost step (habitat boom after belt industry),
+  terraforming, Earth emigration after 2750; NOT implemented (needs author OK).
+- Found inconsistency: traffic Cobrett cargo 40 t vs descriptor 50 t.
+- Checks: `lab.py --check-dataset`, `--check-lore`, `lore_md.py --check` OK
+  (117 files unchanged); lab data untouched.
+
+### Political-economic world balance 3126 (user order 2026-11-03, second pass)
+Status: offline model + permanent data + Lore layer implemented; runtime cargo
+capacity unified (built, dock traffic check PASS); PROPOSAL, NOT
+user-accepted. Population scale = AUTHOR_TARGET.
+- Architecture moved from D:/tmp into `Notes/Economy/` (README,
+  WORLD_ECONOMY_ARCHITECTURE, WORLD_DATA_GRAPH, POLITICAL_ECONOMY,
+  LOGISTICS_AND_NAVIGATION, FLEETS_AND_SHIPYARDS, PLAYER_ECONOMY, BANKING);
+  world facts generated into `Notes/Lore/ECONOMY/` (new WORLD_BALANCE, FLEETS,
+  DEFENCE, FUEL, BEACONS_AND_NAVIGATION, SCENARIOS + blocks in the old files),
+  polity report (14 sections) in every `COLONIES/<id>.md` and Sol in
+  `POLITICS/EARTH_3126.md`, system report in every `SETTLEMENTS/*.md`,
+  population eras per polity. One truth: canon/*.json -> out/ -> Lore.
+- Demography: `canon/population_history.json` (targets + dated epochs:
+  habitat boom, terraforming, high-fertility era, immigration programmes;
+  Earth visa windows 6 / 4 / 1 M/y), new mechanisms in `demography.py`
+  (recruiting polity never donates; fill-cheapest-tier split; Earth surface
+  ~10 bn per the FINAL-ARK-1 quote), `calibrate_population.py` fits ONE
+  number per polity (`intensity`, 0.38-1.4; no population multiplier).
+  Result: Earth 9.96 bn, Sol outside Earth 1.71 bn, off-Sol 10.09 bn, all 18
+  polities inside their ranges; boom-era TFR 3.4-4.6 (Free Clans 5.3);
+  Earth emigrants 2752-3126 ~1.23 bn. lab.py D.8 table, POPULATION_3126.md.
+  Old fate.md numbers kept as `pop_3126_authored`, superseded in checks.
+- Cobrett capacity diagnosed: repo had no container data (one
+  `container_mount_center`); 140 m3 = 6 x 23.3 m3. Decision: C20 container
+  (<= 20 t payload, 23.3 m3, tare 1.7 t); Cobrett 6 x C20, 120 t limit,
+  typical mixed load 56 t (volume-limited). Runtime:
+  `src/game/catalog/ships/ShipCargoPassports.h` is the single source for
+  `ShipStorageCaps` (cargoMass in TONNES, new containerSlots /
+  containerPayloadTonnes) and dock traffic (no own 40 t); OCS-4 cargoMass
+  was written in kg (450000) -> 450 t, 24 C20. Build (MSYS2 MinGW64) OK;
+  `EliteDockTrafficCheck` 6 h: 78 arrivals, 0 invariant / separation /
+  structure violations.
+- Jump rule: `charge = q * d * (kappa * hull_envelope + M)` (field term +
+  mass term), calibrated on Cobrett 3.0 empty / 2.5 full 120 t ->
+  3.01 / 2.73 / 2.50 mean jumps; consumable / charge energy (25 % of reactor,
+  Cobrett 27 TJ in 6 h) / peak discharge (2 s, 13.5 TW) kept apart;
+  170 kg/(ly*1000 t) Cobrett, 110 train; charge 5.65 Cr/kg.
+  Heavy carrier = jump tug + 12 modules (57.6 kt, 67 Cr/t); classes:
+  Cobrett, medium freighter C-120, jump train / tanker, OCS-4, gas tanker,
+  ore tug, service tender, patrol cutter, interceptor, escort frigate, line
+  combatant, recon/EW picket, fleet tender, impact-defence tug.
+- `world_economy.py` (out/world_3126/: economy, infrastructure, trade_flows,
+  fleet_census, defence, beacons, scenarios, checks + WORLD_BALANCE_3126.md):
+  15 commodities, 325 interstellar flows 1.36 Gt/y 7.5 T Cr/y over the real
+  beacon net (+ short unbeaconed links, + expedition link to the far Kern
+  pocket 37/41/45 which is disconnected at 32 ly), hostile pairs via neutral
+  re-export, infrastructure from output (e.g. 6 008 mines, 28 big civil
+  yards), fleet from flows (101 k shuttles, 35 k tugs, 34 k freighters, 31 k
+  Cobretts incl. couriers, 3.3 k trains; 23 k line combatants, 15 k cutters),
+  defence share 0.8 % (Sol) .. 3.5 % (New Karma) from doctrine + tasks,
+  beacons (24 bridge + hub / station / relay / military / science), jump
+  error model (950 km both-end beacons .. 190 000 km none at 20 ly),
+  vulnerabilities, 6 scenarios (mine, beacon loss: Tianhe +39 % ships;
+  yard; habitat disaster with SupportProgram; external aid; war + sanctions
+  -> re-export via New India, import price x1.22).
+- Checks (all OK): world_economy --check (author ranges, settlement sums,
+  cargo identity 2e-16, no goods from thin air, infrastructure >= output,
+  flows <= transport, fuel covered, replacement <= yards + imports,
+  statuses), logistics --check, calibrate_population --check, lab
+  --check-dataset / --check-lore, lore_md --check (123 files); two lab runs
+  and two world_economy runs byte-identical (lab sha c8225243...).
+- Open author decisions: Sol's navy scale (8.5 k line combatants from its
+  GDP even at 0.8 %); Earth visa windows during the Cordon (4 M/y recruited
+  out); Sol as the largest exporter of electronics after 3112; fleet scale
+  constants (defence task norms) in `canon/polity_economy.json`.
+
+### Spatial civilisation layer + fixes of the second pass (user order 2026-11-03, third pass)
+Status: offline model + permanent data + Lore + first visible map layer
+implemented; PROPOSAL, NOT user-accepted. News delay (<= 7 days to the far
+periphery) = AUTHOR_TARGET. Restore point before this work: tag
+`restore/pre-world-sites-2026-11-03` (= 9fa2fa19).
+- Analysis answered before work (no blocking questions). Second source of
+  truth risks named and closed: sites are generated from canon into ONE file
+  the runtime only reads; deep-space objects are GENERATED `galaxy_object`
+  copies (provenance, never edited); `earth_orbital_hub` keeps its runtime id
+  (`runtime_binding`, never drawn twice); legacy
+  `src/assets/data/galaxy/{actors,nodes,routes,systems}.json` (GalaxyDatabase)
+  is NOT extended.
+- Fixes of the second pass (all verified by checks):
+  1. Defence: forces ONLY from 15 tasks; line combatants only from the
+     deterrence task (key nodes x threat, squadron 4); the ship budget left over
+     goes to munitions / stocks / sensors / repair / training / reserve crews /
+     bases / impact & missile defence / R&D / mobilisation / mothballed / reserve.
+     Line combatants 19 397 -> ~180 (226 with reserve / repair); Sol 8 477 -> 12
+     (Sol's unspent ship line ~842 bn Cr/y goes to readiness). Check
+     `line_combatants_only_from_deterrence_task`.
+  2. Export production limited by installed (+ finishing) export plant built
+     since joining the network (2 %/y of home output, cap x3; network fuels sized
+     to the network's need, ramp 50 y). Flows 325 -> 261, 1.35 Gt/y,
+     5.3 T Cr/y. Asset counts from installed plant (utilisation reported).
+     Check `exports_within_installed_export_capacity`.
+  3. C20 net / tare / gross: mass equations use gross (`logistics.cargo_gross_t`,
+     runtime `catalog::ships::grossCargoTonnes`); Cobrett 120 t net + 10.2 t tare
+     = 130.2 t gross; recalibrated 3.0 / 2.73 / 2.5 mean jumps (q 7.7e-5,
+     kappa 0.247, field term 388 t). Dock traffic envelope mass = gross.
+  4. OCS-4: passport 4 m/s2 at 830 t -> 450 t GROSS = 409 t net + 40.8 t tare;
+     orbit only (0.4 g, cannot lift off Earth); new surface lifter SL-12.
+  5. Runtime passports vs `ship_economics.json`: `logistics.py --check` parses
+     `ShipCargoPassports.h` (dry mass, net, volume, places, C20) - PASS; a
+     mismatch is detected (verified with a forced 450 t).
+  6. Expedition edge removed: Kern pocket reached via Gliese 436 (real system,
+     Kern staging depot "Pereval", beacon 3036 in world.json): legs 30.6 / 30.8
+     / 30.4 ly. Check `no_edge_beyond_max_hop`.
+  7. HTML Lore: the mirror had been made by an external tool (no style.css,
+     stale since 9fa2fa19); now `tools/colonization_lab/lore_html.py`
+     (markdown-it, same template) regenerates Notes/html; `--check` PASS
+     (132 files).
+- New: `canon/world_sites.json` (authored) + `world_sites.py` ->
+  out/world_3126/{sites, society, law, comms, passengers, fleet_age, frontier,
+  world_events}_3126.json, sites_checks, WORLD_SITES_3126.md; runtime copies
+  `src/assets/data/galaxy_details/world_sites/sites_3126.json` (527 in-system
+  sites + 4 zones) and `objects_details/world_dso_*.json` (5 deep-space
+  objects). 498 sites (16 hub types), 60 Earth agglomerations at the real
+  urban regions (the map Earth is the real Earth), 6 deep-space objects with
+  world lines (Lotus 38 km/s; FINAL-ARK-1, LEGACY-1 in flight), 10 hazard zones,
+  52 persistent administrators, social state (12 metrics, 9 archetypes,
+  reactions to 12 shocks), law (13 families, offence matrix, competing
+  claims, ship legal status fields), beacon comms (Sol -> Gliese 436 0.5 d,
+  Kern pocket 1.4 d, Lotus 2.5 d, World's Ass 4.0 d; network diameter
+  1.75 d), passengers (91 M interstellar trips/y, 2.4 M migrants, 7.3 k
+  liners, 2.4 k surface lifters; evacuation of 1.2 M ~2 days), fleet age
+  (8 states; jump ships never older than their polity's network link),
+  piracy index (19 enclaves), wreck fields, schema registry + WorldEvent ->
+  KnowledgeRecord example.
+- World's Ass (月工门 = 月门 with 工 inserted: 月+工 = 肛, reads as 肛门):
+  HD 102195 behind the Lotus (83 Leonis -> Lotus 21.1 ly -> HD 102195 18.4;
+  direct 39.3 > 32); Cobrett needs a J20 charge tank (3.7 t round trip vs 3 t
+  tank); Lotus dead zone 4.5 % unlocked / 0 % locked (beacon uptime 62 %);
+  lotosite equilibrium ~9 M Cr/kg, ~74 kg/y, ~534 expeditions/y, ~26 ships
+  lost/y, reserves ~60 y; average expedition EV -0.26 M of 1.03 M cost; six
+  artifacts (one fraud); identity of the Lotus = DISPUTED (NIRVANA-1 fate is
+  UNKNOWN to the author). Other frontiers: the Chest (9 Ceti, resource), the
+  Monastery (HD 93083, science).
+- Runtime (built RelWithDebInfo, MSYS2 MinGW64): `WorldSitesCatalog.h`
+  (loaded with the StarAtlas by ClientCatalogService, presentation only),
+  `ClientWorldSitesMapBridge.h`: System Map adds system-level sites as
+  infrastructure markers (no Hub-map drill; bound runtime hub skipped);
+  Detail Map adds the body's sites (surface ones at lat/lon in the planet
+  texture frame, small glyph, no velocity arrow); Galaxy Map colours
+  deep-space sites and shows them from the overview level.
+- Evidence: offline checks PASS (world_economy 14/14, world_sites 15/15,
+  logistics incl. passports, calibrate_population, lab --check-dataset /
+  --check-lore, lore_md --check 129 files, lore_html --check 132 files); two
+  lab runs and two world_economy + world_sites runs byte-identical (lab sha
+  1895d762...); EliteDockTrafficCheck 6 h: 78 arrivals, 0 violations, min gap
+  38.6 m (unchanged). Live game (nav-stress:simple, captures
+  D:/tmp/elite_ws_*.png): Earth Detail map shows the agglomerations on land
+  (East Asia, Japan, Korea, US west coast) as small markers - GAME VERIFIED;
+  System Map / Galaxy Map markers present but not distinguishable at the
+  scripted overview zoom - NOT visually verified. Architecture contracts for
+  maps PASS; `tests/system_map/check_architecture.py` red on
+  SystemMapRenderer.cpp (file not touched; pre-existing).
+- Limits: orbit sites use a presentation phase law (1-day period); the server
+  does not read sites yet; climate-only lat/lon for non-Earth bodies (terrain
+  sampling = Stage 6); Earth agglomeration names = historical regions
+  (author decision); epidemics / quarantine only as schemas (Stage 7).
+- Open author decisions: Lotus = NIRVANA-1 or not (kept DISPUTED); lotosite
+  (+3 ly hop) as a strategic resource; names of Earth's 3126 agglomerations;
+  defence posture norms (squadron 4, 0.5 posture per key node).
+
+### World's Ass rework: Developer World Truth, Lotus = NIRVANA-1, causal lotusite model (user orders 2026-11-03, third pass b)
+Status: offline model + data + Lore; PROPOSAL (Lotus = NIRVANA-1 is internal
+CANON by the author's decision; +3 ly = AUTHOR_TARGET). NOT user-accepted.
+- Developer World Truth vs world knowledge split: `canon/world_sites.json ->
+  lotus.truth` (route, 2680 fold accident, trajectory, crew cohorts, last human
+  2712, systems, messages incl. which arrived, animals, discovery 3091 by Kern
+  "Sirin", cover-up and leak 3103) -> `Notes/Lore/AUTHOR/WORLDS_ASS_TRUTH.md`;
+  public layer `Notes/Lore/FRONTIER/WORLDS_ASS.md`.
+- Canon check: the first draft (fold 2341) contradicted fate.md / reconciled
+  canon (signals 2550 / 2650, "Do not look for us" 2680, 2 100 aboard) ->
+  fixed to 2680; ART-0006 "cryo pods" contradicted "no cryo" -> infirmary stasis
+  pods; legacy loss point HD 104067 kept: the field lies 21 ly beyond it.
+  missions.json NIRVANA-1 fate -> derelict_found (author_knows), knowledge.py
+  AUTHOR_TRUTH, unknown removed; COLONIZATION_CANON note added.
+- Biology (fictional anomalous): combined profile uricase loss + GULO loss +
+  CMAH loss (none unique alone); species table (dogs / cats / apes / guinea
+  pig / ferret not affected); 5-stage field syndrome; phenomena registry with
+  developer category physical / sensor / subjective.
+- `lotus_model.py` (causal): finite primary stock by crew cohorts (upper
+  estimate ~1.6 kg recoverable, ~0.96 kg left), medical + jump demand, free
+  entry raids capped by physical hulk extraction (~80 bodies/y), price
+  ~0.22 bn Cr/g, ~190 raids/y, ~43 ships lost/y, ~26 y to exhaustion,
+  trafficking ~52 victims/y from incentives and the hidden "Garden" capacity,
+  quarantine capacity, corruption pressure by role and zone (outer ~13-34 %,
+  grey ~40-69 %, inner ~61-84 %), non-linear blockade (least smuggling at
+  strictness 0.4, actual 0.6), lotus fever outbreaks from population and beds
+  (Mandala 3093, Stella 3115, Pereval 3121 via a bribed inspector), +3 ly map
+  effect (17 new beacon edges, GJ 1214 and 9 Ceti reachable, no hostile pair
+  brought into one jump), six security units (lawful .. piracy in uniform).
+  Previous numbers (9 M Cr/kg, 534 expeditions) withdrawn.
+- Three zones (outer perimeter HD 104067 "Vorota", grey frontier Far Berth /
+  picket / HD 102195, inner field Lotus / Garden / Dead Reckoning); cordon =
+  Cognium + Kern (Cognium doctrine gains `quarantine`).
+- Checks: world_sites 21/21 OK, world_economy OK, lab dataset / lore OK,
+  lore_md 130 files OK, lore_html 133 OK.
+
+### Industrial geography + rescue services (user order 2026-11-03, third pass c)
+Status: offline model + data + Lore; PROPOSAL, NOT user-accepted.
+- `canon/industry.json` + `industry.py` -> out/world_3126/industry_3126.json,
+  rescue_3126.json, INDUSTRY_3126.md; Notes/Economy/INDUSTRY_AND_RESCUE.md;
+  Lore ECONOMY/INDUSTRY.md, ECONOMY/RESCUE_SERVICES.md.
+- 8 blocs (Cognium pool ~ West, Heavenly Pact ~ USSR/China, Lalande League ~
+  Europe, Southern Circle ~ non-aligned with Mecca's own cores, Citadel
+  Compact, Free Belts, Sol, outside blocs) from founders' cultures, jump-core
+  lineage and grievances; inter-bloc channels open / licensed / restricted /
+  black; design schools (modular premium, standard monohull, many-vendor
+  modular, licensed kits, heavy military, hollowed asteroids and refits, mass
+  production); 19 named makers incl. the runtime ones (Cobretty Corporation ->
+  Second Hellas, Orbital Freight Union "Ural-Kourou" -> Sol); per polity and
+  per block (10 ship, 4 mining, 3 gas, 8 station) concern / assembly / parts /
+  import; who supplies whom through which channel; per-site production /
+  assembly / sales; major-block BOMs; fleet uniformity (Pact main hull maker
+  74 %, League 50 %). Jump cores only from Cognium, Mecca, Citadel (Citadel's
+  never exported); Sol's own cores stay UNKNOWN (author). New Karma (refuses
+  the network): in-system fleet only.
+- world_economy.shipyards: yard-less polities buy from their bloc, then their
+  main trade partner, then the nearest polity with yards (refusers never
+  supply).
+- Rescue: SAR, search, fire / damage control, medevac, towing, hazmat,
+  disaster; organisation by legal family; counts from defence tasks and
+  population; response time to every site (hours near the polity's bodies,
+  ~half a day in belts with a patrol base, ~3 days otherwise; Lotus field only
+  Kern SAR "Laska"; pirate enclaves rescue themselves).
+- Checks: industry 7/7, world_sites 21/21, world_economy, logistics,
+  calibrate_population, lab dataset / lore, lore_md 132, lore_html 135 OK;
+  industry / sites runs byte-identical.
+
+### Fourth pass (user order 2026-11-03, after 7ec5f4c1): lotusite price, Sol network, System Map, Orbital Transfer
+Restore point: tag `restore/pre-sol-network-2026-11-03` (= 7ec5f4c1). Branch main.
+
+#### Stage A audit (source-audited, 2026-11-03)
+- System Map: one pointer resolver (hub > body > cube marker > child cube on a
+  hover-layer plane); no arrow / Tab keys; cube frame colours borrowed from
+  the Galaxy defaults (`GalaxyNavigationGridVisualSettings`, the System struct
+  `SystemNavigationGridVisualSettings` is dead code); no toggle to hide cubes;
+  world-site stations drawn with the ship triangle glyph (tacticalGlyphKind maps
+  Station -> Infrastructure); no hover tooltip on objects; info cards 238 px,
+  titles / values neither wrapped nor clipped; right panel (28 %) shows only
+  the selected system; no beacon links on the System Map.
+- `tests/system_map/check_architecture.py` red root cause: commit 97b39d73
+  (map history "back arrow", 2026-10-31) assigns `m_detailView.camera()` /
+  `m_hubView.camera()` directly in `SystemMapRendererContextMenu.cpp`
+  (applyMapHistoryRestore) -> real rule violation, not a stale test.
+  `check_object_overlay.py` red: stale token `clickedBodyId` (renamed to
+  `selectedBodyId` in the same commit).
+- Orbital motion: circular Kepler orbits (`OrbitalMotion`), hub world velocity =
+  parent + orbit velocity, replicated with the full motion; several hubs are
+  structurally supported (`m_orbitalHubs` map) but data has one and many
+  places hard-code `earth_orbital_hub` / `hub_hex_dock_a`.
+- Gravity: `GravityFieldSystem` result is navigation metadata only; the only
+  stepped player motion is `HubTactical` in the hub's LVLH frame (no gravity,
+  no fictitious forces) -> a ship with thrust off co-orbits with the hub
+  forever; it cannot fall. Real gravity integration exists only in
+  diagnostics (`PassiveTrajectory`, velocity-Verlet). `TravelFrameSystem::detach`
+  and `KinematicFrame::rebaseLocalKinematics` are unused: there is no
+  hub-tactical <-> system-travel transition. `maxCruiseSpeed` (0.1c) is unused.
+- Navigation v2: routes are planned in one hub frame to fixed goals; terminal
+  matching is scalar speed only; `NavigationArrivalProfile.matchVelocity` has
+  no executor; the only executed route is docking.
+- DockServiceTraffic: one instance, hard-coded facility `earth_orbital_hub.hex_dock_a`,
+  "Earth Orbital Hub" strings, ORB-/CBR- callsigns, flight id EOH-n; geometry
+  from C++ constants (6 pads); no ETA, no multi-hub identity.
+
+#### Stage 1: lotusite price and technical role (offline; PROPOSAL)
+- Author rejected ~219 M Cr/g and +3 ly. Removed: `jump_component`,
+  `max_hop_bonus_ly`, `hop_bonus_effect`, mass `jump_g_y`, the map effect
+  (17 edges, GJ 1214 / 9 Ceti reachability) everywhere (model, checks, Lore,
+  Notes/Economy).
+- New `lotus.phase_stabilizer`: insert 0.3 / 0.6 / 1.2 g in the emitter of
+  Cognium G4+ cores; holds the jump field in jump-dead (only the outer 15 %),
+  distortion (exit error x25 -> x6), unstable navigation (misjump 0.12 ->
+  0.035) and the Lotus field; emergency exit with 30 % irreversible damage;
+  not consumed, degrades only under heavy anomalous exposure; no effect in
+  normal space. Demand from real users (cordon units in the field, SAR,
+  research, anomaly patrols, licensed expeditions): ~24 ships, ~9 g installed,
+  ~0.9 g/y; each fit decided by avoided hull loss vs ownership cost.
+- Demand: medical = Pareto income tail of every polity (economy_3126 GDP per
+  capita) x access (prohibition, taboo, distance from the Kern pocket);
+  research = budgets (unit elastic); stabilisers as above. The ONLY parameter
+  fitted to the AUTHOR_TARGET is `demand.medical.access_base` (0.0005).
+- Supply: each raid segment enters on the economics it BELIEVES (rumoured
+  outer-perimeter price, optimistic corridor), the hulk gives ~80 bodies/y and
+  those who know the open compartments take them first (connected -> map ->
+  blind); connected crews capped at 15 runs/y by bought pickets. Fixed two
+  latent bugs: illegal-raid "insurance" double-counted hull risk (removed);
+  charge / fuel keys did not match `trip_cost` (was always 0).
+- Result (not canon): price ~3.11 M Cr/g (~0.92 Cobrett-I), course 0.12 g ~373 k
+  Cr, body ~2.25 M Cr retail, ~1 300 medical buyers (mostly Sol), ~46 g/y
+  refined, ~60 raids/y (15 connected, ~32 blind, ~13 cover-story), ~12.5 ships
+  lost/y, primary stock exhausted in ~21 y; trafficking now ~0 (margin 0.83:
+  while NIRVANA-1 bodies last, live raw material does not pay), after
+  exhaustion ~46 M Cr/g and ~50 victims/y; corruption expected share outer
+  17-40 %, grey 47-75 %, inner 68-88 %; blockade least smuggling at
+  strictness 0.4 (actual 0.6); bribe pool ~3 M Cr/y.
+- Checks: world_sites 25/25 OK (new: price in AUTHOR_TARGET, no jump-range
+  effect, stabiliser demand small, medical main demand, networks self-source
+  cheaper than buying < map-buyers); lore_md 132 OK; lore_html rebuilt.
+
+#### Stage 2 (B): Sol hub network - world data (offline + runtime data; PROPOSAL)
+- `canon/sol_network.json` (authored: names, history, owners, orbits, rules) +
+  `sol_network.py` (derived: populations, traffic, docks, utilisation, routes,
+  relays, checks); world_sites.py replaces the generic Sol hubs with it.
+  `earth_orbital_hub` moved from world_sites named_sites into sol_network (one
+  source; founded 3108 on the Cordon station site kept from the old record).
+- Earth: 12 hub complexes (AUTHOR_TARGET) in 11 planes: Vysokiy 51.64 (gateway,
+  player start), Baikonur 51.64 (opposite phase), Meridian 56.5 (the only plane
+  Moscow reaches directly), Tikhiy 36.2 (Tokyo), Tanegashima 31.6, Canaveral 29,
+  Tropic 24.5, Wenchang 19.8, Sriharikota 14.8, Kourou 6, Ekvator (GEO), Aurora
+  (SSO 98.6). Surface traffic 398.4 M legs/y (~1.09 M/day, ~13.5 k SL-12
+  flights/day) split per agglomeration over the planes it reaches directly
+  (i >= |lat|, logit on the lost Earth-rotation boost); rest of Earth follows
+  the agglomerations' latitude mix; no fixed city -> hub binding.
+- Dock semantics: dock_sector = runtime 6-pad HexDock; hubs get
+  `dock_sectors` x 6 pads sized to mean utilisation ~0.62 (peak x1.35); only
+  Vysokiy's first sector is visible in runtime (presentation limit recorded).
+- Other Sol: 31 hubs at Moon / EML1 / EML4 / EML5 / SEL2, Mars (Phobos, Ares,
+  New Tharsis, Hellas, Deimos), Mercury, Venus (aerostat science), Belt
+  (Ceres, Ahuna, Vesta, Pallas, Hygiea + the Hilda pirate enclave, rumour only),
+  Jupiter, Saturn, Uranus, Neptune; counts checked against drivers (population,
+  mines, gas platforms, research, military). Belt hubs stand at persistent
+  anchors with real orbital elements (Ceres, Vesta, Pallas, Hygiea are not in
+  the physical catalog). The two generic mining hubs at 246.10 / 245.17 deg
+  were adjacent by id hash -> merged into the Ceres cluster; 26 generic ids
+  mapped once as legacy aliases.
+- 82 aggregate routes with persistent ids (Earth hub<->hub shuttles,
+  interplanetary passenger / cargo / gas, belt ore tugs, Moon shuttles), 19
+  local nav relays (2 per inhabited region + dense-node extra + SE L4/L5
+  conjunction relays).
+- Runtime data: initial_world_state.json orbital_hubs is now GENERATED (12 Earth
+  hubs + "Pereval Tserery" co-orbiting the Ceres anchor, parent = the Sun, one
+  command_station model family); sites_3126.json gains hub details, routes,
+  relays, belt anchors and per-system summaries (state from events / epidemics /
+  shortages, never a hand-written status).
+- Found, not changed: OrbitalMotion's circle runs +X -> +Z (retrograde against the
+  catalog's prograde convention) and is relative to the parent's ecliptic-aligned
+  frame, not the Earth equator; the Ceres hub compensates with i = 173.9 deg.
+- Checks: world_sites 38/38 (13 new sol.*), industry, world_economy, logistics,
+  lab dataset / lore, lore_md 133 (new ECONOMY/SOL_NETWORK.md), lore_html 136
+  OK; sol / runtime outputs byte-identical across runs.
+
+#### Stage 3 (E): Orbital Transfer - planner + server mode (implemented; offline PASS, live partially verified; NOT user-accepted)
+- `src/game/navigation/orbital/OrbitalTransferPlanner.{h,cpp}` (lib
+  `EliteOrbitalTransfer`, linked into EliteNavigationWorldRuntime): plan in the
+  central body's frame from the ship's actual state to the destination hub's
+  approach point (15 km behind on -prograde, closing 20 m/s) AT THE ARRIVAL
+  EPOCH with the hub's velocity then (moving target from `OrbitalMotion`);
+  departure / arrival ramps (0.4 g inside 25 km), a nearly Keplerian phasing
+  chain (radius blend start -> phasing radius -> end, angle at the local
+  circular rate, plane change done where the orbit is high), minimum safe
+  altitude (catalog atmosphere top + 150 km), smallest arrival epoch within
+  the thrust envelope (min(18 m/s2, 0.25 x main engine)) and a delta-v budget
+  25 km/s (PROPOSAL). Carrier law: feed-forward + real gravity + PD, clamped
+  to the engine.
+- Server (`GameSimulationOrbitalTransfer.cpp`): `ClientShipCommand::
+  RequestOrbitalTransfer{target}` / `CancelOrbitalTransfer` (wire v19). The
+  ship's travel frame is detached from the source hub and its origin driven
+  by the carrier on the orbital clock; the ordinary tactical integrator keeps
+  running inside it (maxCombatSpeed untouched). At the arrival epoch the ship
+  is re-based into the destination hub frame with its actual relative state.
+  Other body (Earth -> Ceres): ABSTRACTED transit (brachistochrone reported,
+  90 s real, placed at the approach point with the hub's velocity).
+  Normative note added to NAVIGATION_V2_EXECUTION_ARCHITECTURE.md section 11a.
+- Client: map context menu "Орбитальный перелёт" on a hub (or O with a hub
+  selected) previews the tunnel with the same planner (Earth state recovered
+  from the source hub's replicated ephemeris) and sends the command.
+- Evidence:
+  - OFFLINE `EliteOrbitalTransferCheck` PASS: Vysokiy -> 10 LEO hubs at two
+    epochs: ETA 1.9-2.9 h, path 46-75 thousand km, peak 7.7-8.3 km/s vs Earth
+    and 5.6-15.7 km/s vs destination, dv 9.6-25 km/s, min altitude >= 251 km,
+    arrival position error 0.8-2.5 m at the approach point, arrival relative
+    speed 20.0 m/s (= the planned closing speed); coasting with thrust off
+    stays in orbit (419.8-420.2 km); a 300 m/s retro burn falls below 100 km
+    after 1029 s. OPEN: Vysokiy -> Ekvator (GEO) infeasible within the budget
+    (no Hohmann / spiral optimisation yet).
+  - LIVE (RelWithDebInfo, nav-stress:simple, `ELITE_DEV_SOL_MAP_SCRIPT`,
+    stderr D:/tmp/elite_galaxy_capture_stderr.txt): Vysokiy -> Baikonur
+    started (server ETA 11 196 s, dv 12.0 km/s, min alt 391.6 km); server log
+    t+0..360 s: departure ramp 3.92 m/s2 for 113 s, then 5-9 m/s2, tracking
+    error <= 1 m; at t+335 s the ship is 102 km from Vysokiy at 1 268 m/s
+    relative (above the tactical 500 m/s). Arrival at Baikonur NOT observed
+    live (3.1 h). Vysokiy -> Pereval Tserery (abstracted, physical 5.5 d at
+    9.2 m/s2) handed over: 15 km offset, 20 m/s relative, matched to the
+    Ceres hub frame - LIVE VERIFIED.
+- Answers (section 19): with thrust off outside a transfer the ship does NOT
+  orbit or fall - Hub Tactical carries it in the hub frame, gravity is
+  metadata; inside a transfer the carrier IS gravitational (coasts / falls,
+  offline-proved). The tactical -> system transition is the new detach in
+  requestOrbitalTransfer; the return is handOverToHub.
+- Known debt: ship attitude not slaved to carrier thrust; abstracted transit
+  leaves the ship's world pose stale for the 90 s; a cancelled transfer that
+  reaches the atmosphere stops updating its frame; no free gravitational
+  flight outside transfers.
+
+#### Stage 4 (C): hybrid System Map (implemented; scripted + live captures; human acceptance OPEN)
+- Cubes stop being the user's model: wireframe = optional overlay (G, hidden
+  by default, System-specific quieter colours); cubes are pick targets only
+  with the overlay; drawn hubs / bodies are targets anywhere (removed the
+  cube-containment rule for hub picks and the cube culling of bodies); arrows
+  move a selected child cube to a sibling in the screen plane locked at the
+  first press (1.5 s lock), never "into the screen".
+- World objects: hubs use the hub glyph (world sites amber, replicated hubs
+  cyan), relays a diamond, belt anchors a disc; far-zoom declutter (objects on
+  a planet's or another marker's pixel appear as the region grows); hover
+  tooltip (name, operator, type) clamped to the viewport; replicated hubs
+  take name / operator / type from the world model.
+- Right panel "КАРТА СИСТЕМЫ" (`SystemMapInfoBuilder.h`): nothing selected ->
+  summary from the world model (actors, economy, imports / exports /
+  shortages, state from events / epidemics / hazards, relation to the player
+  "neutral, no records" until reputation exists, hubs BY REGION); hub / site /
+  relay / anchor / body selected -> its facts and routes. Word-wrapped,
+  clipped (scissor), scrollable, >= 15 px text; the system list moves under
+  the information and opens upwards.
+- Network routes: 82 aggregate routes drawn dashed (width / alpha by
+  flights/day, T toggles) - distinct from the solid Orbital Transfer tunnel.
+- Data: WorldSitesCatalog parses hub facts, routes, relays (placed), belt
+  anchors (heliocentric, Kepler like the planets), Lagrange points (L1/L2/L4/
+  L5 with Hill ratio) and system summaries.
+- `tests/system_map/check_architecture.py` GREEN: root cause fixed in code
+  (`DetailMapView::restoreCamera` / `HubMapView::restoreCamera` instead of
+  assigning the views' cameras from the facade); `check_object_overlay.py`
+  stale token updated (`clickedBodyId` -> `selectedBodyId`).
+- Evidence: `tests/system_map/check_hybrid_map.py` PASS (new static
+  contract); `EliteSystemMapInfoCheck` PASS (new, on the runtime data: the
+  summary names "Перевал Цереры" and the Earth hubs without ids; Ceres / Тихий
+  / Earth panels; 13 runtime hubs bound once; all 82 route ends real; 19
+  relays placed; 4 anchors; Ceres hub 2.80 AU) - the check found and fixed a
+  real discoverability bug (summary listed only the 12 busiest = Earth hubs).
+  Live captures D:/tmp/elite_sol*_*.png: overview + panel summary, Earth
+  approach (cislunar hubs, dashed routes to Venus / Mars / outer), LEO zoom
+  (hub orbits, relays), Baikonur / Ceres panels, hover tooltip, grid toggle.
+- NOT done / limits: primary view stays 3D perspective (hybrid = optional
+  cubes, no 2D ecliptic lock); clicking a route line opens nothing (routes
+  are listed in the hub panel); Detail Map has no zoom-to-lat/lon for a
+  selected settlement; relation to the player is a placeholder until
+  reputation / warrants exist; human mouse acceptance of the new map OPEN.
+
+#### Stage 5 (D): generic dock traffic (implemented; offline PASS)
+- `TrafficConfig` carries hub id / display name / dock facility / frame /
+  system, callsign + flight namespaces, surface name, connected destinations
+  and the surface / hub mix; no hub name, facility id or "ORB-/EOH-/Earth"
+  literal remains in DockServiceTraffic; flights keep one persistent serial
+  (no parsing of the callsign), manifests carry origin, destination,
+  category and ETA of the aggregated far part. The game fills the config
+  from the hub record and the world-model routes: "Высокий",
+  earth_orbital_hub.hex_dock_a, namespace VYS, 11 connected destinations,
+  shuttle interval 1 550 s = the hub's modelled arrivals per dock sector.
+- Evidence: EliteDockTrafficCheck 6 h, 4 profiles (cobretts/interval 4/600,
+  4/1549, 9/600, 6/300): 78 / 71 / 73 / 72 arrivals, 0 invariant / separation
+  / structure violations, min gap 38.6 m; queue max 0 / 0 / 7 / 6.
+- NOT done: physical dock traffic exists only where a dock sector is spawned
+  (Vysokiy); other hubs have modelled traffic (panel, routes) but no
+  materialised ships; hub A -> hub B flights are not yet one cross-hub
+  schedule object.
+
+#### Verification summary of the fourth pass
+- Offline: world_sites 38/38 OK (13 sol.*), world_economy, industry,
+  logistics, lab dataset / lore, lore_md 133, lore_html 136, Sol / runtime
+  outputs byte-identical; EliteOrbitalTransferCheck PASS (LEO) + 2 OPEN (GEO);
+  EliteSystemMapInfoCheck PASS; map tests 5/5 PASS; EliteDockTrafficCheck 4x6 h
+  PASS. Python contract suites: 11 reds, all identical at the restore point
+  (pre-existing, unchanged by this pass).
+- Live: listed above. Human acceptance (find hubs without ids, read the
+  panel, fly hub -> hub to arrival and dock) is the user's.
+
+### Fifth pass (user order 2026-11-03, refinement): major-hub budget, 2.5D map, one transfer architecture
+Restore point: tag `restore/pre-sol-major-hubs-2026-11-03` (= 2eb47aad). Lotusite part of
+the order was already done in the fourth pass (cc56fd59) and is unchanged.
+
+#### Stage B-D: major-hub budget (offline + runtime data; PROPOSAL)
+- Rule: infrastructure capacity != number of map objects. Levels: A major hub
+  (System Map), B sector / terminal / merged hub of a complex (data, panel,
+  Detail / docking), C local facility / settlement (Detail Map or near the player).
+- Earth: 12 stations -> 7 complexes (Vysokiy gateway, Tikhiy mass passenger,
+  Canaveral 31.6 deg passenger + Mars, Wenchang cargo, Kourou lunar /
+  interplanetary, Aurora polar SAR / science + Meridian terminal for Moscow,
+  Ekvator GEO industry / repair); Baikonur / Tanegashima / Tropic /
+  Sriharikota / Meridian are named terminals. Dock model hub -> sector (ring of
+  <= 12 HexDock modules) -> module (6 pads): Tikhiy 12 sectors / 141 modules /
+  846 pads ... Ekvator 1 / 1 / 6; Earth 57 k movements/day vs 92 k capacity
+  (utilisation 0.62, reserve 0.38), terminals and berths per complex.
+- Sol major hubs 29 / 30: Earth 7, cislunar 3, deep space 1, Mars 3, Venus 1,
+  Mercury 1, Belt 5 (incl. the pirate enclave, hidden until known), Jupiter 4,
+  Saturn 2, outer 2. Settlements and small stations (Shackleton, Imbrium,
+  New Tharsis, Hellas, Ahuna, Kaloris, Europa / Enceladus science, quarantine
+  L5) are level C.
+- Other systems: development tier from population (developed >= 800 M,
+  colony >= 100 M, periphery > 0, frontier) with budgets 10-18 / 4-10 / 1-5 /
+  0-3; extra same-kind hubs merged into one complex as level B (capacity kept).
+  Result: developed max 11, colony max 6, periphery 2, frontier 2; some
+  developed systems are below the lower bound (Tau Ceti 4) - not padded.
+- Checks: world_sites incl. map_complexity_within_tier_budgets,
+  sol.sol_major_hubs_within_budget, region budgets, Earth 6-8,
+  earth_capacity_ge_demand_plus_reserve - all OK; industry, economy, dataset,
+  lore_md 133, lore_html 136 OK. Commit da09a65e.
+
+#### Stage E-H: map 2.5D, clusters, one transfer architecture (implemented; scripted + live; human acceptance OPEN)
+- Plan view (default): fixed tilt over the ecliptic (1.30 rad), only azimuth
+  rotates, height stems to the parent's / ecliptic plane; V -> free 3D.
+  Clusters: hubs hidden on a planet's pixel gather into one marker with a
+  count ("Земля: N крупных хабов"; one hub counted once). Relays and dotted
+  beacon links only with the N filter. Body panel: major hubs listed,
+  settlements / local facilities counted (Detail Map). Hub panel: sectors /
+  HexDock modules / pads, passenger / cargo terminals, service berths, named
+  terminals.
+- Transfer: Earth -> Ceres now uses the same plan type / mode / executor /
+  hand-over in compressed time (`planCompressedTransit`, frame follows a
+  bowed star-relative tunnel, arrival at the destination's approach point at
+  the real epoch, physical brachistochrone reported). While a transfer runs
+  the server executes no pilot / autopilot translation inside the frame (the
+  nav-stress autopilot had pushed 500 m/s of local drift in a live run).
+- Dock traffic interval per visible HexDock MODULE (Vysokiy 1 535 s).
+- Evidence: map python tests 5/5 PASS (check_hybrid_map extended: plan view,
+  beacons filter, stems); EliteSystemMapInfoCheck PASS (Sol major hubs drawn
+  29 / 30, Earth 7, Vysokiy panel shows its terminals, Earth panel lists major
+  hubs + counts settlements); EliteOrbitalTransferCheck PASS (6 LEO complexes x
+  2 epochs; compressed Vysokiy -> Pereval Tserery: tunnel 3.92 AU, closest to
+  the Sun 1.00 AU, physical 4.18 d, arrival 15.0 km / 20.0 m/s) + 2 OPEN (GEO);
+  EliteDockTrafficCheck 6 h (4/1534 s, 9/600 s): 76 / 73 arrivals, 0
+  violations, min gap 38.6 m; world_sites / lore_md / lore_html OK. LIVE
+  (captures no longer exist - deleted by a D:/tmp cleanup error 2026-11-03;
+  observations recorded here only): plan-view Earth with its
+  complexes, transfer tunnel to Tikhiy around Earth, Ceres tunnel with the
+  ship mid-way, arrival at Pereval Tserery 15.0 km / 20.0 m/s matched, cluster
+  counts on the overview. Live arrival of a LEO transfer (~2.8 h) still not
+  observed; human acceptance OPEN.
+
+### Sixth pass (user order 2026-11-03): hub / beacon list, neutral beacon names, Ctrl+J free flight
+Restore point: `restore/pre-hublist-freeflight-2026-11-03` (= ac71cfb6).
+
+#### Map list (implemented; scripted + live; human acceptance OPEN)
+- System / Detail map: the star-system dropdown is gone (it stays on the
+  Galaxy map); in its place "Хабы и маяки" - every hub and beacon the System
+  Map draws, grouped by planet (moons and Lagrange points with their planet,
+  the belt as one group) in order of distance from the star, then the beacons;
+  objects unknown to the player (map level none) are not listed.
+  `buildSystemMapObjectList` (SystemMapInfoBuilder.h); row ids = marker ids
+  (runtime hub id or site:<id>). A row = the click on the marker:
+  `SystemMapRenderer::focusObjectFromList` selects it (selectedHubId, overlay
+  activation -> panel facts), keeps it drawn through declutter / clusters /
+  the beacon filter, flies the camera to it (planet neighbourhood framed;
+  heliocentric objects keep the zoom).
+- Beacons renamed to neutral codes (region + number: ЗЛ.1-4, МР.1-2, ПС.1-3,
+  МК.1, ВН.1, ЮП.1-3, СТ.1-2, ВШ.1-2, СЗ.L4/L5) in canon/sol_network.json;
+  check `sol.relay_names_neutral_codes` 19/19.
+- Evidence: EliteSystemMapInfoCheck PASS (list 28 hubs + 19 beacons in 10
+  groups, ids = marker ids, the pirate haven not listed, no person names);
+  check_hybrid_map extended, map python tests 5/5 PASS; world_sites --check OK,
+  lore_md / lore_html regenerated. LIVE (D:/tmp/elite_list1..5): grouped list
+  open (Меркурий first, 47 objects), pick Рейсильвия -> panel facts + ringed
+  marker centred, pick Маяк ПС.2 -> drawn with the beacon filter off + facts,
+  pick Тихий -> camera at Earth (500 000 km scale) + facts.
+
+#### Ctrl+J free flight (implemented; live LEO evidence; human acceptance OPEN)
+- Contract: NAVIGATION_V2_EXECUTION_ARCHITECTURE.md §11b. Detached travel
+  frame carries the global (system / galaxy reference) motion under the
+  gravity of all bodies; local motion folded into it each tick (no envelope);
+  Assisted +/- = direct main thrust; Backspace free rotation = no main thrust,
+  its exit aligns with the GLOBAL velocity; attitude rates capped at 0.10 rad/s
+  under thrust (PROPOSAL); off -> nearest hub frame with actual relative
+  kinematics. Held J (cruise placeholder) unchanged; Ctrl+J excluded from it.
+  WireProtocolVersion 20, snapshot schema 23 (motion.freeFlight).
+- LIVE (no nav-stress autopilot, ELITE_ARGS=--dev-direct-flight):
+  Newtonian-I at Vysokiy: coast 150 s -> altitude 422.63-422.65 km (free
+  orbit under Earth gravity), 20 s '+' -> 12 -> 736 m/s vs the hub (36 m/s2),
+  HUD "J НЬЮТОНОВСКИЙ 24.11 km/s" (global); off -> handed over to Vysokiy at
+  734 m/s, 3.6 km. Assisted-I: 15 s '+' -> 1 103 m/s vs the hub, 20 s coast
+  kept 1 103 m/s; off -> Vysokiy at 1 103 m/s, then Assisted brakes toward
+  its envelope (938 m/s 3 s later).
+- Contracts: the python contract loop is line-for-line identical to the
+  restore point (no new reds).
+
+#### J corrections after the user's live review (restore/pre-j-fix-2026-11-03)
+- User report: on Ctrl+J the ship was inside the station; the velocity vector
+  pointed anywhere; wanted: speed relative to the hub (starts ~0), a banner
+  "speed no longer local", HOME full thrust / END brake / INSERT thrust off,
+  limited manoeuvres.
+- Root cause (inside the station): SceneRenderer placed hub-attached objects
+  and co-hub ships in the PLAYER's reference frame whenever the hub id matched;
+  after detach the frame origin is the ship, so the station was drawn around
+  the ship (the same applied during Orbital Transfer). FIX: only a matched
+  frame resolves hub-local presentation (HubFramePresentation.h; contract test
+  extended).
+- Implemented: §11b updated - velocity reference = the hub left (replicated),
+  HUD vector / speed / Backspace exit / brake on v - v_ref; HOME / END / INSERT
+  latched thrust through the ordinary main command and alignment controller
+  (`freeFlightMainCommand`, gateway); keypad only with the engine idle; turn
+  rate omega = 3 m/s3 / |a_thrust| (Cobra 0.082 rad/s) instead of 0.10;
+  capture envelope 50 km + safe speed 500 m/s on Ctrl+J OFF; HUD banner.
+  Wire protocol 21, snapshot schema 24.
+- LIVE (D:/tmp/elite_jfix_run1, run2): station stays 10 km away on entry;
+  Newtonian-I HOME 36.8 m/s2 -> 703 m/s vs Vysokiy in ~19 s; OFF at 737 m/s
+  -> UNSAFE capture refused, stays in J; END flip + burn 737 -> 1.7 m/s, thrust
+  off by itself; OFF at 10 km / ~2 m/s -> captured. Assisted-I: HOME latched +
+  Backspace ON -> 0 thrust (735.8 m/s held); Backspace OFF -> alignment then
+  thrust resumes at the full 72 m/s2 (nose along the relative velocity).
+  The HOME burn aimed at the station passed ~1.5 km from it at 700 m/s: no
+  station collision yet.
+- Not verified live: the turn-rate value itself; Newtonian Backspace (Assisted
+  only in the input); OFF with no hub within 50 km.
+- Radar: the cockpit radar HUD was disabled (`RuntimeFeatureFlags.h`
+  RadarHudEnabled = false) - superseded 2026-11-04 e: the scope now draws the
+  session-private scan (see that section).
+- Pending order (user, 2026-11-03, 60 sections): unify free flight, global
+  autopilot, hub transfers and real ship components into one physics; it is
+  written for main AFTER a generic ship / ShipDescriptor / equipment pass that
+  is not on main - not started.
+
+### Ships pass (user order 2026-11-04): 17 class base models + justified variants, passports, equipment passports, drawings, functional schematics
+Restore point: `restore/pre-ships-2026-11-03`. Scope (user): one full canonical base model per fleet
+class, variants only with a real design / lore reason; each a full passport with a runtime-compatible
+descriptor / loadout; primitive placeholder geometry allowed.
+
+- Data (authored): `tools/colonization_lab/canon/ship_designs.json` - 120 equipment products
+  (drives, propulsion / service reactors, radiators, coolant loops, jump cores, tanks, RCS, MotherComputers,
+  radars, comms, transponders, ECM, life support, capsules / lifeboats / refuges, medbays, C20 / P20 /
+  habitat / cold-sleep / train / cryo modules, docks, bays, hangars, tow rigs, workshop, heat shield,
+  landing gear, weapons, armour) by the industry.json manufacturers; 21 ship models = 17 bases + 4
+  variants (Cobrett-I A3 Assisted - existing runtime; GT-3000 gas tanker - separate economic class;
+  Harmony He-120 - standard-monohull school / allied_fleets_uniform; Stone Docks "Kamen" hollowed-asteroid
+  tanker - Free Belts lore). Manufacturer mapping: Cobretty (Cobrett), OFU (OCS-4, SL-12), Bharat (C-120,
+  T-5000), Harmony (train, tanker, He-120, frigate, fleet tender), Sol Lunar-Martian Yards (gas tanker,
+  service tender, patrol cutter, PAO tug), Kern (ore tug), Bastion (interceptor, line ship), Hyperion
+  (recon, liner).
+- Tool: `ship_designer.py` (+ `--check`): layout fill (drives per I/Y/X main slot, one generator per
+  Newtonian main / Assisted pair), mass budget (hull structure = dry - equipment; possible 15-90 %, typical
+  30-75 % WARN, asteroid form own bounds), thrust / acceleration vs class, group power, hotel power,
+  RCS from propulsion spare (30 % simultaneous), universe thermal law (6 MW/m2 pads, x10 radiation; drive
+  emitter diameter and sustainable thrust fraction derived), jump core rating vs gross mass, charge,
+  life support capacity / endurance, survival seats for everyone awake, C20 / passenger places, supplier
+  reachability through bloc channels (weapons / cores only open or licensed), price by component vs the
+  economics model x school (WARN), functional schematic (power propulsion / service, coolant, fuel, data,
+  life), functions -> required units, single points of failure, redundancy doctrine (passenger /
+  security / military: thrust, life, comms without SPOF - FAIL otherwise; the sealed jump core is a
+  factory item and excluded), repair doctrine per category (crew / station / yard / factory, LRU,
+  hours). Result: 21 ships, 0 FAIL, 39 WARN (price deviations from the economics estimate, truss
+  freighters' structure share > 75 %, A3 = runtime fact 19.1 MN aft).
+- Outputs: `out/ships_3126/` (ship_designs_3126.json, SHIP_DESIGNS_3126.md, svg/<id>.svg top/side/front
+  drawing, svg/<id>.schematic.svg, index.html catalog page); lore `Notes/Lore/ECONOMY/FLEET_MODELS.md`,
+  `SHIP_EQUIPMENT.md` (lore_ships.py, registered in lore_md; lore_md --check OK); runtime copy
+  `src/assets/data/ships/ship_catalog_3126.json` (GENERATED).
+- Runtime: `ShipDesignCatalog.h` (loader) + `GenericShipDescriptorBuilder.h`: ONE builder makes a
+  ShipDescriptor from any design - one damageable module per unit (bulk positions - armour, fluids,
+  radiator field, C20 rails - one module each), EngineUnitDescriptor / EngineReactorDescriptor from the
+  product ratings, loadout on the fixed physical topology (CobraPropulsionPresets), generator groups,
+  ship services, rigid body (box inertia), flight envelope (crew load by class, size-scaled rates,
+  500 m/s tactical envelope), radiators, payload, survival, bays. `EliteShipCatalogCheck`: PASS - 21
+  descriptors build, modules = installed units, slots / groups / services bound, forward accel = design
+  thrust / dry mass, schematic nodes are modules, sealed cores not field-repairable, 18 economic classes.
+- Not done (next): non-Cobra ships are NOT yet flyable - ShipCore still hard-codes the Cobra RCS nozzle
+  presets / cockpit / mesh and the registry is keyed by ObjectType; radar range of the product is not yet
+  bound to the runtime sensor; ship_economics.json radiator_mw (e.g. 3 400 MW for Cobrett) contradicts
+  the universe thermal law used by the runtime (380 m2 / ~180 MW) - to reconcile; economics prices differ
+  from the designed parts (WARN list) - the economics should take the design as source next.
+- Decision recorded: Cobrett manufacturer = Cobretty Corporation (Second Hellas), founded as
+  Kobersberg-Braunauer Raumfahrzeugwerke (KB-* stock numbers); code comment and industry note agree.
+
+### Generic ships executable (user order 2026-11-04 b): passports -> real ShipCore for all 21 models
+Restore point: `restore/pre-generic-ships-2026-11-04`. Order: no Cobra topology in the generic path,
+real module hierarchy, passport positions in all physics, live mass, runtime devices, primitive geometry,
+passport-id identity, runtime check, Cobra on the same path; economics NOT rewritten yet.
+
+- Topology: the six fixed layouts moved from `presets/cobra` to `plant/CanonicalActuatorLayouts.h`
+  (Cobra headers are aliases). Slot STRUCTURE (count, ids, roles, directions, generator wiring, the
+  8-node x 3-nozzle RCS bank) stays the model; COORDINATES are the hull's own. `ShipLoadoutTopology.h`
+  `registerLoadoutTopology()` validates the structure (replaces requireLoadoutMatchesLegacyTopology)
+  and registers the loadout's mount positions (`plant/ActuatorTopology.h`, key = FNV(passport|loadout),
+  never a pointer: ShipParams is written raw into case files). `ShipParams::actuatorTopologyKey`
+  (appended) is set by the capability builder from the bound loadout; every lever-arm consumer reads
+  positions through it: capability axial authority, actuator plant (3 fns), engine control matrix,
+  preset manoeuvres (cache keyed by it), execution gateway r x F, Newtonian RCS allocator / authority /
+  pair feasibility (`NewtonianRcsDemand::topologyKey`). ShipCore nozzle module ids come from the bound
+  loadout (`rcsNozzleIds()`), not the Cobra table. The "all six loadouts" profile cache is generic
+  (`installedProfiles`, per descriptor), not `typeId == CobraMk1`.
+- Working-axis analysis: a CoM within a gimbal TRIM distance (|arm.z| tan(min(cone, 2 deg))) of an
+  opposite pair's segment counts as a balanced axial ray (real hulls are never exactly centred). Cobra
+  (CoM at origin) unchanged; legacy A3 with CoM shifted 0.02-0.2 m keeps 73.2-73.4 m/s2 (probe).
+- Passport (designer): `place()` writes runtime slot / generator-group / RCS-node ids and a primitive
+  block (centre, size in metres) per position; Cobrett keeps the canonical runtime coordinates (RCS
+  corners +-1, ER-5 skeleton). Canon fixes: Cobrett height 4.3 -> 5.0 m (= runtime), RCS clusters a
+  multiple of the 8-node bank (Kamen 6 -> 8, He-S240 12 -> 16, L-900 12 -> 16; new FAIL check
+  rcs_fills_newtonian_bank). Designer still 0 FAIL / 39 WARN; lore regenerated (lore_md OK, html 138).
+- Builder (`GenericShipDescriptorBuilder.h`, rewritten): hull.root (keel) -> hull.fore/mid/aft (load
+  bearing, support links) -> equipment by block z; RCS cluster block = parent of its node's 3 nozzle
+  modules (Cobrett: 24 nozzle units); every module has `ModuleDescriptor::placement` (box + mass); dry
+  mass / CoM / inertia tensor summed from the placements (structure = dry - equipment split keel 25 %
+  + sections 3 x 25 %); drives / reactor groups / nozzles at passport coordinates; existing runtime
+  products (CR-1, N1-AX, ER-5, FC-RCS, AT argon tank) use their runtime passports verbatim; devices
+  (`ShipDescriptor::catalog`): radar = sensor backend with the product range (N-2 2 000 km ... PA-100
+  100 000 km), receiver / transmitter from the comm product, transponder, life support (power, persons,
+  days), computer, jump core (rating, sealed), coolant loops, service reactors, docks; cargo holders
+  share the passport payload; `primitiveBlocks` (keel + one box per installed position) and
+  `meshPartIds` per module. `CatalogShipRegistry.h`: process registry by passport id.
+- ShipCore: `ShipCoreMass.cpp` - live mass = attached (not detached) module placements + load
+  (cargo in holders, C20 tare, people, tanks, stores); a detached holder leaves with its cargo;
+  recomputed on setLoad / addCargo / removeCargo / module revision; legacy hulls keep the authored tensor
+  (zero load = identical numbers). `serviceLoad()` (crew, full tanks and stores) at spawn for catalog
+  ships. `refreshDeviceState()`: radar / receiver / transmitter / life support / jump core follow their
+  modules; jump mass vs core rating. Player keeps a catalog radar (TestIdeal backend) instead of the
+  synthetic one.
+- Damage: hulls without a mesh get one hit volume per module placement (`ObjectRuntimeHitBuilder`),
+  health from ObjectModuleRuntime.
+- Identity: `ShipSnapshot::catalogShipId` (wire schema 25, protocol 22), `ShipInstanceRecord::
+  catalogShipId`, client `ShipDescriptorRegistry::resolve(typeId, catalogShipId)` (world state + map
+  bridges), procedural `CatalogShipAssembly.h` (box meshes, LOD proxy) and
+  `AssemblyGpuLibrary::get(const ObjectAssembly&)`; no ObjectType needed for catalog ships.
+- DEV spawn: `ELITE_CATALOG_SHIPS=all | id[,id...]` - row ahead of the player, each placed in the
+  player's hub frame (`placeShipInReferenceFrame`), broadside.
+- Evidence (offline): `EliteShipCatalogCheck` (now on the production ShipCore) PASS 227: per model -
+  identity / topology key, passport coordinates in the loadout, hierarchy (no missing parent, every chain
+  ends at hull.root, supports resolve), healthy slots + live generator groups (= passport MWe), devices
+  (radar range = passport), in-service mass, loaded mass = passport base gross + canonical C20 tare
+  (1.7 t from ShipCargoPassports; a full passport load occupies every declared C20 slot) and lower
+  acceleration, docks / radiators / placement hit volumes, radar module destroyed -> radar off (second
+  set keeps it), drive destroyed -> less thrust; train car detached -> mass -car -its cargo -its C20,
+  acceleration up; fixed-step burns on the production control path (OCS-4, PK-30 Assisted capped by
+  its 1.5 g crew load, C-120 empty 6.70 / full ~2.86 m/s2, He-T12 full ~1.22, L-900 full 3.99, B-90
+  11.62, Cobrett N1 35.73, A3 71.8, B-4, ST-6) = thrust / live mass, spin < 0.02 rad/s; Cobrett
+  passport vs legacy Cobra (N1 and A3): slot coordinates, drives, 24 nozzles, generators, mass,
+  envelope, SR-70, radiators, C20 identical; NOTE A3 passport hold 110 t vs legacy 120 t (legacy one
+  hold for both generations); inertia passport/legacy 1.06/0.84/0.66 (N1) - summed boxes vs one uniform
+  box. `EliteNavigationCapabilityCheck` PASS 20, `EliteShipThermalCheck` PASS 9.
+- Evidence (real game, target machine, Debug, D:/tmp/elite_genship_run1): `ELITE_CATALOG_SHIPS=all`
+  spawned all 21 (log: modules, in-service mass, radar km), client hydrated all 21 with procedural
+  assemblies, the row is visible from the cockpit / drone view next to Vysokiy. Not flown by a human.
+- Tests (full suite tests/run_all_mingw64.sh, then the red blocks re-run at the restore point in a
+  worktree): 8 red blocks - model asset (link: compartments/presentation V4), world runtime
+  (interstellar medium), cross-timeline (travel-frame ownership text check), navigation runtime (6:
+  traffic_route_graph, client_route_autopilot, assisted_authority_contract, newtonian_execution_authority,
+  assisted_safe_course_recovery, ship_state), interaction activation, system map (SystemMapBehaviorTests
+  abstract mock), feature contracts (renderShipUi), client acceptance (PlayerInputMapper) - ALL identical
+  at `restore/pre-generic-ships-2026-11-04`. Caused by this pass and fixed: NewtonianRcsPhysicalTests /
+  NewtonianPhysicalDiagnosticsTests no longer compiled (the allocator stopped including the Cobra nozzle
+  header) - include added. Green: trajectory predictor, sensors, presentation, multiplayer, headless
+  build + smoke, main build + fast universe smoke, standalone runtime, network process.
+- Review correction after 24f40671: generic runtime no longer invents a 2.2 t C20 tare. Both payload
+  (20 t) and tare (1.7 t) now come from the pre-existing authoritative ShipCargoPassports.h contract;
+  EliteShipCatalogCheck marks a full passport load with containers=containerSlots (OCS-4 = 24 boxes).
+  The designer's field name mass.gross_t / accel_g_loaded still excludes C20 tare and is therefore
+  semantically misleading; reconcile/rename it when the passport/economics layer is made authoritative.
+- Review correction after 5c971ead: catalog ships now use the same CPU CatalogShipAssembly on the
+  authoritative ShipCore side as on the client. Its primitive meshes are module-local with the module
+  origin at the passport placement, so detach/repair no longer depends on a legacy ObjectType /
+  AssemblyMeshLibrary entry. EliteShipCatalogCheck now requires the He-T12 car to spawn a detached
+  fragment at its passport position and to reattach with the parent's mass restored.
+- Detached-fragment limitation: ObjectDetachedFragmentRuntime is still a kinematic salvage/repair
+  representation, not an independent rigid body with its own mass/cargo state. Parent mass conservation
+  on detach is correct; world-level fragment mass/cargo conservation remains future work.
+- Known RCS granularity limit found in review: designs with 16 cluster units at 8 mount positions are
+  represented as 8 damageable node-parent modules with 2x mass/authority each. Healthy mass/thrust is
+  correct, but losing a node currently removes both co-located clusters together; unit-level 16-cluster
+  damage requires a follow-up representation change.
+- Not done: the player cannot yet board a catalog ship (cockpit / view rely on the Cobra descriptor);
+  Assisted designs with RCS blocks (He-F22) carry them as hardware only (Assisted has no RCS bank);
+  Shipyard UI not started (by order); economics reconciliation pending (radiator_mw 3 400 for Cobrett
+  etc.); Cobrett manufacturer = Cobretty Corporation, historical origin Kobersberg-Braunauer
+  Raumfahrzeugwerke - PROPOSAL until the author confirms.
+
+### Clean generic ships + F6 Shipyard + F7 Repair & Refit (user order 2026-11-04 c)
+Head checked first: review commits 5c971ead / 97f482af / e2d72b68 did not compile (`catalog::ships::C20PayloadTonnes`
+resolved to game::catalog inside the generic builder) and the train detach contract measured the "detached"
+acceleration after reattaching - both fixed (eda7e1f8), not reverted.
+
+- Mass ladder (106c1bce): one meaning in designer, runtime and lore - dry -> service (tanks, stores, crew) ->
+  net payload (cargo + passengers) + C20 tare in EVERY declared place (1.7 t from ship_economics cargo_model =
+  ShipCargoPassports.h) -> gross (everything aboard at a full passport load). `accel_g_light` renamed
+  `accel_g_service`; `mass.service_t / net_payload_t / container_tare_t / c20_tare_t` exported; runtime spawn
+  mass = service_t and full load = gross_t within 10 kg for all 21 models. The economics class model
+  (logistics.py cargo_gross_t) uses the same tare definition but its own class masses - reconciliation with the
+  passports still pending (by order: economics not rewritten).
+- RCS units (8f811f0d): several units per mount node, each its own damageable cluster module with its own three
+  nozzles; `RcsNozzleBank24` in the existing allocator sums the living units of each bank nozzle (24-nozzle
+  topology unchanged), ShipCore builds it once (`installedNewtonianRcsBank`) for capability and execution,
+  operating life per unit. He-T12: destroying one of the two clusters of a node halves that nozzle (8 -> 4 MN).
+- Detached mass (6adf44f0): `DetachedFragmentMass` (module dry, cargo it carried, C20 tare, total) on every
+  fragment from the same load rule as the parent (`cargoAboard`: holders carry the payload and their C20
+  places), replicated (snapshot schema 26). He-T12 car: 400 + 4800 + 408 = 5608 t = the parent's loss.
+  The fragment is still kinematic (no own rigid-body dynamics yet), but no mass disappears from the data.
+- Repair & Refit layer (64533b6a, `src/game/ship/refit/RepairRefit.*`): a throwaway ShipCore adopts the live
+  instance (modules, links, load, propulsion switch, service reactor / coolant / radiators), the operation is
+  applied with the same `ShipCore::serviceModule` an apply uses (`ObjectModuleRuntime::repairModule` - one
+  module, wear kept; `replaceModuleWithNewUnit` - new unit, reinstalls a detached one), both states measured by
+  the production capability / power / thermal / device code plus an 8 s fixed-step full burn (temperatures,
+  margins, coolant, emergency exchanger). Deltas, compatibility (category, fit, generator power, Assisted
+  gimbal), compatible catalog replacements, cost from passport price + repair doctrine through
+  `assets/data/ships/ship_market_rules.json`. Another product: exact preview on a descriptor copy, apply refused
+  until the per-instance configuration layer exists.
+- Network: `ClientShipCommand::RefitPreview / RefitApply` (+ `detail`, subject ship in `amount`), server
+  `GameSimulation::requestRefitPreview / applyRefit` (same owner only), `ShipSnapshot::refit` (ownership,
+  registration, preview, apply result; snapshot schema 27, protocol 23). Owned ships always replicate their
+  module graph. DEV lineup ships are owned by the player.
+- F6 Shipyard (`ShipyardPresentation`, `ServicePanelsRenderer`): all catalog models (right), card (left) with a
+  side / plan preview of the runtime primitive blocks, the passport / descriptor numbers, expandable passport,
+  seller offers of concrete instances (`ShipMarket.h`: passport id, condition, age, hours, wear, damage,
+  installed equipment, price, seller) - DEV mock stock; price: -20 % first sale, age / hours / wear / damage
+  decay, seller margin, never below scrap + reusable parts.
+- F7 Repair & Refit (`RepairRefitPresentation`): the player's ships with < >, functional side-view schematic of
+  every module placement coloured by its replicated state (clickable), groups (propulsion, generators, RCS,
+  service power, cooling, tanks, radar / comms, computer, life, jump, weapons, payload, docks, structure),
+  damaged-module list, module card (product, state, health, damage causes, wear, mass, power, position, repair
+  level, LRU, replace hours, price), Repair / Replace (previews from the server), compatible replacements,
+  DEV apply. Selecting a damaged module requests its repair preview at once.
+- Evidence (offline): EliteShipCatalogCheck PASS 227 (passport service / gross = runtime, RCS units, fragment
+  mass), EliteRepairRefitCheck PASS 9 (radar failed -> restored, drive destroyed 4.46 -> 6.70 m/s2 and burn,
+  generator at 57 %: 8 019 -> 9 900 MW and burn 5.52 -> 6.70 m/s2 - the capability alone did not show it,
+  incompatible rejected, N-2 -> N-10 range, preview never mutates the live ship, apply == preview after),
+  EliteServicePagesCheck PASS 7 (21 models one source, card values = runtime, offer ladder, real module ids,
+  failed radar, preview carried), EliteNavigationCapabilityCheck PASS 20, EliteShipThermalCheck PASS 9.
+- Evidence (real game, target machine, D:/tmp/elite_shipyard_run1, ELITE_CATALOG_SHIPS=C-120,He-T12 +
+  ELITE_CATALOG_DAMAGE=1 + ELITE_DEV_SERVICE_SCRIPT): F6 shows 21 models / C-120 card / 4 offers; F7 shows the
+  player's 3 ships, C-120 with the server-damaged drive (failed), generator (57 %) and radar (failed); radar
+  selected -> server preview "radar no -> yes, range 0 -> 2000 km, 33 840 Cr"; DEV apply -> "[Refit] apply
+  ... APPLIED", the replicated radar module becomes "in service 100 %". Not exercised by a human mouse yet.
+- Tests (full suite after the last commit): the same 8 red blocks as at restore/pre-generic-ships-2026-11-04
+  with the same messages (model asset link, world runtime interstellar medium, travel-frame ownership text
+  check, the 6 navigation runtime reds, interaction activation, SystemMapBehaviorTests abstract mock, feature
+  renderShipUi, client acceptance PlayerInputMapper); green: trajectory predictor, sensors, presentation,
+  multiplayer, headless build + smoke, main build + fast universe smoke, standalone runtime, network process.
+- Not done: per-instance configuration (installing another product), Remove / Install / Sell actions, real
+  payments and seller inventories, Shipyard purchase transaction, legacy Cobra modules have no passport
+  placement (F7 lists them, the schematic is empty for the Cobra hull), the human acceptance of F6 / F7.
+
+### Catalog ship meshes, carriers, editor model list, hub module folder (user order 2026-11-04 d)
+Restore point: tag restore/pre-ship-meshes-b-2026-11-04.
+- Carriers (3e29abf3): hangar / boat bay volume from the CARRIED craft envelope (`craft_ship` -> its catalog
+  design, else `craft_envelope_m`), two abreast + clearance; designer check `craft_bay_fit`. He-S240 AP-2 was
+  9 x 5 x 12 m (smaller than one B-4) -> 30 x 7 x 24 m for 2 x B-4; new `bastion.bay.hangar4` (AP-4, 300 t) on
+  the B-90 Tsitadel: 4 x B-4 -> 30 x 7 x 45 m ventral; boarding boat bays 8 x 6 x 15 m. 21 ships, 0 FAIL.
+- Ship meshes (9ab242a6, c2368ec7): `EliteShipMeshExport` (tools/ship_meshes) writes
+  assets/models/ships/<folder>/LOD0/<category>__<module>.obj from ShipDescriptor::primitiveBlocks (the boxes
+  the game draws), one OBJ per module + primitive.mtl + ships/ship_models.json (folder <-> passport, class,
+  carrier bays, primitive / authored). 19 folders; Cobrett-I N1 / A3 -> existing cobretty-mk1-int (authored);
+  existing folders never touched; `--check` = PASS. NOTE: assets/ is gitignored (external tree) - the ship
+  folders and index are NOT in git, they are regenerated by the exporter (index rebuild from scratch is
+  byte-identical). Contact sheet: 0 inward faces.
+- Hub (c5452903): dock models moved src/assets/models/hub/guidance_test -> assets/models/hub/<module>/LOD0
+  (hex-dock-a, dock-service-block, guidance-dock-cube, guidance-dock-cylinder); .gitignore keeps
+  assets/models/hub/ tracked; runtime paths, generator (byte-identical output), geometry contract, docs updated.
+- Editor 0.10.87 (25436bed): ship folders named from the index, hub folders as Folder sources, grouped model
+  select (catalog ships / ship folders / hub / stations / runtime), passports in the catalog message.
+  Evidence (target machine, D:/tmp/elite_shipmesh_run1): WS probe of the running editor - 30 entries,
+  20 catalog-ship entries = 21 passports, 4 hub modules; B-90 opened (LOD0 66 parts, editor_b90.png).
+  Model-asset architecture checks: identical to the pre-change baseline (23 PASS, 30 old FAIL; 10 version
+  pins moved 0.10.86 -> 0.10.87).
+- Full suite: the same 8 red blocks with the same messages; game start: no OBJ load failure, dock traffic at
+  hex_dock_a. A second immediate relaunch after a timeout-killed run died at startup ("Fatal error") - test
+  harness artefact, a later relaunch was clean; not investigated.
+- Not done: runtime still draws catalog ships from descriptor primitives (not from these OBJ / a compiled
+  .elmodel); editor "open ship record -> load new mesh -> save as actual" flow (index source=authored is the
+  hook); hangar interiors / parked craft geometry; human check of the editor list.
+
+### Player radar scope + user report "freezes / slow route / hull oscillation" (2026-11-04 e)
+- Radar (64dc8931): the cockpit PPI scope was off (`RadarHudEnabled = false`, recorded earlier as "by
+  design") and read the empty legacy `radarContacts`; the server sensor unit already produced the
+  session-private RadarScanReport. Now the scope draws those tracks (nothing when the radar module is
+  destroyed / unpowered), automatic 1-2-5 km scale, state line above the scope; navigation-sensor
+  contract updated (HUD allowed only when fed by the scan). GAME evidence: D:/tmp/elite_freeze_run1/
+  radar_30s.png - scope visible, "RADAR 1 km | 8 tracks" at the start hub. Blips only on sweep (not seen
+  in the single frame); human check pending.
+- User report after a docking flight: strong freezes passing the station, very long route computation,
+  vertical hull oscillation. A/B real-game flights (nav-stress:simple, D:/tmp/elite_freeze_run1, base =
+  restore/pre-generic-ships-2026-11-04, head = 64dc8931):
+  Assisted route worker 44.0 s (base) vs 44.8 s (head) - the slow Assisted planner is PRE-EXISTING
+  (Newtonian 1.08 / 1.07 s); the user's 55.9 s request (elite_docking_planner.log) was Assisted.
+  N1: DONE 230.6 / 234.0 s, max cross-track 15.0 / 20.6 m, hitches 0 / 1 (81 ms autopilot update);
+  A3: hitches 0 / 0, xtrack 24.1 / 25.2 m. Pitch command sign changes ~550 / ~465 per flight, mean
+  |omega| 0.266 / 0.270 - no new oscillation in the trace. Freezes NOT reproduced in the fixture;
+  the user's scene (normal start, hub traffic) not reproduced yet. OPEN: Assisted planner time (45 s);
+  user-visible vertical oscillation (needs the user's flight trace); freezes in the normal scene.
+- "Fatal error:" (empty message) at startup: reproduced twice when EliteGame was relaunched right after a
+  timeout-killed instance; a relaunch a minute later starts normally. No leftover Elite / WebView2
+  processes found. Root cause not proven.
+
+### Radar scope fixes + orphaned WebView2 / "Fatal error" (2026-11-04 f)
+- User: scope blinks, one blip that keeps vanishing, no station / docks, nearby ships invisible; asked
+  for a simple game radar and whether it is heavy. Root causes: (1) the PPI latch lit a blip only when
+  the 1400 deg/s sweep passed within 3 deg (23 deg per frame -> ~1 revolution in 4), faded in 0.23 s;
+  (2) my 64dc8931 capped the scale at the client descriptor's 1 km LCD preset; (3) the server sensor
+  read only materialized ships - traffic shells (hub traffic) were never radar truth.
+- Fix (0a8cae1d + 5efb79b9, the server half was first lost to a probe revert): traffic shells in the
+  truth, track kind ship / structure (snapshot schema 28), every track drawn every frame (sweep only
+  brightens), structures amber squares, beyond-scale tracks on the rim, scale = 1-2-5 step holding the
+  tracks within 30 km, content redraw <= 30 Hz, sweep 180 deg/s, DEV ELITE_DEV_RADAR_LOG.
+  Detection stays the simple game rule (server: in range of the installed radar, 2 Hz); the legacy
+  perception radar (RCS / lock) stays off. GAME evidence D:/tmp/elite_radar_run2: 15 tracks (ships +
+  structures), scale 20 km at the start hub, stable between frames (final_scope.png).
+- Cost (temporary probes, reverted): server sensor 0.0036 ms / tick; scope 0.2 ms CPU + 0.07 ms GPU per
+  frame (GL timer query; an earlier 1.9 ms figure was a glFinish sync artefact).
+- Orphans (46ba1fb3): after a kill / crash EliteGame left its msedgewebview2 browser on the shared
+  profile (%APPDATA%/EliteGame.exe - the per-pid WEBVIEW2_USER_DATA_FOLDER is ignored by the webview
+  loader, 985 empty folders); the next start died with an empty "Fatal error" (webview error -3). A
+  normal window close leaves nothing. Now main() puts EliteGame in a kill-on-close job object: 0 orphans
+  after a kill, immediate relaunch starts. Fatal message names the exception type / webview code.
+- Full suite: the same 8 baseline red blocks; NAVIGATION SENSOR + IDEAL RADAR, multiplayer, network
+  process, standalone runtime PASS. Human check of the scope pending.
+
+### User order 2026-11-04 g (accepted radar; queued work, in this order)
+Restore point: tag restore/pre-order-2026-11-04-g.
+1. Radar: episodic interference (the LCD glitch effects) from time to time; R cycles the scope range
+   20 / 50 / 150 km; in J (global) mode the radar looks only forward along the course to 2 000 km
+   (early hazard warning).
+2. Player ship identity: the player flies Cobrett A3 (Assisted) - my reports said N1; verify.
+3. Freezes: user video D:/tmp/freez01.mp4 (suspect: planet).
+4. Visual: "Elite classic" render - planet white for ~1 s at start; entering J the hub disappears and
+   then catches up the ship (time desync, as before).
+5. Details map: player position = golden marker "игрок" (hub cube golden when the player is in a hub);
+   planets opaque; labels behind a planet hidden; every map remembers its last view; rings / belts:
+   repeatable procedural asteroids (same place -> same asteroids).
+6. Hubs: describe the module composition next to the hub functions (shuttle dock 10 pads + hotel +
+   10 interstellar passenger platforms; admin station; one staff habitat; fuel dock 6; service dock 6;
+   fuel / gas terminal; cargo terminal (more docks); holding area).
+7. Economy: 30-40 grouped commodities; per-hub bulletin board for couriers / carriers (clickable
+   destination and hub list -> map, distance, owner, last known prices with network delay); ticks and
+   price drivers, quarantines, blocs (customs may turn ships away), sector patrols; supply / crew
+   delivery to remote hubs - beacons are hubs.
+8. Navigation in J: orbit-relative velocity (direction vs the planet radius, gravity: falling and
+   missing), star-relative outside planets - to explore with an interplanetary flight.
+
+### User order 2026-11-04 g - results (game evidence D:/tmp/elite_order_g_run1)
+1. Radar (f37a7a04): R cycles 20 / 50 / 150 km; J shows a 30-deg forward sector to 2 000 km
+   ("RADAR FWD"); episodic LCD interference every 45-120 s for 3-8 s. GAME: default "RADAR 20 km [R]".
+2. Player ship: the player flies Cobrett A3 (ASSISTED-I in the HUD); N1 in my earlier reports was the
+   acceptance harness's own Newtonian model, not the player's ship.
+3. Freezes (a0f330e3): user video = ~20 fps with 0.2-0.33 s stalls while the Earth limb is in view and
+   the Assisted route plans (65-86 s, elite_docking_planner.log). Cause found in repro (planet view +
+   docking request): terrain bake pool = hardware_concurrency - 2 = 10 normal-priority threads + route
+   worker on 6 physical cores. Pool = physical - 1 (max 6), pool + route worker below normal priority:
+   steady frame 34.4 -> 16.7 ms, worst 83 -> 34 ms. Hitch profiler always on -> D:/tmp/elite_hitches.log
+   every session. OPEN: Assisted planner time itself (45-86 s).
+4. Visual: Elite Classic grey planet at start fixed (61ec69c6: height 0 = a contour level before the
+   globe bake). J-entry hub desync NOT reproduced (rest + full thrust, 25 ms / 400 ms captures) - DEV
+   switches ELITE_DEV_FREE_FLIGHT_AT / _THRUST_AT kept (e34e7217). OPEN.
+5. Detail map: opaque planet, markers / labels behind bodies hidden, golden "игрок" marker (golden hub
+   cube when in a hub) (a0ba54eb); maps remember the last view - Detail per body, Hub per hub, Galaxy
+   (bac78746); repeatable procedural ring bodies by ring cell, density by screen size and optical depth
+   (68fd527b, Saturn). OPEN: asteroid-belt spatial cells. DEV SOL script: `detail`, enter aliases.
+   NOTE for scripts: ELITE_DEV_FRAME_CAPTURE / ELITE_DEV_MAP_SCRIPT count GLFW seconds, the SOL / DEV
+   switches count space-state seconds (~10 s later).
+6./7. Hubs + economy (e8461c41, subagent, PROPOSAL data only): 22 module types / 538 hubs with
+   composition + description; 37 goods in 14 groups; tick / price / events / quarantine rules;
+   bulletin-board schema; price info age over the comms network; 8-bloc customs matrix.
+   tools/colonization_lab/out/ECONOMY_LIVE_DESIGN.md. Author questions listed there (tick 24 h, bloc
+   matrix, lotos in catalog, 32 liner platforms at Vysokiy). No runtime / UI yet (board, clickable
+   destinations, ticks).
+8. J orbit HUD (0c19ded7): speed vs the dominant body, radial, circular / escape, H / Pe / Ap
+   (schema 29). Observation: the Earth hub moves 7.74 km/s at 422 km (circular 7.66) - a ship leaving
+   it is on a 422 x 733 km orbit.
+- Full suite after 0c19ded7: the same 8 baseline red blocks with the same messages; navigation sensor /
+  radar, multiplayer, network process, standalone runtime, headless + main builds PASS.
+
+### User order 2026-11-04 h ("belt asteroids and the rest"; the user approved the video-report format)
+- Belt (aa1859ea): a belt body's Detail = ~3 million km window on the annulus, star-fixed 100 000 km
+  cells seeded by (belt, sector, lane), screen-density LOD, edge arcs + arrow / distance to the star.
+  GAME: Sol main belt (2.67 AU).
+- Assisted route time (0ac359f4): the navigation runtime / geometry / trajectory libraries compile -O2
+  in every configuration (the game builds Debug -O0). Real game: Assisted worker 44.8 -> 3.3 s,
+  Newtonian 1.07 -> 0.52 s; N1 route identical (32 743.764 m), DONE 235 s, 0 violations.
+- F8 Trade (1e90f78a): deterministic EconomyModel on the generated economy data (market drift + events,
+  board 4-12 entries / hub / day, rewards by the rules, last known prices aged by the beacon-network
+  delay) and the native F8 page (board / market / system hubs, hub card, SHOW ON MAP). GAME at Vysokiy.
+- OPEN: trades (buy / sell / take an entry, credits, cargo), customs refusal at docking by bloc channel
+  and quarantine / blockade events, sector patrols, server ownership of the economy state once trades
+  exist; J-entry hub desync (needs the user's scenario / video).
+- Full suite after 1e90f78a: the same 8 baseline red blocks / failing tests with the same messages.
+
+### User order 2026-11-04 i (video fragments, J mode as orbital flight, atmosphere, terrain)
+- frag01 (full automatic docking, 6.7 min): 28-29 unique fps, longest pause 0.13 s - the freezes are
+  gone (was ~20 fps with 0.33 s stalls). The session hitch log was overwritten by a later start; it now
+  appends (c.f. HitchProfiler).
+- farg02 hub jump (87faa141): at J entry the station vanished for 8 frames. Root cause (DEV FFTrace): the
+  world is drawn one interpolation window in the past; the newest snapshot already carried the ship's new
+  free-flight frame and the player was presented at 'now' in it - ~10 km from the hub drawn at 'then'.
+  The player now stays in the render-epoch frame until it crosses the change. Trace: player-hub distance
+  21-24 km throughout (was a 10-12 km dip for 0.35 s).
+- J mode (9ee86c53, 5497cf37): speed / alignment / brake against the dominant gravity body; Assisted holds
+  the nose on the velocity (prograde) without input and turns the horizontal velocity toward the nose when
+  steering (20 m/s2); HUD lower right: 1st cosmic speed, V (+vertical), H / min safe, dense layers, drag,
+  colour ramp; warnings (stall, atmosphere entry, dense layers, low descent, crash / landed); physical
+  drag rho0 exp(-h/H) v^2 / (2 * 800 kg/m2); safe altitude = drag 0.1 m/s2 at circular speed (Earth
+  109 km), dense layers = 1 g (71 km); dense-layer impact + heating damage, camera shake; solid ground and
+  sea. HubMotionLab debug lab (its cube followed the player frame) switched off.
+- Terrain contact (5493b942): the renderer's surface loading moved to BodySurfaceFieldLoader (shared);
+  the server samples the same field (Earth DEM / curated maps / procedural PlanetSurfaceField) with the
+  renderer's orientation: ground height, slope, material (rock, regolith, sand/dunes, ice, water, lava),
+  feature (crater, ranges). Landing tolerance by ground; HUD 'below us'. Earth verified (rock, 2.1 km
+  terrain, crash at 131 m/s). Moon / other bodies: same path, not flown yet.
+- Snapshot schema 31. Full suite after 5497cf37: the same 8 baseline red blocks.
+- OPEN: catalog surface pressure for rho0 (Mars / Venus use Earth's now); soft landing / splashdown not
+  flown by a human; J Assisted steering not verified with real input; Moon test; terrain field memory.
+
+### User order 2026-11-04 j (Earth hub -> Moon flight in the game window, landing)
+- J autopilot (476ebb32): fly to a body and land. Server J drive on the free-flight frame (a game drive,
+  NOT the ship's main engine - the user asked "where does the acceleration come from with engines off":
+  the HUD thrust line now says "J-ПРИВОД АВТОПИЛОТА N g"; reactor / fuel do not pay for it yet). 1 g
+  doubling every 2 s up to 100 km/s2 (ELITE_J_AUTOPILOT_MAX_ACCEL), no speed cap, sqrt(2 a d) braking at
+  0.4 of the cap, d/6 s approach tail to 12 km above the body on the ship's side, the departure body is
+  never cut through; nose on the target during the transfer; level powered descent (belly down, nose to
+  the horizon, 40 m/s2) to ~1.5 m/s. Keys: O on a body selected on the System Map while in J, PgDn = land
+  here / cancel; DEV script autopilot:<moon|earth|mars|here|off>. Schema 32. Full suite after ada429ef:
+  the same 8 baseline red blocks.
+- Live Windows evidence (D:/tmp/elite_moon_run1..3, video D:/tmp/elite_moon_landing.mp4): Vysokiy (LEO
+  422 km) -> Moon: engaged, departure phase (Moon behind Earth), transfer peak ~4700 km/s, descent from
+  8-11 km at t+230 s, touchdown 1.53 / 1.62 / 1.62 m/s vertical, 0.0-0.2 m/s horizontal, slope 7.7 / 6.8 /
+  17 deg, rock, landed at t+279..287 s - three flights, three soft landings. Not a human acceptance.
+- User videos frag03 / frag04 + my run2: three defects found and fixed:
+  1. descent attitude nose-up (tail-sitter): the cockpit saw only sky -> level descent attitude;
+  2. "white sky" over the Moon (and Earth) low over the ground: the coarse displaced globe rose above the
+     camera (Modern) and Elite's silhouette lit distant ridges past the limb (nv < 0) -> low over the
+     local terrain the globe is a smooth backdrop sphere at the ground level under the camera; the Elite
+     rim is not drawn past the limb (d9ebd040, ada429ef; Planet Lab Moon/Earth near-surface checks);
+  3. hull shake on the airless Moon: a soft touchdown pulsed the impact shake; now only real impacts
+     (atmosphere comes from the catalog body; the Moon has none). Climbing out of rising ground is no
+     longer a "contact".
+- Modern / Anime natural-zone palette painted the Moon green with "snow" (zone heuristic read grey
+  regolith as vegetation; descriptor contract says no default greening) -> zones only for bodies with a
+  stated biosphere or open water (ada429ef). Planet Lab: Moon grey, Earth unchanged. (One earlier grey
+  Planet Lab run stays unexplained - probably a different binary.)
+- The star map in run2 video was opened by the user (not a bug).
+- User decision (2026-11-04): the Moon is Earth's signature and must be clearly visible; plausibility over
+  hard realism, physical sizes unchanged. Done (e106bc1d, contract CELESTIAL_RUNTIME_RENDERER.md 1):
+  cinematic apparent size - a small far body (> 8 R, full from 25 R) is drawn as if closer along the line of
+  sight, extra angular radius softmin(2 x true, 0.8 deg): Moon / Sun from Earth 0.26 -> ~0.57 deg, Earth
+  from the Moon 0.95 -> ~1.5 deg, moons over their planets likewise; nearer than 8 R exact. Sky discs: round
+  mesh, Elite fills the lit phase, Modern / Anime raise the lit side's exposure. Geometry check (true size,
+  option off) 22 PASS. Planet Lab PLANET_LAB_ONLY=sky shots (D:/tmp/elite_sky*). Game run4 (Elite): the
+  Moon disc on the nose grows through the transfer; at this game date the near side is unlit (new-moon
+  geometry), so from Earth it is a dark disc with its outline. Not human-accepted.
+- OPEN: J drive energy accounting (reactor / fuel), human flight of the autopilot, autopilot to bodies
+  without terrain data, hub as an autopilot target, camera framing of the transfer (drone view).
+
+### User order 2026-11-04 k (J control, J off between planets, minimum altitude)
+- J steering: yaw / pitch turn the velocity (vs the dominant body) toward the nose in 3D at constant speed,
+  1.5 s time constant, 2..20 deg/s (J drive). The old horizontal-only 20 m/s2 turn was an arbitrary
+  placeholder (not an engine figure) and did nothing when flying radially away from the Moon. Live run
+  (D:/tmp/elite_jsteer/steer.log): 8 s yaw / 8 s pitch at 7664 m/s - speed kept (7641..7671 m/s), the
+  velocity follows the nose at 20 deg/s, pitch climbed 416 -> 505 km. The hull itself spins at the ship's
+  own yaw rate (~70 deg/s) under a held key - velocity lags behind it; human feel not yet verified.
+- J off anywhere: away from a hub (or too fast for its capture) the ship keeps its global motion in its own
+  ballistic frame (free fall under gravity) and the local speed starts at 0; J again -> free flight. Live
+  (local.log): 160.3 km/s global kept, local 0 -> 368 m/s after 5 s of '+', global unchanged by it.
+  OPEN: hub capture from the local frame only via J on / J off near the hub; HUD of the local frame does
+  not show the global motion.
+- "Why 100 000 km minimum": it was 109 309 m = 109 km (HUD printed metres). Reason: the altitude where
+  drag at circular speed reaches 0.1 m/s2 (the orbit decays fast). HUD now prints km above 10 km and the
+  reason (not visually re-checked in a capture yet).
+- Follow-up (user video qwert01: the hull swung freely in J; "roll is blocked"): Assisted J now steers
+  stiffly - hull pitch / yaw <= 4 deg/s, nose lead over the velocity limited to 10 deg (the velocity's
+  inertia), velocity follows at angle / 2 s (~5 deg/s held), speed kept; not while braking or below
+  50 m/s; Newtonian J unchanged (free hull). Roll was swallowed by the prograde hold (alignment owned the
+  attitude while only pitch / yaw counted as steering) - roll now releases it. Live: steer2.log (lead
+  stops at 10.0 deg, 5 deg/s, 7664 -> 7654 m/s), roll2.log (a 1.5 s roll stays after release).
+  Full suite not re-run for this change. The user allowed closing a running EliteGame.exe for my checks.
+
+### User order 2026-11-04 l (J reference frames, units, touchdown, signed acceleration)
+- J reference = the deepest body whose Laplace sphere of influence holds the ship, catalog parent (the
+  Earth-Moon pair is one system; the strongest-pull primary had switched to the Sun halfway to the Moon and
+  the Sun-parented Moon sphere came out 160 000 km). Live (D:/tmp/elite_soi): Earth -> Moon flown against
+  Earth until 69 773 km from the Moon, then the Moon; Earth -> Mars: Earth until ~925 000 km, then the root
+  (Sol): "глобальная скорость 13630 км/с (отн. Sol) · гравитация планет пренебрежима", altitude / 1st cosmic
+  dashes. Global speed includes Earth's orbital 29.8 km/s (28.2 km/s at the hub at rest vs Earth); at J
+  autopilot speeds (thousands of km/s) it is ~0.2 % and looks equal. Schema 33.
+- HUD units by magnitude (m/s -> km/s; m -> km -> thousand / million km -> AU) (7deda479).
+- Touchdown: the hull centre rested at ground + 1 m - half the hull sank into the surface. Now ground = max
+  terrain under the footprint (centre, nose/tail, sides) + half height + 0.5 m gear. Live t2.log: 1.64 m/s.
+- Autopilot acceleration is signed along the velocity: '+9117.7 g (разгон)', '-4078.5 g (торможение)'.
+- QUEUED (user, not started):
+  1. a believable Moon: from Earth a cratered ball, on the ground a lunar landscape (craters, ejecta,
+     regolith) - procedural, reusable for the many airless moons. NOTE: the game currently draws in the
+     Elite vector style (black bodies + lines); the Moon's albedo / relief show in Modern / Anime.
+  2. System Map flat (plan) as the main presentation; "sectors of interest": split the asteroid belt and
+     Saturn's rings into selectable sectors viewable in Details.
+  3. J drive energy (reactor / fuel) accounting; human feel of the stiff J steering.
+- Follow-up (user video qwerty02, "the ship sank under the Moon"): ROOT CAUSE - updateFreeFlights ran before
+  rebuildNavigationGravityContext, so J flew against last tick's bodies; the snapshot carried this tick's Moon:
+  ~0.01 s x 29.2 km/s heliocentric = ~300 m. Measured (ELITE_TRACE_CELESTIAL + DEV jstate): rendered camera
+  4888 m vs server 5183 m before; 4174.9 vs 4177.3 m after (camera offset). The hull-footprint touchdown is a
+  separate, also valid fix. HUD near the ground: "H 19 м над грунтом (4190 м над ср. радиусом)" (H over the mean
+  radius on the +5 km highlands misled). Landing glow: Elite terrain horizon rim faint, relief lines brighter,
+  backdrop-globe outline faint low over terrain (user request). Not human-accepted.
+
+### User order 2026-11-04 m (landing autopilot module, planner, terrain for landing)
+- New module src/game/navigation/landing/LandingAutopilot.{h,cpp} (pure guidance, reusable): Pad mode (designated
+  body-fixed spot) and Wild mode (ring search for a flat spot of the hull's size: footprint slope <= 6 deg, height
+  spread, no water / lava). J autopilot plans the site AHEAD (from 200 000 km) and aims the approach above it; no
+  site -> no landing: circular orbit, wider search under the ground track every 3 s. Transit height grows with
+  speed; last 50 m straight down. Commands: autopilot:moon (wild), autopilot:moon@pad:<lat>,<lon>.
+- Live (D:/tmp/elite_landing): wild - site chosen at 190 312 km, 150 m from the approach point, slope 5.2 deg,
+  roughness 2.7 m; touchdown 1.63 m/s vertical, 0.19 m/s horizontal against the ground. Pad 3N 4E - aimed from
+  190 324 km; touchdown 1.57 / 0.21 m/s (the pad itself 11.5 deg: a random spot, pads are not graded).
+- Root causes fixed on the way: hovering at 2 km forever (velocity against the centre, the site turns ~4.4 m/s);
+  landed ship slid and sank (rest was world-fixed while the Moon turned; now body-fixed: altitude constant over
+  30 s); touchdown horizontal speed against the centre (Earth equator would crash); Elite outline line through
+  the HUD cross over the local terrain (removed).
+- My script bug on the way: a patch truncated LandingAutopilot.cpp (empty object, link error) - rewritten.
+- QUEUED (user idea, not started): terrain generation with landing-friendly areas (more on plains / deserts,
+  fewer in mountains) and a flat-with-features type: cracks, canyons, scarps (sharp cliffs), standing rocks /
+  boulders. Plus the believable Moon and the flat System Map with sectors.
+
+### User order 2026-11-04 n (lunar landscape: craters and surface)
+- Root cause of the "mountains, no craters" Moon: the curated map is 2048x1024 (5.3 km/texel, 8-bit +-10 km) and
+  below the texel ImportedSurfaceField added terrestrial hills + ridges with +-960 m amplitude (relief 8 km x 0.12).
+- New reusable CraterLayer (src/world/celestial/surface): crater population 2.6 km .. 1.5 m radius, D^-2 law
+  (halving cells, 85 % filled at density 1), fresh deep bowls / old shallow saucers, rim, ejecta to 3 R, bright
+  ejecta, blocks and 0.5-6 m boulders on fresh rims; band-limited, deterministic (server = client). Airless / icy
+  imported bodies: soft low hills + craters, regolith (rock on steep walls / fresh rims). Server ground: regolith.
+- Elite style: contours follow the eye in NESTED power-of-two spacings (refine, never slide - the user saw the
+  relief "flow like water" with a smoothly varying spacing); dense lines fade instead of a moire.
+- Planet Lab captures (D:/tmp/elite_lunar1): Modern near surface shows craters with rims; Elite approach shows
+  crater rings. Game: landing on regolith 1.64 m/s (D:/tmp/elite_lunar_landing.mp4, 110 s from the descent).
+  Geometry check 22 PASS (an 8-bit map blur I tried failed it 21/22 - removed). Not human-accepted.
+- DONE (user: "give the crater layer to procedural moons"): PlanetSurfaceField AirlessRocky / Icy get the CraterLayer
+  below their smallest class (~28-95 m) down to 1.5 m (no second boulder set). Measured with Planet Lab --probe-fine on
+  the airless 'rocky' body: mean |slope| 0.150 -> 0.165, heights change ~1 m (mostly old shallow pits) - a subtle
+  ground-level effect; Planet Lab proc_moon (system 47) frames differ by a few pixels at 220 m. Not human-accepted.
+- OPEN:
+  globe-level stair contours from the 8-bit relief bake; ejecta rays; the landing-friendly-areas / cracks / canyons
+  / scarps / rocks terrain type (queued).
+- Follow-up (user: small craters deeper, bright ejecta): small craters fresher (youth exponent by size), d/D 0.05..0.2,
+  ejecta halo + rays to 5 R; space-weathering albedo on airless / icy (mature darker, fresh lighter toward white - the
+  multiply clipped at 1 on bright ice). Probe: albedo spread rocky 0.36..0.51, icy proc moon 0.64..0.68 (400 m line).
+  Visual: Modern ground ~3 % darker overall, halos soft (the Modern tone curve compresses highlights); the Elite vector
+  style shows no albedo at all - there the deeper small craters show only as contour rings. Not human-accepted.
+
+### User video qwerty05 (2026-11-05): the hub jumps on a flight-mode change
+- Measured with the DEV FFTrace extended to the DRAWN distance (nearest scene object's render position vs the player's
+  render position; ELITE_DEV_FF_TRACE_SECONDS): steady 10 307.8 m except at the render-epoch frame crossing - J on
+  -1175 m, J off (hub capture) -1452 m, recovering over ~60 ms. ROOT CAUSE: sampleRenderReferenceFrame - when the
+  bracketing snapshots carry different frames, interpolateReferenceFramePresentation returns the new frame as of the
+  NEWER snapshot, (1 - alpha) * span ahead of the render epoch (~36 km/s heliocentric x ~35 ms). Fix: carry the new
+  frame back to the render epoch along its velocity; also no blend of old-frame / new-frame local positions on the
+  crossing frame. After: max drawn step 0.1 m through both changes (D:/tmp/elite_q5/run/t4.log). Full suite: the same
+  8 baseline red blocks. Not human-accepted.
+- Earlier note (farg02, 87faa141): that fix kept the ship in the render-epoch frame until the crossing; this one fixes
+  the crossing frame itself.
+
+### User order 2026-11-05 o (route planner + autopilot; then damage mechanics) - STARTED
+Scope as given (no questions, implement optimally, corrections after review):
+A. Planner + autopilot hub -> hub / orbit of a body, incl. other systems: at the finish match the hub's velocity and
+   leave J automatically, a stable position inside the hub bounds / on the new orbit; gravity obstacles and fields,
+   anomalies, safety through interstellar clouds / anomalies, gravity assists; Assisted and Newtonian, all 6 layouts.
+   UI: finish chosen on the map -> route-points info window buttons "official" / "unofficial" route -> planning,
+   J on, flight. The dashed network routes = GREEN corridors (preferred, official: safer, faster). Unofficial =
+   smuggling: away from outposts / patrol routes, through poor radar coverage; intermediate points may be hubs
+   (legal / illegal refuelling). Waypoint actions (now: refuel): arrive, J off, dock (the dock given with the point),
+   refuel, undock, J on, continue. A J on/off distance from hubs (collision avoidance). Zones: BLUE mandatory
+   passage, RED forbidden, GREEN preferred; a zone violation is an administrative penalty, not a collision.
+B. Then damage: collisions and weapons (lasers, missiles of different power; no fragmentation warheads - a common
+   tacit agreement: melting / burning-through warheads, the slug is destroyed or stuck in the ship). A shell ship in
+   view / in a duel becomes a full ship (hit volumes, modules). Hit volumes page in the mesh editor (exists) for
+   every part incl. hull plates and "patches"; parts tied to the frame by bars (destroying them detaches a part, they
+   carry impacts and break), plates joined by perimeter "sausages" (cut out to reach containers with their locks);
+   finish the part dependency tree / graph (existed). Example: the Cobra mesh.
+
+#### A - results (2026-11-05), live Windows runs D:/tmp/elite_route1, D:/tmp/elite_route2
+- Route autopilot legs (GameSimulationRoute.cpp, 43eb2b67): hub (arrive 12 km from it with its velocity, automatic
+  J exit = hub capture, at rest in the hub frame), orbit (circular, J exit into the free-falling local frame), point.
+  Hub J boundary 20 km: gentle departure (<= 1 g, <= 300 m/s against the departure hub). Bodies gone round (R + 150 km
+  / atmosphere + 50 km, never below the destination's altitude - Vysokiy -> Tikhiy first went THROUGH Earth).
+- Route planner (src/game/navigation/route/RoutePlanner.*) + zones data (src/assets/data/navigation/route_zones.json:
+  blue gate Earth-Moon at the Earth-Moon midpoint 15 000 km, red "range behind the Moon" 25 000 km, green capsule
+  corridor Vysokiy-Tikhiy 600 km; hub radar 3000 km). Official: green corridor guides, blue gate between the gate's
+  bodies, around red. Unofficial: around hub radar, red and blue (no customs). Server route sequencer: pass-through
+  guide points (braking for the rest of the route), stops leave J; action "refuel" = PROPOSAL timed 20 s stay at the hub
+  (no dock flight: automatic docking exists only at Vysokiy's dock module; ships have no fuel model).
+- Map UI: finish info window "ЛЕТЕТЬ: ОФИЦИАЛЬНЫЙ / НЕОФИЦИАЛЬНЫЙ МАРШРУТ", intermediate hub "ЗАПРАВКА ЗДЕСЬ: ДА/НЕТ";
+  the planned route drawn as the transfer line. DEV script: via:hub:<id>[:refuel], finish:hub:<id>|body:<moon>,
+  route:official|unofficial, leg:hub:<id>|orbit:<body>:<km>.
+- Zone watch (client): red zone entry / blue gate skipped -> "АДМИНИСТРАТИВНОЕ НАРУШЕНИЕ ... штраф N кр" banner, a
+  fines record (no bank yet).
+- Live: official Vysokiy -> (corridor) -> Tikhiy refuel -> (blue gate) -> Moon orbit 100 km: complete, gate passed (no
+  fine), orbit held ~104 -> 101 km over 150 s (20 m/s entry error; now 3 m/s / 500 m); unofficial Vysokiy -> Moon
+  orbit: around the gate, fined "пропущен обязательный створ" 2500 cr, orbit entry 18 m / 3 m/s.
+- NOT DONE / honest gaps: interstellar legs (no inter-system movement exists in the game at all - a separate stage:
+  jump / interstellar environment); gravity assists (the J drive dwarfs gravity; the planner flies direct); interstellar
+  clouds / anomaly safety (InterstellarNavigationEnvironment exists, unused - with the interstellar stage); real dock
+  flight + fuel for "refuel"; Newtonian vs Assisted: the J route drive acts on the free-flight frame, the same for all
+  six layouts (Assisted / Newtonian x I / Y / X) - not flown with a Newtonian ship yet; zones not drawn on the map yet;
+  the sites network routes (41, site-to-site) are not runtime hubs - only the zone-file corridor is green so far.
+- Full suite after the route work: the same 8 baseline red blocks.
+- Pre-existing: every EliteGame run killed by `timeout` ends with a [CRASH] in opengl32.dll after a WebView2 "Failed
+  to unregister class" - shutdown under kill, seen in all earlier logs; not from this work.
+
+#### B - plan (2026-11-05, started after A; restore tag restore-before-damage)
+Infrastructure audit: runtime hit volumes come from ObjectRuntimeHitBuilder (module OBBs from mesh parts, auto
+PanelSeam links between panels with link volumes, frame mounts); structural links + detach propagation exist
+(ObjectModuleRuntime / ObjectStructuralLinkRuntime / ObjectDetachedFragmentRuntime, fragments replicated);
+ShipCore::applyDamage existed with NO production caller; no weapons, no ship-ship collision (src/physics/Collision.h
+empty); two conflicting game::damage::DamageType enums (DamageType.h unused); editor .elmodel COLL/STRL/HITR data
+never read by the runtime; shell tiers exist, the Combat claim is never emitted.
+Slices (each: offline check on production code, then live Windows evidence):
+- B1 combat core: weapons data (src/assets/data/combat/weapons.json), penetration model (beam heat at a spot with
+  cooling, burn-through holes, armour reflection; units 1 health = 1 MJ), laser fire command, server beams, beams in
+  the snapshot, client fire key + beam render, DEV target ship, EliteDamageCheck.
+- B2 missiles: projectile sim with guidance; warheads shaped (melting jet, consumed) and kinetic slug (destroyed when
+  spent / stuck in the volume where it stops / leaves the hull); momentum to the hull and the struck part.
+- B3 collisions: ship-ship OBB (SAT) contacts, impulse + separation, lost energy as damage, inertial loads through
+  structural links (break -> detach); ship-hub later.
+- B4 shell -> full ship on fire / missile lock / duel range (Combat claim).
+- B5 editor: hit-volume page per part incl. plates and patches, bars (frame mounts), seam "sausages", container locks;
+  .elmodel COLL/STRL into the runtime; dependency tree / graph on the Cobra.
+
+#### B1 - WRITTEN, NOT COMPILED (2026-11-05; uncommitted working tree)
+Auto-mode permission classifier began refusing every shell command (build, run, commit) mid-slice; file edits still
+worked. Everything below is source only - no compile, no check run, no live evidence yet.
+- Cobra audit (EliteDamageCheck --dump, run from build/ for assets/): 172 runtime hit volumes (panels, frame CF/CB/FL/FR/
+  reactor, engines, tanks, lasers, cockpit, radar, control units, auto panel seams placed as thin boxes = the
+  "sausages"); 102 structural links; the support-link (bar) volumes are NOT placed (centre 0, 0.05 m) - B5 must place
+  them; hull 260 t. The old ShipCore::applyDamage ignored the hull's orientation (world offset, not rotated) - the
+  combat path rotates into the hull basis itself.
+- New: src/assets/data/combat/weapons.json (3 lasers 1.5 / 4 / 10 MW, 3 missiles: shaped 30 / 90 MJ, slug 40 kg;
+  material constants), src/game/combat/WeaponCatalog.*, src/game/combat/Penetration.* (ray vs OBB volumes, spot heat with
+  conduction, burn-through holes, armour reflection, shaped jet / slug walk, stuck slugs),
+  src/game/simulation/ShipCombatSnapshot.h + ShipSnapshot.combat (wire schema 34), GameSimulationCombat.cpp (lasers from
+  WeaponMuzzle attachments converging on the boresight target, damage flush 0.2 s / on burn-through, missiles with
+  seeker cone + lateral-velocity nulling guidance + system gravity, contact by segment vs hit volumes, momentum to the
+  hull, part impulse to the struck part; shell under fire -> Combat activation claim + materialize + promote; DEV
+  target Cobra), ShipCore::applyVolumeDamage / applyPartImpulse / afterVolumeDamage (applyDamage tail shared),
+  ClientShipCommand::FireWeapon (0 off, 1 on, 2 missile, 3/4 next type, 5 DEV target), keys SPACE (hold) / M / , / .,
+  DEV script fire:on|fire:off|missile|laser:next|missile:next|target:<m>, SceneRenderer 1C beams / missiles / impact
+  flashes, tools/combat/DamageCheck.cpp (EliteDamageCheck, headless_server build) with PASS/FAIL checks.
+- Next: compile (build/headless_server EliteDamageCheck, build EliteGame), run the check, fix, live run with
+  target:400 + fire:on + missile, commit; then B2/B3 per the plan.
+
+#### B1 - COMPILED, OFFLINE PASS, LIVE PARTIAL (2026-11-05; still uncommitted)
+- Compile fixes: a broken string literal in ShipCoreDamage.cpp (applyPartImpulse log).
+- EliteDamageCheck (build/headless_server, run from build/): 0 failures after two fixes -
+  (1) weapons.json missing in build/assets until the client build copied assets;
+  (2) dependency tree: a part burnt to zero did not release what it holds (frame FL has DisableOnly -> state Disabled,
+  links ignore the support's state; the link hit-volume mirror in syncDestroyedModulesFromHitVolumes then revived any
+  broken link). Fix: syncDestroyedModulesFromHitVolumes first kills every link whose support (moduleB) volume is
+  destroyed, with its link hit volume -> laser L detaches when frame FL is destroyed. Pulse laser burns the side panel
+  in 11.95 s, military 10 MW in 0.67 s, 0.18 MW never; 30 MJ jet spent inside; 40 kg slug stuck at 1.2 km/s, out at 6.
+- Full suite after these changes: the same 8 baseline red blocks (model asset, world runtime, cross-timeline,
+  navigation runtime (same 6), interaction activation, system map, feature contracts, client acceptance).
+- LIVE (build/EliteGame.exe --dev-direct-flight --diagnostic-scenario nav-stress:simple, Newtonian-I,
+  ELITE_DEV_SOL_MAP_SCRIPT, stderr D:/tmp/elite_b1_stderr.txt):
+  - root cause 1: the DEV target Cobra was flown by the NPC AI (20 m/s away, 6 -> 47 deg off the boresight).
+    Fix: m_combatTargetDummies, skipped in the NPC AI loop (GameSimulation.cpp) -> target stays at 400 m, vLocal 0.
+  - LIVE VERIFIED: military laser burns through Cobra panels (ship_panel_top_LF / CB / RB / RF BURN-THROUGH logs);
+    target on the boresight (0.2-0.5 deg drift from the scenario ship's own slow rotation).
+  - root cause 2: missiles launched with zero world velocity (tracks only kept while fighting) -> fixed, tracks are
+    always kept. Missiles now lock target 12 but MISS: closest approach 61-79 m (hull radius 19 m) within ~1 s.
+    Suspect: finite-difference velocities of hub-tactical ships are noisy / inconsistent (launch-velocity diagnostic
+    added, not yet run - the auto-mode classifier blocked shell commands again).
+  - DEV diagnostics in GameSimulationCombat.cpp (1 Hz laser line, MISS DIAG, missile t+N, passed-target, launch diag)
+    - trim the noisy ones before commit.
+- Next: run the launch diag; take ship velocities from motion (referenceVelocity + frame local velocity) instead of
+  finite differences if they disagree; re-run missiles; trim diagnostics; commit; beep.
+- PAUSED by the user (2026-11-05): damage work stops here. The B1 working tree must first be committed as a WIP
+  checkpoint (status: compiled, offline PASS, laser LIVE, missiles miss - NOT accepted) before the next order starts.
+
+### User order 2026-11-05 p - political order revision - SOURCE + GENERATORS DONE, AUTHOR REVIEW PENDING
+Status: offline generators PASS; whole new order = PROPOSAL_PENDING_AUTHOR_REVIEW (not CANON). No runtime C++ change, not
+compiled (runtime JSON shape kept: economy_rules.json blocs.matrix + hub "bloc"). Restore tag
+`restore/pre-political-order-2026-11-05` (= B1 WIP checkpoint 7b6ebf5a, which the user ordered committed first).
+Terminology (user 2026-11-05): **actor = acting party, node of political force** (sovereign subject of 3126).
+- Single source of truth: `tools/colonization_lab/canon/political_order.json`, read only through
+  `tools/colonization_lab/political.py` (`--list` / `--check`; out/world_3126/political_order_3126.json + POLITICAL_ORDER_3126.md).
+  Layers: historical actor (src/assets/data/galaxy/actors.json 14 + subactors.json 2: early-world layer, runtime map
+  ownership; only a top-level "layer" note added, records untouched) / actor 3126 (21) / economic unit (23 = world.json
+  colonies + Sol) / province (hd40307_firmament -> eps_eri_harmony, CANON in world.json) / special zone (gj832_gaia_zone,
+  quarantine_exclusion). Blocs: cognium_pool 4, heavenly_pact 2 (+ province), lalande_league 3 (hd114783_hellas3 associate),
+  southern_circle 3, citadel_compact 2, free_belts 2, sol (pole) 1; non-aligned 4 (verde resource_neutral, next
+  strategic_multivector, karma ideological_isolationist, zion newcomer_religious) - not a bloc, not mutual allies.
+  Directional access seller -> buyer per category (civilian_goods, industrial, dual_use, military, strategic,
+  people_finance_data; 0 open, 1 licensed, 2 restricted, 3 sanctions/indirect = channel "black", 4 closed) = max(export
+  seller, import buyer) -> exception caps (Kern finance, Agora transit hub, Mecca jump math for the Southern circle,
+  Providence, Verde fuel; Karma excluded from caps) -> 8 sanctions, each tied to a relations_anchor record (Cognium-Citadel,
+  Cognium-Meru, Harmony-Strife, Karma split, Maland-Firmament at unit level only, Hellas2-NewIndia, Kern-Hellas3 temporary,
+  Europa-Freeclans); Zion-Kern = tension without measures (crisis of 3126, open).
+- Migrated: industry.json `blocs` + hand bloc matrix in economy_live.json (+ polity_overrides) REMOVED; industry.json now
+  `industrial_schools` (design + core_source per unit, values carried over; Verde -> design none). The hidden
+  `if q == "wolf359_citadel"` in industry.py is replaced by strategic access 4. Runtime economy_rules.json blocs.matrix is
+  now derived (headline_channel_rule over access keys: bloc / nonaligned:<actor> / zone:<unit>) plus political_access
+  (unit -> unit six-digit codes). Consumers switched: industry.py, economy_live.py, ship_designer.py, world_economy.py
+  (yard partner: Third Hellas now buys ships via Agora, was Sol), lore_md.py (POLITICS/POLITICAL_ORDER.md + a generated
+  "Политический статус 3126" block in every colony dossier), lore_sites.py (INDUSTRY.md tables).
+- Data adjustments made while wiring (PROPOSAL): Pact military export 2 (state decision; keeps Sol PK-30 / PAO-7 with
+  Firmament armour/guns); UM transponder T-1 = industrial (network civil standard; Bastion ships carry it); jump-core
+  supply prefers the unit's core_source incl. an assembler (Firmament gets cores from Harmony); buyers outside their own
+  bloc spread purchases over 3 suppliers (keeps League fleet "many vendors").
+- Hand text fixed: RELATIONS.md (bloc formation rows, per-actor table: "cores from Citadel" claims contradicted the 2850
+  licence + Bastion-only-in-pact -> Cognium licence / Mecca; added Tianhe, Zion, Third Hellas, Providence, Sol rows),
+  WARS.md (blocs and sanctions instead of wars, no new wars), STRATEGIC_DEPENDENCIES.md, COLONIES gj581_europa /
+  hd40307_maland, Economy/INDUSTRY_AND_RESCUE.md §1, Economy/POLITICAL_ECONOMY.md (layer section), lab README.
+- Gates (2026-11-05, all rc=0): lab --check-dataset, --check-lore, logistics, world_economy, world_sites, political,
+  industry, economy_live (deterministic_rebuild), ship_designer (21 ships, 0 FAIL, 39 WARN), lore_md --check (pre-existing
+  stale FLEET_MODELS / SHIP_EQUIPMENT blocks refreshed by the rewrite), lore_html --check (139), calibrate_population.
+- Known, NOT fixed (outside the bloc layer): the lab.py trade-flow model still sells "jump cores" from New Shanghai to
+  Mecca, Meru and New Karma (STRATEGIC_DEPENDENCIES generated table) - contradicts own Mecca math / refused licence /
+  refused network. Free belts formally receive Cognium cores at "restricted" (2850 licence covered all but Citadel /
+  Karma; no post-2862 sanction in the canon) - author question.
+- Next: author review of every bloc / actor / sanction / exception (open_questions in political_order.json); promote
+  accepted rows to CANON; then decide on the lab.py trade-model core flows; then resume damage B1 (missiles miss).
+
+#### Correction pass 2026-11-05 q (on top of 0f5a0bda) - SOURCE + GENERATORS PASS, still PROPOSAL_PENDING_AUTHOR_REVIEW
+- Author decisions: "Святой Сион" retired -> **Ново-Фиваида** (short: Фиваида; government: Синод). Machine id `leo83_zion`
+  kept (legacy). Linked to historical actor actors.json id 10 (same community: ark NEW-JERUSALEM-1, first target GJ 667 C c
+  = the legacy systems.json "Ледяная система Ново-Фиваиды"; 2291 target change to 83 Leonis; arrival 3126). Name status
+  CANON via knowledge.py AUTHOR_NAMES; missions.json keeps "Святой Сион" only under retired_aliases. Renamed in world.json,
+  settlements.json, missions.json aliases, political_order.json, world_sites.json, hand Notes (RELATIONS, COLONIZATION_CANON,
+  COLONYCORE_V2, fate.md heading, dossiers, TECHNOLOGY, MINES, EARTH_3126), regenerated lore / html / runtime sites.
+- Design rule (author): Chekhov's gun - every political element carries `player_role` (blocs, non-aligned, province, zone,
+  exceptions, licence, sanctions); political.py check every_element_has_player_role. No secret ruling societies.
+- Jump cores: new licence layer `licences.universal_jump_licence_2850` (holders = world.json jump_technology how=licensed +
+  Sol; non-holders get strategic 4 from Cognium: Citadel, Mecca, Meru, Strife, Freeclans, Karma, Third Hellas, Novo-Thebaid).
+  trade.py flows are now gated by political.py (lab.PoliticalTradeAccess: category per good, level 4 = no flow, markups
+  0 / 5 / 25 / 60 %, end-use-controlled strategic goods exported only by their producer). Result: Cognium cores no longer go
+  to Mecca, Meru, Karma, Citadel, Strife, Freeclans; core resale by non-makers gone; Citadel munitions no longer reach
+  Cognium. industry.py reads the trade core flows (flow_sources) + checks trade_core_flows_legal / _from_makers_only;
+  stolen lineage -> own pirated copies. Southern circle import strategic 1 -> 2.
+  Model limit (not tuned): Mecca makes 15.3 core units/y and consumes them; New India / Maland still buy the bulk from Cognium
+  (legal: 2850 licence holders, "restricted").
+- narcotics: access category civilian_goods; legality stays in trade_goods.legality x hub regime family (legality_layer);
+  lotosite strategic; check controlled_goods_not_military.
+- Sanity: Karma is no longer anyone's >15 % partner (RELATIONS partner narrative + per-actor table rewritten from the new
+  flows; STRATEGIC_DEPENDENCIES "precision from Karma" / "cores for the outcast" rows fixed; Maland / Mecca dossiers fixed).
+  New checks: kern_cannot_sell_strategic_to_citadel, providence_does_not_lift_sanctions, transit_never_strategic,
+  finance_bridge_no_strategic_cap, citadel_civilian_open_strategic_closed, free_belts_military_only_grey, cognium cores only
+  to licence holders, no cores for refusers / copiers, own core makers not licence buyers.
+- POLITICAL_ORDER.md narrative "Как сложился порядок" written (no TODO; no invented exact bloc dates).
+- Runtime audit: GalaxyDatabase (actors/subactors/systems/nodes/routes) is compiled but never loaded (SpaceState / GameServer
+  comments); ownerActor (ActorIds::Player() = 1) is only an opaque same-owner token, never resolved to actors.json (where id 1
+  = Cognium) - latent clash only if the legacy DB is ever loaded. In-game owner / operator labels come from sites_3126
+  (polity 3126). No C++ change, nothing compiled; runtime JSON regenerated with the same shape.
+- Gates: lab --check-dataset / --check-lore, logistics, world_economy, world_sites, political (32 checks), industry,
+  economy_live, ship_designer (21 ships 0 FAIL 39 WARN), lore_md, lore_html (139), calibrate_population - all rc=0;
+  lab.py twice -> sha256 98f58fd0... IDENTICAL.
+
+#### Plausibility pass 2026-11-05 r (on top of 00c55971) - SOURCE + GENERATORS PASS, still PROPOSAL_PENDING_AUTHOR_REVIEW
+- Author decision: Mecca's own jump mathematics -> CANON (world.json jump_technology; knowledge.py follows status).
+  Asymmetry kept: own knowledge and core design, imported precision / electronics / isotopes (trade.py INPUTS).
+- Core capacity: jump_technology.capacity_x (calibrated PROPOSAL): Mecca 2.5, Citadel 2.0. Bloc procurement quota
+  (political_order blocs.*.strategic_procurement, read by trade.py via lab.PoliticalTradeAccess.preferred): Southern circle
+  30 % of member core demand reserved for Mecca, overpay up to x1.6; Citadel pact 85 % for Citadel, x2.0.
+  lab.core_autonomy_scenarios -> lab_state core_autonomy: peacetime Mecca share of the circle's external demand 0.53 (author
+  guide 20-40 %), Cognium cut-off 0.12 coverage, mobilised 0.68 (Mecca civil output -22 %) -> survives. The flow model is
+  path-sensitive here (x2.2: share 0.19, mobilised 0.57 -> fails); kept 2.5 = lowest tested value that survives. Meru: 100 %
+  of imported cores from Citadel, own pirated copies tiny (emergency capability).
+- New data: interim_arrangements (83 Leonis status quo, unstable, outcome UNKNOWN; real lever = Kern operates beacon
+  BCN-045-BR, so the supply corridor is revocable; arbitration seat itself disputed), licence accession (Third Hellas
+  negotiating with conditions; Novo-Thebaid not applying, Synod split), cognium_pool.coordination (collective strategic /
+  dual-use / IP, civilian national), fault_lines per bloc, free-belts risk details, self_interest of Kern / Agora /
+  Providence / Verde / Mecca, sanctions_rule + evasion per measure (dual-use 4 -> 3 for Harmony-Strife, Karma split,
+  Maland-Firmament; full closure needs full_closure_reason).
+- Checks added: political (36): sanctions_realistically_leaky, no_pool_wide_embargo_on_karma, thebaid_kern_interim_open_no_sanctions,
+  newcomers_not_licensed_yet; industry (16): cognium_core_flows_only_to_licence_holders, new_karma_no_strategic_trade,
+  citadel_serial_cores_stay_in_pact, svarog_serial_from_citadel_with_own_copies, mecca_core_technology_own,
+  southern_circle_survives_cognium_cutoff; lore_md --check: check_core_claims (hand-written core-source sentences vs
+  political.py; proven on the old Mecca / New India texts).
+- Narratives fixed (found by the lint or by hand): lalande_mecca (buyers incl. New Karma, monoculture), hd20794_newindia
+  (Citadel cores / main buyer / collapse scenario), gj832_tianhe, eps_eri_harmony, hd69830_verde, lalande_hellas,
+  hd20794_hellas2, delta_pav_karma (cores from Citadel / Mecca); POLITICAL_ORDER story (Mecca quota + mobilisation,
+  Meru-Citadel lever, Kern / Agora / Providence / Verde self-interest, 83 Leonis interim order, Third Hellas accession).
+- Gates: all colonization_lab checks rc=0; lab.py twice sha256 75c06541... IDENTICAL. No C++ change.
+
+#### Acceptance pass 2026-11-05 s - POLITICAL/ECONOMIC ORDER 3126 ACCEPTED / CLOSED
+- Author accepted the structure: canon/political_order.json status = CANON (actors 21, units / province / zone, blocs,
+  non-aligned, access profiles, licence layer incl. accession state, sanctions as now, Kern / Agora / Providence / Verde
+  roles, Southern-circle procurement policy, Citadel pact + Meru dependency, 83 Leonis interim order as the 3126 start
+  state). Kept PROPOSAL: bloc genesis / dates (formed.*). Kept PROPOSAL/model: core_autonomy numbers, capacity_x,
+  procurement floor / tolerance, trade.py shares and volumes, scenarios. Mecca own jump mathematics CANON everywhere.
+- Southern circle: peacetime_share_target [0.2, 0.4] replaced by expected_peacetime_share [0.45, 0.60] (accepted
+  calibration capacity_x 2.5 -> 0.533) + acceptance text; industry checks southern_circle_peacetime_share_in_accepted_range
+  and southern_circle_survives_cognium_cutoff (0.678 mobilised). Texts say autonomy != autarky (Mecca imports precision,
+  electronics, isotopes, equipment).
+- open_questions = [] ; author_unknowns: leo83_crisis_outcome, sol_own_jump_cores (UNKNOWN on purpose).
+- Licence 2850 wording: historical rule (majority of colonies then, except Citadel and New Karma) vs the 3126 holder list
+  computed from world.json (licence basis + RELATIONS text). Harmony-Strife dual-use described as grey (level 3), not closed.
+- Mixed documents: POLITICAL_ECONOMY.md / INDUSTRY_AND_RESCUE.md state "structure CANON, numbers PROPOSAL/model".
+- political.py checks 40 (new: order_accepted_canon, no_open_design_questions, mecca_own_math_canon,
+  harmony_strife_dual_use_grey_not_closed).
+- Runtime smoke: build/EliteGame ninja (assets re-copied); EliteGame --dev-direct-flight with ELITE_DEV_SOL_MAP_SCRIPT
+  (System Map, trade tabs, Detail map) - data loads, no JSON / economy errors; graceful close clean (a [CRASH] in opengl32
+  appears only when the process is killed by timeout). Economy is lazily loaded only by the F8 Trade panel, so the data
+  smoke is in EliteServicePagesCheck §6 (DEV tool, build/headless_server, run from build/): 37 goods, 538 hubs, names
+  New Shanghai / New Mecca / New India / Citadel / Lal Kot / Novo-Thebaid / Firmament found, no retired "Zion",
+  blocs Mecca + New India southern_circle (open), Citadel + Meru citadel_compact, Firmament heavenly_pact,
+  Thebaid nonaligned, Cognium-Citadel licensed, quarantine zone closed -> PASS. Not done: visual check of other systems'
+  owner labels in the System Map UI (the DEV map script works only in the start system Sol).
+- GUARD (technical debt, not a blocker): ActorIds::Player() = 1 collides with historical actor 1 = Cognium in
+  actors.json. GalaxyDatabase is not loaded today; before re-connecting the legacy GalaxyDatabase separate the
+  PlayerActorId / HistoricalActorId namespaces.
+- Gates: all colonization_lab checks rc=0; lab.py twice sha256 fb41f9d4... IDENTICAL; EliteServicePagesCheck PASS.
+- Next task is no longer a political revision (damage B1 missiles miss remains paused, see stage B).
+
+Original order text (summary):
+Full revision of the 3126 political structure: separate ideological bloc / economic integration / technology access /
+sanctions (now mixed in tools/colonization_lab/canon/industry.json); polity 3126 vs historical actor
+(src/assets/data/galaxy/actors.json, ~14 old actors) vs economic unit (~23) vs province / special zone;
+hd40307_firmament = far province of Xin He (economic unit, not sovereign); gj832_gaia_zone = quarantine zone;
+blocs: Cognium pool (tau_ceti_cognium, cyg61_kern, hd20794_hellas2, delta_pav_freekarma), Celestial pact
+(eps_eri_harmony, gj832_tianhe + firmament province), Lalande League (lalande_hellas, gj581_europa, hd114783_hellas3 as
+low-integration associate; hd69830_verde removed), Southern circle (hd20794_newindia, hd40307_maland, lalande_mecca),
+Citadel pact (wolf359_citadel, proxima_outpost), Free belts (eps_eri_strife, gj581_freeclans), Sol separate pole;
+non-aligned (not a bloc; "autarkies" only as a migration label): hd69830_verde, gj876_next, delta_pav_karma,
+leo83_zion (arrives 3126). Access matrix by category (civilian, industrial, dual_use, military, strategic,
+people_finance_data; 0 open .. 4 closed), sanctions as a separate overlay derived from history, explicit special
+exceptions (Kern, Agora, Mecca, Providence, Verde) as data. All new decisions marked PROPOSAL_PENDING_AUTHOR_REVIEW;
+existing author CANON kept. Regenerate lore with the existing generators; sync Notes/Lore/POLITICS/*,
+Notes/Economy/POLITICAL_ECONOMY.md, manufacturers / ship bloc metadata; programmatic listing of polities / units /
+provinces / zones / bloc membership; restore tag first; commit, no push. The user's full text is the source of the
+order - ask for it again if it is not in the session.
+
+### User order 2026-11-05 t - TOPONYMY / ENDONYMS / EXONYMS / HERALDRY - DONE (commit, not pushed)
+- Scope: cultural shell only. Political / economic layer 3126 stays CLOSED: blocs, dependencies, sanctions, licences,
+  population, industrial structure, jump-tech balance and the Southern-circle core maker are unchanged (machine ids too).
+- Naming source of truth: tools/colonization_lab/canon/naming.json (entities by stable id: unit colony / polity,
+  system:<StarAtlas id>, star:<HYG id>, body:..., site:<settlement or runtime id>, place:..., mission:<code>; endonym /
+  formal / exonyms / aliases with kind + valid_from / valid_until / naming_history / verdict KEEP..VERIFY; heraldry;
+  retired_authoring_names). naming.py (reader + resolver + 23 checks) writes the MIRRORS: world.json name / polity /
+  asset names, political_order.json actors ru / government / short, settlements.json, population_history.json
+  author_name, legacy src/assets/data/galaxy/actors.json display fields, runtime src/assets/data/naming/names_3126.json,
+  out/world_3126/naming_3126.json. world_sites.py and economy_live.py resolve site / hub names by id. Pipeline: naming.py
+  --write first (README). lore_md renders CULTURE/NAMING.md, CULTURE/HERALDRY.md, FRONTIER/FORTUNA.md and now refreshes
+  document titles from data.
+- Former Arabic branch removed (author decision): AL-QUDS-1 -> VAKA-MOANA-1 (Pacific Voyaging Compact: Aotearoa NZ,
+  Hawaii, Samoa, Tonga, Fiji, Cook Is., Kiribati, Nauru, Tuvalu, PNG, Solomon Is., Vanuatu, FSM; seabed-nodule royalties,
+  loss-and-damage funds, diaspora bonds). Capital Tauranga / Тауранга (mi: anchorage), polity Te Kāpehu / Капеху ("the
+  Compass", formal Te Whakaminenga o Te Kāpehu), observatory Te Whare Tātai Arorangi, jump mathematics = "etak frames"
+  (science, not myth). Machine id lalande_mecca kept. Dates, population, cohorts, regime parameters, fate kept; regime key
+  scholar_theocracy -> navigator_council (same parameters). Culture vectors gulf_arab / pakistani removed; new
+  pacific_polynesian / pacific_melanesian / aotearoa_nz (PROPOSAL priors). The legacy runtime record of AL-QUDS-1 is not
+  exported (naming.json former_legacy = drop); NEW-HELLAS-1 -> HOMESTEAD-1 (Second Hellas -> Homestead / Хомстед).
+- MODEL CAUSALITY FIX (user decision 2026-11-05, "not 1-3"): the honest Pacific culture vector collapsed Tauranga's core
+  output (peacetime share 0.533 -> 0.0) because capabilities had a direct culture term (0.25 x culture axes) amplified by
+  the cubic comparative-advantage allocation. Rejected (documented): culture tuning, capacity_x tuning (chaotic:
+  0.29 / 0.18 / 0.45), market-order change, labour reservation (input-limited 11.8 cores), removing the culture term for
+  all (Cognium -20 %, Citadel cores 8.2 -> 2.0), culture as a uniform level (Cognium -19 %, Free settlements -33 %).
+  Chosen: industrial capability is a separate state - world.json colonies[].industrial_heritage (9 sectors, capability
+  points; PROPOSAL/model, the sectoral profile of the accepted 9d44bee5 economy, same method for every colony; outposts
+  inherit the owner's). lab.colony_profile: caps = 45 tech + industrial_heritage + 18 endowment + scale + 0.5 bias;
+  culture is the social profile and acts on industry only through history (demography / technology). CAP_CULTURE removed.
+  Result with the honest Pacific culture: drive_cores made Cognium 116.53, Tauranga 16.67, Citadel 8.23; Southern circle
+  consumption Tauranga 16.74 / New India 20.47 / Maland 9.67; external demand 16.83 = Tauranga 8.97 + Cognium 7.86;
+  share 0.533 (in [0.45, 0.60], not hard-coded), cutoff 0.124, mobilised 0.678; every actor's output value within 0.1 %
+  of 9d44bee5. Tauranga bottlenecks: isotopes 100 % imported, electronics 94 %, precision 87 %. The 30 % quota only
+  distributes existing output. Not done: core_maker is still a works-capacity multiplier on the research base
+  (now part of the explicit industrial state, documented), not an installed physical capacity in cores / year.
+- Nordic layer: Citadel / Skjoldborg (nb [ˈʂɔlːbɔrɡ], formal Protektoratet Skjoldborg, ON ceremonial Skjaldborg; RU
+  «Скьольдборг» / exonym «Цитадель»; slang Борг, Щит, the Borg). Wolf 359 local name Ulven (folk etymology of Max Wolf's
+  catalogue). Nyhamn (nn) / Nyhavn (nb registry), Jarnvik / Jernvik, Mjølner arsenal, Gruve 7, Arkivhvelvet, Heimdal
+  vaktstasjon, Bifrost-varden (beacon BCN-003-BR), Toeren (asteroid IS-2). Territory language nordic_pmc -> nb
+  (Novo-Thebaid christian_traditionalist -> en, not ru). Old Norse only ceremonial (check t21).
+- Other corrections: Синь Хэ -> Синьхэ 新和 (old "core / river" etymology rejected; the real county 新和县 noted as VERIFY);
+  Firmament endonym 天垒 (asterism 天壘城); missions 天命一号 / 天命二号 / 天河一号; Tau Ceti 天倉五 kept, local 天仓, capital
+  新上海 / RU Синь-Шанхай (historical Новый Шанхай); Агор-Прим -> Новая Эллада (polity Νέα Ελλάδα, capital Αγορά, free port
+  Σταυροδρόμι); Рестаурос -> Союз Новой Европы (la Restauration, slang «Ресторан»); Вердензальб -> остатки Гайи-Прайм;
+  Уджамаа-Джахи -> Содружество Уджамаа (Jumuiya ya Ujamaa; "jahi" not attested); Сельта-Верде -> Сельва-Верде; Indian
+  endonyms नया भारत, कर्मभूमि, धर्ममण्डल; Novo-Thebaid legacy note fixed ("прежнее название «Святой Сион» больше не используется").
+- Fortuna: Fomalhaut / α Piscis Austrini / HD 216956 / HIP 113368 / Gl 881, Piscis Austrinus / Южная Рыба, 7.70 pc =
+  25.13 ly, V 1.16, A4 V (HYG A3V), 北落師門; colony-era name Fortuna, zh exonym 命運之輪 / 命运之轮 (Mìngyùn zhī lún). Not in
+  the StarAtlas flight catalogue (visible in the sky via HYG). canon/remote_systems.json holds physics; accessibility is
+  computed (superseded 2026-11-05 u: Fomalhaut is now StarAtlas system 61, see below): nearest beacon Gliese 876 (Providence, 11.15 ly), Sol 25.13 ly (max hop 32), outside the 8-ly commercial
+  unbeaconed limit, no beacon / fuel / repair / SAR, exit error x17 vs a beacon pair growing with ephemeris age (3σ 26 372
+  km fresh, 1.9 M km at 120 years), Cobrett round trip 0.36 tank from Providence, 0.81 from Sol (no reserve -> extra tank
+  or cache). Lexie / Лекси / 柏辛 / Bǎixīn = body:fomalhaut.lexie (spelling corrected by the user to Lexie), naming history
+  AUTHOR_UNSPECIFIED; PROPOSAL physics 1.3 M⊕ at 4.4 AU, 0.86 S⊕, ~283 K, oceans, N2/CO2 1.4 bar, not breathable;
+  compatible with JWST / RV limits; no reward, no resource.
+- Runtime: EconomyModel HubEconomyInfo gets `actor`; EliteServicePagesCheck §6 finds hubs by actor id and compares owner
+  names with names_3126.json (province hubs run under their actor) -> PASS.
+- VERIFY (open): 盛和, 新和 vs 新和县, Shanghainese 上海, Maland origin + Maland Mpya, Skjaldborg heldr, skjoldborgere,
+  Toeren; Russian ship names of non-Russian makers (Б-4 «Сокол», C-120 «Конвейер», Хэ-С240 «Тыловик», HT-20K «Мул») live in
+  the render model registry - outside this pass; Fomalhaut as a flyable system needs EliteUniverseGenerator +
+  navigation-cell regeneration - outside this pass.
+- Gates: all colonization_lab checks rc=0 (naming 23/23, political, industry, lore_md, lore_html 142, calibrate_population,
+  check-dataset, check-lore); lab.py twice IDENTICAL (sha256 f59e9182...); EliteServicePagesCheck PASS.
+
+### User orders 2026-11-05 u (Fomalhaut system on the maps, Lexie generated) + v (final naming / political-economic cleanup after 51e9aacc) - DONE (one commit, not pushed)
+- POLITICAL / ECONOMIC LAYER 3126: CLOSED / ACCEPTED. Structure = CANON (political_order.json); numeric simulation and
+  calibration = PROPOSAL/model. Further changes only for a new gameplay need or a factual error.
+- Fomalhaut is FLYABLE-CATALOGUE data, not world-data-only: StarAtlas local system id 61
+  (src/assets/data/galaxy_details/systems/061_fomalhaut: system.json with observational_reference, stars/fomalhaut.json,
+  observed/planet_lexie.json), materialised by EliteUniverseGenerator (16 bodies + debris disk = ALMA main ring
+  136.3-149.8 au; stability PASS; no planet > 1 M_Jup; Lexie at 4.4 au, 1.3 M_E, 262-299 K, plate-tectonic continents,
+  surface ocean, N2/CO2 1.4 bar, not breathable, preset terrestrial_temperate), atlas_visible + route_target, position = HYG
+  HIP 113368 (merged with the sky star, no duplicate), localization world/star_systems/fomalhaut.json (Лекси / 柏辛).
+  Interstellar cells unchanged (Fomalhaut already inside the navigation domain); generator determinism 62 systems, 0 differ.
+  EliteServicePagesCheck §7 loads StarAtlasDatabase: 61 local systems, Fomalhaut on the maps, Lexie present -> PASS;
+  client --dev-direct-flight loads with no catalogue error. NOT done: a live jump to Fomalhaut and a visual check of the
+  Galaxy / System map. canon/remote_systems.json removed (physics now in the catalogue, one source); naming ids
+  system:61 and body:system_61.Fomalhaut.Lexie.
+- Endowment scale fix: endowment.py ranked resource indices over all catalogue systems, so adding an empty system moved
+  every colony (Tauranga share 0.533 -> 0.331, off-Sol population -2.4 %). Now ranks are taken against a fixed reference
+  set (canon/endowment_scale.json: the 60 systems of the calibrated catalogue); later systems are placed on that scale.
+  Economy, colonies and demography are byte-identical to 51e9aacc.
+- Lexie spelling: no `Lexi` anywhere (check t16b).
+- Former AL-QUDS semantics removed: legacy actors.json id 7 ideology / culture / description / tags mirrored from
+  naming.json polity.legacy_actor_profile (navigator council, Pacific navigation science); political_order texts and the
+  Tauranga dossier no longer say "учёная теократия"; population_history story rewritten; legacy GalaxyDatabase
+  nodes / routes / systems.json (Аль-Нур, Ан-Нур, Космический Халифат, Расад ат-Таухид, retired polity names) fixed;
+  TRADERS-GUILD-1 crew "один грек и один таурангец".
+- Type of power vs social-religious law: law family key theocratic -> religious_law (same parameters; still used by the
+  real theocracies New Karma and Novo-Thebaid). navigator_council defaults are neutral (law customary_council, goods strict,
+  family policy neutral, REGIME_FAMILY technocratic); Tauranga's religious-conservative law is the explicit colony field
+  world.json lalande_mecca.law_policy {law_family religious_law, goods_policy faith, family_policy faith} read by
+  world_sites, industry, economy_live, world_economy and demography. Outputs unchanged.
+- VAKA-MOANA-1 motives from the new dossier: civilisational_insurance 0.45, prestige 0.2, scientific_vanity 0.2,
+  religion 0.1 (church communities as the recruiting network, not the reason), ideology 0.05; elite_capital_flight
+  removed; the 2185 fono raises patricians + scientists (not "faithful"). Voyage regime tendency is now "олигархия".
+  Demography unchanged (colony culture uses cohort shares, not power).
+- Retired-name ban is entity-aware: unique names of the retired colonial entities banned anywhere in the display layer;
+  contextual words (Мекка, исламский, халифат, улем...) banned only next to a current Lalande entity and in any current
+  entity name; real Mecca / the Islamic world of Earth history allowed (Europa motive text restored). Probes both ways (t07b).
+- industrial_heritage: field_status status PROPOSAL/model, generated by knowledge.py (t26); culture does not set it (t19b).
+- Gates: colonization_lab all checks rc=0, naming 29/29 (t07b, t16b, t24, t25, t26, t27 new), lab.py twice IDENTICAL,
+  Southern circle 0.533 / mobilised 0.678 / cutoff 0.124 (= 51e9aacc), EliteServicePagesCheck PASS (economy by id +
+  atlas), EliteGalaxyPointerCheck / EliteMapPointerCheck / EliteNavigationCapabilityCheck PASS, universe generator
+  determinism PASS. CI: the repository has no CI configuration (.github/workflows absent); all results are local.
+- Semantic grep (AL-QUDS / Мекк / Mecca / араб / ислам / теократ / theocr / улем / халифат / caliph): remaining hits are
+  (a) the rule lists themselves (naming.json retired_authoring_names, naming.py checks), (b) real theocracies (New Karma
+  caste_theocracy, Novo-Thebaid synod_theocracy, Gaia legacy actor, AMAZONIA voyage tendency), (c) Earth history
+  (Europa "исламский мир"), (d) machine ids lalande_mecca / mecca_farms kept for compatibility, (e) dated archives
+  (PROJECT_STATE history, LEGACY_HISTORY_IMPORT), (f) unrelated substrings (барабан, заработок, font files).
+
+### User design decisions 2026-11-05 w (jump mechanics, space warfare) - DESIGN ACCEPTED, NOT IMPLEMENTED
+- Documents (repo root): SPACE_WARFARE_DOCTRINE.md (analysis of space sims / SF / strategy articles mapped onto the 3126
+  world: no cover -> ambiguity instead of stealth, war for nodes (beacons, depots, yards), logistics first, doctrine
+  groups by bloc; PROPOSAL) and JUMP_MECHANICS.md (the accepted jump / J design).
+- Accepted by the author: one decoupling field, three regimes (main drive, J, jump); J cap 0.8-0.9 c and J acceleration
+  up to ~1e5 g (inner system <= 1 h); in-system short jumps along system beacons / green corridors to the outer planets;
+  no beacon = lottery (exceptions: local smuggler knowledge, pirate beacon frequency + cipher, old self-propelled
+  beacons); administrative zones red / blue / green with the transponder rule (on -> automatic fine, off -> police);
+  automatic velocity sync to the local frame on exit (small residual error, planner hint, no autopilot); two planners
+  (visible promise + hidden server-side deterministic result, honest 3 sigma along beacons).
+- Author answers (same day): the star catches both interstellar and in-system jump steps (in-system jumps route around
+  it via waypoints); the jump is instantaneous (screen ripple, new sky; HYPERION-1's 3 days = charging + in-system
+  flights); charging is not visible, but the jump itself gives a detectable burst at departure AND arrival (place and time, not the destination; detection range always matters); a sump capture hides the real arrival - no burst there, but a "ghost" arrival burst appears at the intended destination; J is never mandatory; J and jump are forbidden near ANY object, a beacon included
+  (fly away first). Still parameters: star capture radius (inner planets must stay reachable), keep-out distances by
+  object mass / size, L4/L5 safety (default: natural, a beacon improves precision).
+- Next (not started): implementation slices - data (sumps / jump limits / medium currents from the catalogue), visible
+  planner, hidden server roll, exit sync, zones + transponder, J cap / acceleration / energy accounting.
+
+### User order 2026-11-05 x - J drive slice 1 (cap, acceleration, keep-out) - CODE + LIVE MOON RUN
+- src/game/simulation/JDrive.h: J figures - max acceleration ~1e5 g (980 665 m/s2, autopilot and route), speed cap
+  0.9 c against the J reference body (autopilot / route setpoints and a hard clamp on every J flight), keep-out 20 km
+  around hubs / stations / beacons (m_hubNavigationFrames) and 5 km around other ships: inside it no J field - a gentle
+  push (<= 1 g, <= 300 m/s against that object) out first; the drive ramp (1 g doubling every 2 s) restarts outside.
+  Route: the departure-hub boundary generalised to the keep-out; hub arrival aim moved to 25 km (outside the keep-out,
+  inside the 50 km capture). HUD: refusal code 3 "J-поле не работает рядом с объектами".
+- LIVE (build/EliteGame --dev-direct-flight, ELITE_DEV_SOL_MAP_SCRIPT 8:freeflight;10:autopilot:moon, D:/tmp/elite_j10):
+  gentle 1 g / 300 m/s out of the Earth Orbital Hub keep-out (~48 s), ramp from 1 g outside, full 980 665 m/s2 at
+  ~t+80 s, peak ~14 700 km/s, transfer ~130 s, descent, LANDED on the Moon after 242.9 s (1.42 m/s vertical).
+  NOT yet: a flight long enough to hit the 0.9 c cap (Earth -> Mars), full test suite, energy accounting.
+- AUTHOR CORRECTION (same day): J must end at an ORBIT point; descent, landing and the climb to orbit go on the MAIN
+  ENGINES - otherwise "no J near objects" contradicts landing on J. Bodies were left out of the keep-out in this slice
+  (the J landing still flies the 40 m/s2 J descent). Next slice: a J floor per body (proposal: max(top of the
+  atmosphere + 50 km, 0.05 R, 50 km): Earth ~320 km - LEO hubs at ~420 km stay above it, Moon ~90 km, Mars ~170 km);
+  body autopilot = J to a parking orbit above the floor -> J off into the ballistic frame -> landing / ascent on the
+  ship's real main engines (needs the landing module on the main-engine flight path, outside J).
+
+### User order 2026-11-05 y - J floor, landing from orbit on the main engines - CODE + LIVE MOON RUNS
+- J floor per body (JDrive.h floorAltitudeM = max(atmosphere top + 50 km, 0.05 R, 50 km); Moon 86.87 km): below it no J
+  field - the autopilot flies on the ship's own main engines (mainEngineAccelMps2: forward main-engine acceleration,
+  legacy fallback the linear g envelope): a thrust-axis lander (acceleration = velocity error / 1 s + gravity
+  compensation; the nose turns toward it at the hull's own pitch rate; thrust = its projection on the nose, within the
+  real thrust) - tail down while hovering. Leaving a body below its floor: a straight 400 m/s climb against it first.
+- Landing checks at engage: main engines >= 1.3 x surface gravity (land AND take off again), else REFUSED (HUD code 5);
+  a body with an atmosphere takes only class surface_lifter (HUD code 6). Route orbit legs are raised to the floor.
+- Landing sequence (author: "по касательной на орбиту, стабилизироваться, садиться с орбиты"): J to a circular
+  parking orbit at the floor, in the plane of the approach and the site, the main-engine braking distance before the
+  site (insertion tangential; close to the orbit the aim is the nearest point of the orbit circle - a fixed point
+  had an equilibrium 6 s x v_orb short of it); J off, 15 s coast; de-orbit and landing on the main engines.
+  LandingAutopilot takes the real authority (braking profiles scale with authority - gravity) and the hull half height
+  along the vertical; ground contact uses the hull projected on the vertical (tail-down legs).
+- J transfer attitude: the nose along the velocity against the target (prograde) instead of at the target centre
+  (user: "нос болтается"); main-engine pointing ignores per-tick noise.
+- LIVE (D:/tmp/elite_j10): orbit3 - ON ORBIT 86.98 km at 1638.95 m/s (circular 1638.9), coast 15 s, de-orbit,
+  LANDED 524.9 s, contact 1.73 m/s vertical / 0.13 m/s horizontal; orbit4 (insertion tolerance 5 m/s) - ON ORBIT
+  86.89 km, vertical -5.2 m/s. Earlier failures recorded: floor2 hard contact 18.4 m/s (per-tick axis projection of a
+  deadbeat servo wasted thrust sideways - replaced by the thrust-axis lander); orbit/orbit2 hung ~10 km short of a
+  fixed insertion point at ~5 m/s (fixed by the orbit-circle aim).
+- NOT done: atmospheric (aircraft-mode, corridor) landing for shuttles; take-off from the surface to orbit not flown;
+  belly-down landings / lay-down and stand-up of a hull (author question - analysis in the reply); 0.9 c cap not hit
+  live; full test suite; J energy accounting.
+
+### User order 2026-11-05 z - belly-down landing along the surface - CODE + LIVE MOON RUN
+- Author: "посадку не кормой, а в обычном режиме и плашмя, двигаться вдоль поверхности". At engage the ship's ventral
+  thrust (newtonianRcsPositiveMps2.y, else manoeuvreThrusterAccel, else strafeAccel) >= 1.3 x surface g selects a
+  BELLY-DOWN landing (f.bellyLanding), else tail-down as before. Belly-down: hull level, ventral thrusters hold the
+  weight, the main engine along the nose brakes / drives along the surface (retrograde heading above 30 m/s horizontal
+  unless a reverse engine exists), side thrusters trim; a weight the ventral thrusters cannot hold pitches the nose up
+  (<= 0.7 rad) so the main engine takes the rest. LandingAutopilot glide path: cruise height
+  min(max(cruise, 10 x |v_h|), max(30 m, 0.15 x distance)) - the approach comes down along the surface.
+- LIVE (D:/tmp/elite_j10/belly2): BELLY-DOWN chosen (ventral 7.5 g vs 0.165 g), ON ORBIT 86.89 km, DE-ORBIT 217 s,
+  LANDED 534.2 s, contact 1.57 m/s vertical / 0.08 m/s horizontal, slope 4.1 deg. Failure recorded: belly1 fell back
+  to tail-down (the dev ship's descriptor has no per-axis RCS telemetry -> ventral 0; fixed by the strafe fallback).
+- Known gap (author remark "400 м/с как в обычном режиме, а ты пользуешься J"): de-orbit and landing still run inside
+  the J autopilot container; moving them to the normal flight mode (real Assisted / Newtonian laws) is a later step.
+
+### User order 2026-11-05 aa - Moon visuals (craters visible from far, no hard terrain switch) - CODE + PLANET LAB
+- Diagnosis (Planet Lab captures, new views mid_space 3 R, pre/post_terrain 0.65 / 0.55 R, low_globe 0.30 R,
+  terrain_on 0.15 R): Elite style showed a black disc with a rim (fixed 1.33 km contours faded by the anti-moire
+  fwidth fade), then contour noise of the 8-bit real height map ("ущелья"), then at 0.6 R the local terrain switched on
+  abruptly with a grid and polygonal, coarser relief (its outer rings run 11-22 px per cell; the 1024 globe is finer).
+- ImportedSurfaceField, cratered bodies (AirlessRocky / Icy with imported maps - the Moon): the real height map is kept
+  only as the macro shape (4x down-sample + gaussian sigma ~110 km: basins and maria); CraterLayer craters now span
+  0.03 R (52 km radius on the Moon) down to 1.5 m at every band limit; complex craters (D > ~15 km) shallower
+  (d ~ 1.04 km x D_km^0.3); the dark maria hold 0.2 of the highland density (albedo, tabulated on a 48^3 direction
+  grid). Albedo stays the real map. Server and client share the loader - the same relief (landing heights change).
+- Elite shader (cratered bodies): contour lines only where the slope > ~4 deg (crater walls, not basin slopes);
+  per-pixel nested power-of-two spacing so lines stay >= ~7 px apart (craters readable from 4 R).
+- LocalTerrain: activation below the altitude where its nadir cell is half the globe texel (Moon ~0.25 R instead of
+  0.6 R), and no terrain level coarser than the globe texel - beyond its footprint the globe shows.
+- Results (D:/tmp/elite_moonvis/after7, after8): cratered sphere at 4 R, 0.65 R, 0.3 R; terrain takes over seamlessly
+  near nadir. Cost: the 1024 globe bake ~10 s instead of ~1 s (big craters sampled at globe scale; async, the 512 tier
+  shows meanwhile). Pre-existing, not fixed: staircase contours on the terrain mesh close in; Modern style soft at near
+  orbit (magnified globe). Planet Lab --check: 1 FAIL "rocky coastline landmark id changes 3443" - identical without
+  these changes (baseline red, procedural body). EliteServicePagesCheck PASS (run from build/).
+- (see bb below for the normal-flight landing that followed)
+- LIVE on the new relief (D:/tmp/elite_j10/moonvis): BELLY-DOWN, ON ORBIT 86.89 km, LANDED 526.7 s, contact
+  1.45 m/s vertical / 0.09 m/s horizontal, slope 4.6 deg. Author visual acceptance of the Moon in the game: PENDING.
+
+### User order 2026-11-05 bb - landing in NORMAL flight (J off on the parking orbit) - IN PROGRESS, PAUSED BY THE AUTHOR, NOT COMMITTED
+- Author: "у тебя скорость 400 м/с как в обычном режиме, а ты пользуешься J"; "переводи посадку в обычный режим полёта".
+- Code (uncommitted, builds): J ends on the parking orbit; J-off below a body's J floor = BODY FRAME (travel frame moves
+  with the ground under the ship, local velocity = velocity over the ground, server folds law motion + gravity and
+  splits each tick; contact / rest / lift-off shared with J); landing virtual pilot SurfaceLandingPilot.h emitting
+  ordinary controls of the ship's NATIVE law (Assisted: level hull, target speed via +/-, lift input; Newtonian: main
+  + per-axis RCS + attitude); pilot controls override the input before the flight step; the J-container descent
+  (old phase 4) deleted; manual J-off below the floor also enters the body frame. DEV trace ELITE_DEV_BODY_TRACE.
+- LIVE failures (D:/tmp/elite_j10/normal1..7), root causes:
+  normal1/2: Newtonian tail-down pilot, nose ~17-57 deg off, horizontal never < 2 m/s -> module never left Transit;
+  normal3: CRASH 673 m/s - the pilot FORCED the Newtonian law on an Assisted plant (dev ship): main requested 73.5,
+  delivered ~0 (author saw HUD "control Newtonian, engine group Assisted", sideways); fixed: the native law only;
+  normal4: Assisted pilot, retrograde/prograde nose flip at 30 m/s horizontal (~110 deg swings); fixed: nose along the
+  needed horizontal velocity change, blended;
+  normal5: at the 500 m/s controlled envelope the law admits no speed-growing thrust -> engines 0, falling; fixed:
+  wanted velocity capped at 0.9 x envelope;
+  normal6: stable, but cruises ~400 m/s at 55-65 km for 500+ s without reaching the site (distance not logged);
+  normal7 stopped at the author's request.
+- Author (2026-11-05): an ARCHITECTURE bug found - without a hub, J-off loses the velocity reference (relative speed
+  0) while J flies against the body; the author is deciding how to resolve it. Open contradiction raised: orbital
+  speed (1639 m/s) vs the 500 m/s normal-flight envelope (options: orbit legitimate in normal flight / orbit = J only).
+- Next: wait for the author's architecture decision; nothing accepted.
+
+### Author decision 2026-11-05 cc - flight architecture: engines, flight modes, velocity references (replaces the bb frame design)
+- ONE physics (global state, star systems at rest in our 0). Modes change only what is called ZERO velocity (HUD,
+  the Assisted reference, the envelope), never the motion; a reference switch gives no impulse (Assisted re-captures
+  its target as the current velocity in the new reference; the nose is not slewed by the switch).
+- Engines: normal (~7 g) / J (huge g) - J becomes an ENGINE SWITCH only; + the jump. References switch AUTOMATICALLY.
+- Velocity references: (1) interplanetary/interstellar - global; (2) inside a body's sphere of influence
+  (r = a (m/M)^0.4, smallest containing sphere, hysteresis) - relative to the body; (3) STABILIZATION - holding a
+  reference trajectory: a ballistic orbit point, a hub (its orbit), or a point on the surface (rotates with the body;
+  thrust holds it against g) - surface = a kind of stabilization reference, not a fourth frame. The HUD names the
+  reference (SPACE / body / ORBIT / GROUND / HUB).
+- Flight modes: NORMAL (no speed limit) / STABILIZATION (current velocity = 0, manoeuvres within the 500 m/s envelope;
+  the author keeps 500: combat comfort, manoeuvres in a bounded volume around the reference; with a hub as the visual
+  reference neither fall nor escape; without one the ship may fall / escape - known, accepted). Stabilization turns
+  on automatically on a closed orbit (periapsis above surface / atmosphere, inside the sphere, no thrust for N s) + a
+  STABILIZATION ON/OFF button. Without stabilization the 500 m/s are not a limit (orbit = 1st cosmic is legitimate).
+- Assisted under gravity: the target velocity follows the BALLISTIC continuation (falls with g) - with no input the
+  ship follows its orbit, thrust only for the pilot's commands; on a surface reference it holds against g. Assisted
+  rule: main thrust along the current velocity of the active reference; Backspace = partial Newtonian without '+'.
+- Landing goals: (a) wild landing (soil sample, rescue): AUTOMATIC only - the autopilot picks a flat spot from the
+  terrain field (author: a map click cannot find a pad at map scale); (b) settlement: a map mark (surface sites already have lat/lon in WorldSitesCatalog), a generated
+  settlement by conditions (airless body / asteroid: underground entrances, 2-3 small domes, antenna, pad; asteroid:
+  a passage in the rocks + pad), deterministic on server and client from one source; "land" -> the ship finds the pad,
+  or the player clicks the map. Orbit insertion phased by the J autopilot: the plane through the site, the insertion
+  point upstream of the site by the descent arc (site position at landing time) - no waiting for the site to come under.
+- Next: slices 1 reference selection + J as an engine switch + HUD label; 2 Assisted ballistic rule, envelope only in
+  stabilization, button + auto-on; 3 landing over these (map point / flat spot); 4 site-phased insertion; 5 settlements
+  (marker, generation, pad). The uncommitted bb body-frame code is reused as the surface reference; nothing accepted.
+- (2026-11-06) J keep-out rule (author): the J engine switches on only well away from other objects; else refused.
+
+### Slice cc-1 2026-11-06 - J engine switch, stabilization switch, velocity references on the HUD - LIVE CHECKED, NOT ACCEPTED
+- Code: motion.jEngine + motion.velocityReferenceKind (0 hub, 1 space, 2 body, 3 orbit, 4 ground; wire schema 35);
+  commands ToggleStabilization (Ctrl+K, was ToggleFreeFlight) and ToggleJEngine (Ctrl+J, appended); server
+  toggleStabilization / toggleJEngine / jEngineBlocked (JDrive.h keep-out 20 km objects / 5 km ships, every body's
+  J floor) in GameSimulationFreeFlight.cpp. Normal flight = the old free flight; stabilization = hub capture / ground
+  (below the J floor AND within 500 m/s over the body - new speed check) / own ballistic frame. The J engine = the J
+  field along the main-engine thrust (1 g doubling every 2 s, x command; the END brake clamped at zero vs the
+  reference); it drops out on entering a keep-out / below a floor (refusal 3 / 4), refused at engage (7 / 8). The
+  Assisted velocity bending by the J field now only with the J engine on. Automatic stabilization: armed by the J engine
+  going off, a new sphere of influence or the orbit closing; fires after a 5 s coast (no thrust / input) on a closed
+  orbit with periapsis above max(safe altitude, ground + 1 km); disarmed when the pilot leaves stabilization or the
+  autopilot engages. HUD banner for normal flight (engine, speed vs space / body), orbit and ground stabilization
+  (manoeuvre speed, 500 limit, "no hub reference"); refusals shown 6 s even in a hub frame; flight vector "J " only
+  with the J engine. DEV script verbs: stabilization, jengine.
+- LIVE (D:/tmp/elite_cc1 run1-3, Earth hub): J refused at the hub (10 / 14 km < 20 km) PASS; Ctrl+K -> normal flight
+  PASS; J engine ramp 2 -> 4 -> 8 -> 16 g on HOME, END brakes with J PASS; J dropped by ship 10 (ship_travel_10, a real
+  hub ship at 4 km) - correct; automatic stabilization after the J drop and a 5 s coast on the closed orbit PASS;
+  manual Ctrl+K -> orbit stabilization PASS; HUD banners seen on screenshots (normal / orbit), the long key line was
+  cut at the right -> texts shortened (not re-shot).
+- Not run: the compiled contract tests (wire round trip for schema 35) - not built in build/ (separate project).
+- Open: the landing autopilot still ends J with enterBodyFrame (phase 9 -> 10, bb) - slice 3 rewires it; the J autopilot
+  ignores motion.jEngine (it owns its drive); a manual J at 0.5 c into a keep-out drops J with the speed kept.
+- Startup blocker found and fixed (not of this slice): FE-30 (fb5baf57) put the jump core / jump-charge tank (36A5 /
+  37A5) into the Cobrett passports but not into the runtime - the Cobra descriptor's passport validation threw inside
+  ObjectDescriptorRegistry's call_once on the client thread; under MinGW winpthreads the once stayed locked and the
+  server thread waited forever (loading screen at 25 %, ~0.5 s CPU). Fixed: passive modules ship_jump_core /
+  ship_jump_charge_tank in EliteCobraMk1.cpp, products um.core.z05 / std.tank.jumpcharge
+  (src/game/catalog/jump/JumpSystemPassports.h, ProductCategory::JumpDrive, data from ship_catalog_3126.json) in
+  CatalogRegistry. Lesson: an exception inside that call_once hangs the game instead of failing.
+- Next: slice 2 is mostly in place (envelope only in stabilization, Assisted ballistic in normal flight); then slice 3 -
+  the landing over the new modes (J to the orbit -> stabilization -> normal flight de-orbit -> ground stabilization).
+
+### Slice cc-3 2026-11-06 - landing over the new modes - LIVE: 2 of 2 soft landings on the Moon, NOT ACCEPTED (author)
+- Chain: J autopilot to the parking orbit at the J floor (86.8 km, 1639 m/s) -> phase 9 orbit hold 15 s (normal flight
+  without thrust = ballistic; HUD "на орбите (стабилизация)") -> phase 11 DE-ORBIT in NORMAL flight -> HAND-OVER ->
+  phase 10 GROUND STABILIZATION (body frame, 500 m/s envelope) -> touchdown by the landing module (Transit / Descent).
+- Phase 11 (updateNormalDescent, GameSimulationFreeFlight.cpp; pilot flyNormalFlightThrust, SurfaceLandingPilot.h):
+  ordinary controls only - the hull points the wanted acceleration, '+' = main along the nose, gated by the alignment
+  (cos 20 -> 4 deg; under thrust the hull turns slowly, crew jerk limit). Wanted velocity over the ground: toward the site
+  min(sqrt(2 0.35 a_main arc), arc / 15 s, circular speed), down along a glide reaching 1500 m as the arc closes (tgo),
+  never down below 800 m; a = horizontal err / 4 s + vertical err / 3 s + g - v_h^2 / r, the vertical first within
+  0.95 a_main. Hand-over: arc < 3 km, < 80 m/s, height < 2.55 km (or < 600 m and < 450 m/s).
+- Phase 10 terminal, Assisted plants: the pilot puts Assisted into the Backspace mode (assistedFreeRotation: no speed
+  servo, keypad axes = vectoring-main accelerations) - flySurfaceLandingVectoring: hull level belly down, nose to the
+  site, per-axis velocity hold against gravity (tau 2 s horizontal, 1 s vertical); released when the pilot stops.
+  Newtonian plants keep flySurfaceLanding.
+- ROOT CAUSE found (also behind bb normal1..7): the body frame folded / split WORLD vectors into the local velocity
+  directly while the frame kept the hub's localToWorldBasis inherited at the normal-flight start - the laws saw a
+  rotated velocity (land2: the terminal pilot pushed away from the site to 490 m/s, envelope cut, CRASH 82 / 495 m/s).
+  Fixed: enterBodyFrame sets an identity basis (the frame is non-rotating; local == world).
+- LIVE (D:/tmp/elite_cc1): land1 FAIL - de-orbit good (hovered over the site at 4 km, 69 m / 5 m/s), the old Assisted
+  terminal pilot ran away (speed servo along the rotating nose, 170 m/s) then circled 20-50 m up for minutes; also the
+  descent first accelerated (wanted 2032 > 1639 m/s) -> capped at circular speed. land2 CRASH (the basis bug above).
+  land3 PASS: LANDED vertical 1.45 m/s, horizontal 0.12 m/s over the ground, regolith, slope 2.4 deg, 575 s.
+  land4 PASS (repeat): LANDED 1.45 / 0.13 m/s, slope 2.2 deg, 575 s; hand-over 1.95 km, 69 m, 80 m/s in both.
+  Screenshot (terminal): banner "СТАБИЛИЗАЦИЯ НАД ГРУНТОМ Луна - скорость над грунтом", autopilot panel "к площадке".
+- Open: the terminal module measures velocity against the body centre (the Moon's turn 4.6 m/s shows as horizontal
+  speed; contact uses the ground); the hand-over arrives at ~150 m/s vertical (h/4 profile) - steep but within the
+  envelope; tail-down vs belly-down: phase 11 flies tail-down (nose = thrust), the terminal belly-down; Newtonian
+  plants, a body with faster rotation, an atmosphere (shuttle corridor) and the take-off not flown yet.
+- Next: the author's in-game check of the landing (PgDn on the Moon); then slice 4 (site-phased orbit insertion).
+- Author 2026-11-06: "корабль при посадке проваливается под грунт". Diagnosis: the server stood the hull on the field
+  sampled at a 30 m band (GameServer::terrainHeight) while the rendered terrain near the ground shows it down to ~1 m
+  (finest level 0.25 m spacing; CraterLayer to 1.5 m) - small craters, rims and ejecta were above the server's ground.
+  Evidence (land5): with ~1 m detail the site search saw roughness 3.6 m (0.9 m on the 30 m relief) and picked another
+  site; at contact centre 3009.88 m vs 3011.32 m (30 m), the footprint max 2.2 m above the centre. Fix: the ground
+  height at the rendered detail (band 1 m), slope / appearance on the 30 m relief, TerrainSample::smoothHeightM for
+  the contact log; footprint + 4 corners (the 26 m wide Cobra). land5: LANDED 1.57 / 0.06 m/s, slope 3.4 deg.
+  The visual result (no sinking) is NOT checked - the author's look in game is the gate.
+
+### Slice cc-5a 2026-11-06 - landing at a settlement: pads in the terrain, "site:<id>" autopilot - LIVE 1 of 1, NOT ACCEPTED
+- Author: "что дальше - посадка возле поселения". Data: the Moon's surface sites in WorldSitesCatalog (Шеклтон -89.6 /
+  129.0, Имбриум 32.8 / -15.6; the map and the autopilot share the lat / lon -> body direction convention).
+- src/world/celestial/settlements/SurfaceSettlementLayout.h (header-only, deterministic from the site id / population /
+  body radius): airless bodies - an entrance at the catalog point, 2-3 domes 75-125 m out, an antenna mast 120 m, pads
+  in a row along the settlement axis from 320 m (1 / 2 / 3 by population); small bodies (< 400 km) - a rock passage and
+  pads from 150 m. Player role: the pads are where the player lands (trade / missions / rescue), the structures mark the
+  settlement from the approach. The catalog is loaded once (call_once, never throws out of it).
+- src/world/celestial/surface/SettledSurfaceField.h: the field decorator - flat discs (the 30 m relief at each centre,
+  smoothstep blend 0.8 r, min 25 m) under the pads and footprints; applied once in loadBodySurface (the ONE field of the
+  renderer and the server), airless bodies only (surface pressure < 100 Pa: Earth would have got 52 domed settlements).
+- Autopilot: landingSpec "site:<catalog id>" -> the body from the catalog, LandingMode::Pad on pad 1; engaging from a
+  hub leaves the stabilization itself; the departure body is set at once (was empty when engaged from a hub). Map: O on
+  a surface settlement = land there. DEV: autopilot:moon@site:<id>. "BELOW THE SURFACE" now against the sampled terrain
+  (a mare lies below the reference sphere - Imbrium's pad at -506.6 m logged it falsely).
+- LIVE site1 (Имбриум from the Earth hub): pad checked from 173 979 km (roughness 0 m, slope 0.93 deg), orbit 240 s,
+  hand-over 1.95 km / 58 m / 80 m/s, LANDED 1.52 / 0.14 m/s, 0.045 m from the pad centre, 632 s. site2 (short): only the
+  Moon gets settlements; Шеклтон pad 1 chosen, departure = Earth. Not flown: Шеклтон (polar) to touchdown.
+- Next: slice cc-5b - the structures rendered on the surface (pad with markings / lights, entrance, domes, antenna),
+  then the author's look; small bodies; atmosphere styles.
+
+### Slice cc-5b 2026-11-06 - settlement structures rendered; terrain drawn at its true height in lowlands - NOT ACCEPTED
+- src/world/celestial/settlements/SettlementMesh.h (CPU, no GL): from the layout - pads (concrete disc, yellow ring,
+  "H", number bars, 12 rim lights), the entrance (apron, metal arch with a dark opening, portal frame, lights), domes
+  (base ring, spherical cap, airlock), the antenna (mast, tilted dish, red top light), a rock passage (small bodies);
+  body-fixed relative to the settlement anchor, on the field's flat footprints, 1 m into the ground; albedo > 1.5 =
+  emissive (the mesh shader shows albedo - 2 unlit; asteroids unaffected). Renderer: built once per body when its
+  field is ready (airless only), drawn with the mesh program after the nearest body's terrain within 250 km (Elite
+  style fill + lines), and in the ships' near-pass depth within 20 km (settlementDepth program). ~6.5-7.3k vertices each.
+- Author 2026-11-06: "все объекты ниже уровня земли метров на 20-30". ROOT CAUSE: LocalTerrain drew every land sample at
+  max(height, waterLevel + 0.5) - an airless field reports water level 0, so every lowland below the reference radius
+  (maria, crater floors; Imbrium -506 m) was DRAWN lifted to +0.5 m while the server (and the ship, and the structures)
+  stood on the true height. Fixed: the lift only in the shoreline band (coastM < 400 m). Captures st_675 / st_690
+  (before: the terrain grid above the pads and the ship) vs st2_600 / st2_615 (after: the pads and the ship on the grid).
+  This may also be the author's earlier "проваливается под грунт" when landing in a mare / a crater.
+- LIVE st2 (Имбриум): LANDED 1.52 / 0.14 m/s, 3.7 cm from the pad; captures by the game's own back buffer
+  (ELITE_DEV_FRAME_CAPTURE), not screen grabs. The entrance / domes / antenna not in the captured views (not yet seen).
+- HUD: phase 11 shows "МАРШЕВЫЕ АВТОПИЛОТА" (was "J-ПРИВОД АВТОПИЛОТА").
+- Next: the author's look in game (structures, lowland terrain); Шеклтон (polar) landing; small bodies; styles for
+  bodies with an atmosphere.
+
+### Slice cc-5c 2026-11-06 - Шеклтон (polar, lat -89.6) settlement landing; ground slope under the hull - NOT ACCEPTED
+- Author: "давай посадку на Шеклтон проверим". LIVE sh1 (autopilot:moon@site:site.000.sol.shackleton): J to the
+  parking orbit 86.9 km / 1639 m/s at t+194 s, 15 s hold, de-orbit in normal flight (near-vertical over the pole),
+  hand-over at 1947 m / 0.56 m from the site / 79.8 m/s, LANDED t+564.7 s, 1.53 / 0.10 m/s, 2.6 cm from pad 1, ground
+  4108.28 m = the flattened pad (detail = 30 m relief). FAILED detail: slope reported 32.58 deg -> the contact counted
+  as tipping over (not soft: impact serial + 0.5 equipment damage on every module) and the site choice logged 32.6 deg.
+- ROOT CAUSE: GameServer::terrainHeight measured the slope one-sided 60 m from the centre - past the pad's flat disc
+  (36 m + blend) onto the crater-rim slope beyond. Fixed: central differences +-15 m (30 m base, the hull's scale)
+  on the 30 m relief.
+- LIVE sh2 after the fix: site chosen slope 0 deg; LANDED t+564.5 s, 1.53 / 0.12 m/s, 2.6 cm from pad 1, material 2
+  (regolith), slope 0 -> soft landing, no damage. A [CRASH] SEH in opengl32.dll was logged at the forced timeout
+  shutdown (after "Failed to unregister class Chrome_WidgetWin_0"), not in flight - teardown under a kill, not chased.
+- F3 captures sh2/f_600..f_650: the camera far from the ship - the crater rim and markers, structures not legible.
+- Open: the pad sits on the crater-rim slope - the 29 m blend ring around the flat disc may be a steep cut (to be
+  seen in game); the slope over a 30 m base also feeds the wild-site search (maxSlopeDeg) - more local than before.
+- Next: the author's look in game at Шеклтон / Имбриум; small bodies; styles for bodies with an atmosphere.
+
+### Slice cc-6 2026-11-06 - Assisted controls: J acceleration throttle, free hull, bounded turn; freeze diagnosis - NOT ACCEPTED
+- Author order (2026-11-06): J = the stick sets ACCELERATION (exponential law; HOME full +, END full -, INSERT
+  zero, +/- exponential trim); J off = wind the acceleration down to the main engines' level first; Backspace = a
+  free hull like Newtonian, the velocity never corrected, zero acceleration along it; normal flight must limit
+  the hull's turn (the velocity changes far slower than the hull turned); speed widget: red thrust bar + the
+  acceleration under the speed; the terrain lattice grid under the ship commented out.
+- Done (source + build + live DEV runs, D:/tmp/elite_cc1/j3*, rot5):
+  - DynamicMotionState jAccelCommandMps2 / jAccelMps2 / mainEngineMaxMps2 / jStopping (wire schema 35 -> 36;
+    contract tests not run). J block: command x2 per 0.5 s of +/- (from 1 g, to 1e5 g), field follows x2/s up,
+    x4/s down; along the nose; a negative field stops at rest against the reference; main engines idle under J
+    (freeFlightMainCommand returns 0). Live: HOME 2 -> 128 g in 8 s, INSERT winds down, '+' 3 s -> 59 g, END
+    reverses through zero, Ctrl+J off at 2.8 g -> "J engine OFF (main engines)".
+  - Ctrl+J "stays on" (author): the radar kept its J forward sector (FWD 2000 km) on freeFlight alone - now
+    freeFlight && jEngine. The server toggle itself was correct (live j1 / j2).
+  - Backspace: the free-flight prograde hold (ForwardToVelocity when not steering) ignored assistedFreeRotation
+    - ROOT CAUSE of "returns to the velocity"; now no hold / no lead limit / no bending with a free hull (live:
+    align 0 for 20 s after a yaw).
+  - Normal flight (no J): the J bending model with the rate capped at a_main / v (live: nose stops at 10 deg,
+    velocity turns 0.45 deg/s at 9.35 km/s = 7.5 g / v). The bend is assisted (no propellant accounting).
+  - HUD: speed widget red bar (J: log 1 g..1e5 g, normal: main fraction; orange = negative), "J +36 g (+100000 g)"
+    under the speed; banner line "УСКОРЕНИЕ J ... (задано ...)" / "J ВЫКЛЮЧАЕТСЯ" with the J keys.
+- Freezes: hitch log now has sub-phases (ev_poll_hotkeys / ev_webview / ev_prepare_frame, r_starfield /
+  r_celestial / r_far_passes / r_terrain_depth_labels / r_ships, remainder = stations pass) and
+  ELITE_DEV_HITCH_MS. Author session 10:01: in flight ~50 ms in the stations / prepared-objects pass (suspect: LOD
+  lazy uploads); map screens 35-86 ms prepare_frame and 90-270 ms hotkey-poll on F-key screen switches. Not
+  reproduced in --dev-direct-flight rotation runs (0 frames > 35 ms). OPEN.
+- Ship reference review (subagent): Cobrett A3 = ONE jump core um.core.z05 + 3 x std.tank.jumpcharge (1 t each);
+  runtime has 1 tank entry and a 70 MW service reactor vs passport 150 MW; A3 dry mass ~67 t unaccounted (reuses
+  the N1 economic class). Calibrated jump rule exists (ship_economics.json jump_rule, logistics.py): Cobrett
+  1.1 t per mean jump, 2.5-3 jumps per 3 t tank. Proposed J rule: J leg = R x mean jump, R 1/3..1/2 by core load;
+  rate ~ (a / 1e5 g)^1.5. Not implemented (J energy accounting still absent).
+- Next: fuel (J charge) by the rule above after the author's calibration choice; Detail map hub click /
+  context-menu info; F12 hub map (hub or player's space cube); Fomalhaut (Лекси) planet names; route waypoint
+  window with per-point programs + planner-inserted waypoints (refuel, jump intermediates) + ship rendezvous.
+
+### Slice map-1 2026-11-06 - Detail-map hubs select / go to hub; F12 = hub or the player's cube - LIVE DEV RUNS, NOT ACCEPTED
+- Author report: (1) a Detail-map hub click opened the info card and the hub could not be entered; wanted: click
+  = SELECTED + its name at the marker + its info and composition in the right panel, info card from the context
+  menu (right click / Ctrl+click), a working "go to the hub". (2) F12 "chaos, sometimes nothing": it must show
+  the hub or the navigation cube with the selected object, by default the player's cube, following the player
+  into the next cube.
+- Root causes (live baseline D:/tmp/elite_maps/b*, c*): (a) every non-celestial overlay glyph opened its card on
+  a single click (MapObjectOverlayState::handlePointer); (b) F11 opens Details without composing a System map,
+  so m_loadedSystemMapId stayed -1 and setSystemMapHubMode returned silently - the HUB drill from such a
+  Details map did nothing; the right panel also stayed the bare "STAR ATLAS" block (its facts required the
+  loaded System snapshot); (c) F12 outside a hub frame built a 2500 km terminal cube in the HELIOCENTRIC frame;
+  in LEO its centre usually lies inside the Earth, so it was promoted to the whole Earth Details (c1/c2); else
+  the cube was fixed while the player + hub co-move with Earth at ~30 km/s, crossing it in ~80 s - after that
+  the cube was empty ("nothing at all", c7); F12 also ignored any map selection.
+- Done (source + Debug build):
+  - MapObjectOverlayItem::selectOnClick (Detail hubs + world sites, LocalMapPresentationBuilder): click selects
+    only, the name is drawn next to the selected marker, double click -> MapIntent::openHub (Hub map);
+    context-menu target selection also selects the Detail hub; INFO opens the card (unchanged menu).
+  - Right panel: Details read the loaded Details system; the Hub map shows its hub too; composition =
+    economy hub_modules_3126 blocks ("Пассажирский блок: челночный док (HexDock) x141, гостиница x21 ...",
+    EconomyModel::HubEconomyInfo::composition), fallback = replicated hub-attached modules; F11 / F12 compose
+    the parent System map first; setSystemMapHubMode on Details uses m_loadedDetailTarget.systemId.
+  - F12 (preparePlayerNavigationMapLevel Local): an object selected on the open System / Detail map -> its hub
+    (Hub map) or the terminal cube containing it; else (and from flight) the player's hub, else the player's
+    cube. Such a cube is a SpatialVolume with focusClass Ship / Hub + the object id: never promoted to a body,
+    and followLocalCubeFocus() (Detail live refresh) moves it to the neighbour cube when "player" / "entity:N"
+    leaves it. MAP_NAVIGATION_CONTRACT (F12, body promotion) and MAP_OBJECT_OVERLAY_CONTRACT (selectOnClick)
+    updated; check_navigation_context token updated.
+  - DEV: ELITE_DEV_SOL_MAP_SCRIPT "pointer:click|dclick|rclick:<objectId>", "pointer:menu:<command>" (scripted
+    pointer through the production input path), "overlay" (map items + panel + loaded targets); SOL steps log
+    their GLFW time.
+- Live DEV evidence (--dev-direct-flight, back buffer D:/tmp/elite_maps/): g1_selected (Тихий selected, name at
+  the marker, panel: facts + Состав by block, HUB enabled), g2_menu (right click menu), g3_card (INFO card),
+  g5_hubmap (double click -> Hub map of Тихий, from a fresh F11 Details); h2_f12_selected_hub (hub selected on
+  the System map -> F12 = its Hub map), h3_f12_from_flight (F12 from flight = the player's hub);
+  i2_f12_selected_ship_later (ship entity:11 selected -> F12 = its cube); f1..f4 (free flight + HOME: F12 =
+  the player's cube, log "[LocalMap] player left cube 42957,2,-40907 -> shown in cube 42957,2,-40908").
+- Gates: check_navigation_context PASS, check_object_overlay PASS, check_route_plan PASS; check_architecture
+  RED pre-existing (DetailMapGeometryPass includes SystemMapRendererInternal.h, untouched); SystemMapBehaviorTests
+  does NOT compile pre-existing (MockSystemMapInteractionContext abstract) - ctest ran a stale binary.
+- OPEN: author's mouse acceptance; the cube does not draw the planet that fills part of it in LEO (SpatialVolume
+  scenes have no body rendering); a cube of a world site does not follow (only player / entity ships); crowded
+  Earth markers: a city click is won by the larger hub (size arbitration); F12 again while already on the local
+  map is a no-op (re-centre needs F1 then F12); the panel mode label stays "ДЕТАЛИ" for the F12 cube.
+
+### Slice cc-7 2026-11-06 - station freezes, J charge, Fortuna names, route programs R1, take-off - NOT ACCEPTED
+- Author order: find the freezes (cache model loads, GPU offload), then the list without questions; the fleet
+  reference = coverage / interchangeability / power+cooling -> how many models to draw.
+- Freezes ROOT CAUSE (live app1): ModelAsset station LOD meshes uploaded lazily on the main thread at first
+  selection - 3..105 ms each (LOD0 geometry 1, 201k tris = 105 ms; the paired 50-60 ms spikes = two LOD0 pieces).
+  Fixed (419348b1): MeshGPU split prepare (CPU) / allocate + uploadChunk (GL); ModelAssetGpu prepares every
+  (LOD, geometry) on a loader thread (coarse first) and pumpPrewarm(3 ms / main frame) uploads 32k-vertex
+  chunks ahead of the selection; a mesh needed earlier finishes synchronously. Live app2: the same flight has
+  no station spikes; the one early synchronous LOD0 piece 9.6 ms (was 105). Map screens: one 50-145 ms frame per
+  F-key switch (first build), not continuous. GPU offload: the CPU frame is ~4-10 ms; no remaining per-frame
+  CPU load worth a compute pass; the vertex-expanded MeshGPU (3 vertices / triangle, ~110 MB for the station)
+  could become indexed + gl_PrimitiveID barycentrics (memory, not fps) - not done.
+- J charge (20ffc825): JDrive.h rule - jump = q d (alpha + M), q 5.6e-5 (-17 % so 2 jumps + 3 J legs fit 3 t);
+  J leg = 1/3..1/2 jump by core load; rate ~ (a / 1e5 g)^1.5; Cobrett 3 t (3 tanks), core 500 t; J refused /
+  collapses when empty (refusal 9); banner "заряд J x.xxx / 3 т"; a hub refuel stay fills it. Schema 37.
+- Fortuna (Fomalhaut) names (c9eb68c9): 15 PROPOSAL names, the kitchen series by conditions (Сковорода, Жаровня,
+  Огарок, Скороварка, Духовка, Мыльный пузырь, Чайник, Парилка, Газировка, Морозилка, Пробка, Кубик льда,
+  Крошка, Сухарь, Гренка); naming.py --check 29/29.
+- Fleet review (subagent, report D:/tmp/elite_fleet_review.md): 21 models / 19 types / 6 blocs; gaps (Sol no
+  jump freighter / liner, Cognium no security, Pact no passenger / shuttle / cutter, Southern circle and Citadel
+  thin, Lalande no hulls, no miner / raider anywhere); 102 SKUs, 45 single-ship, ~33 visible equipment models;
+  reactor oversizes (ST-6 3.84x, GT-3000 2.4x, He-S240 2.22x ...), PAO-7 / B-4 short at full fire, B-4 cooling
+  251 % of its plan area; impossible part sizes (hangars, boat bay, train module, cryo tank). Recommendation: 19
+  hulls (15-16 with shared kits), a minimum set of 9 covering all blocs, ~20 / ~33 equipment models.
+- Route programs (b31126d8 design PROPOSAL ROUTE_PROGRAMS_DESIGN.md, 46698f0d R1 WIP): waypoint program +
+  actions model; the panel cycles the programs the target admits, refuel / repair / pause / take-off toggles;
+  the arrival-profile icons only for a ship target (they were shown and accepted on every finish); the route
+  list shows the program line; launch honours the programs (dock services, orbit altitude; a landing finish ->
+  the landing autopilot, intermediates not flown yet). Not yet visually verified in a capture; pause not
+  executed by the server yet.
+- Take-off: a route leg from a landed ship did nothing (the leg runs only off the ground; live to3: stayed on
+  the pad 6 min). Added a take-off phase (vertical main-engine climb to the J floor, <= 0.9 main) before the leg.
+  DEV verb leg: sent index 0 (= cancel) - fixed. LIVE to4: landed at Шеклтон pad 1 (2.6 cm), leg -> Earth orbit
+  500 km: TAKE-OFF 5.9 m/s at 6.5 m, 400 m/s climb at ~0.16 g, complete at 86.88 km (J floor 86.87), the J leg
+  ARRIVED after 156.7 s, 18 m from the aim, 3 m/s vs destination.
+- Next: route window capture (not yet seen); R2 intermediate landings + take-off in a route, pause; R4 charge
+  planner with refuel insertion; R5 ship rendezvous.
+
+### Slice cc-8 2026-11-06 - router R2-R5 (partial), Fortuna mythology names, fleet reference gaps, war doctrines - NOT ACCEPTED
+- Author: rename the Fomalhaut bodies "the way the other bodies are" (Sol = classical mythology), Lexie untouched;
+  finish the router; complete the ship list in the HTML reference; then (later message) war-doctrine ideas.
+- Names (e10ce647): Fortuna = Roman Fortuna + "mouth of the fish": Атропос, Лахесис, Клото, Немезида, Ананке,
+  Спес, Деркето, Оаннес, Фелицитас, Морта, луны Окказия / Децима, карлики Тюхе / Плутос / Форс (PROPOSAL).
+  naming.py now mirrors body names into generated/bodies (designation = ru, alternative_names = intl; only those
+  two lines change) - the runtime reads designation. naming --check 29/29.
+- Router (built; live DEV runs rt2 / rt4 / rv1; contract tests not run; wire schema 38):
+  - Land legs (FreeFlightLeg::Kind::Land -> the landing autopilot, wild or "site:<id>" pad), take-off before a leg
+    from the ground, service stays, pause points (pause action / landing without take-off) + PAUSE / RESUME
+    (RouteLeg index 3 / 4), motion.routeState / legIndex / legCount, HUD hint "МАРШРУТ НА ПАУЗЕ", route list
+    footer (state + summary), РАССЧИТАТЬ (summary without launch).
+  - J charge walk + refuel insertion at the least-detour hub ("[план]" in the list), 10 % reserve, a refuel stop
+    only has to be reached (first version looped 4x inserting at the stop itself - fixed). DEV
+    ELITE_DEV_ROUTE_CHARGE_T=0.2: one refuel stop inserted at earth_orbital_hub (capture rt/insert.png).
+  - LIVE rt4: Earth hub -> guide gate -> LANDING Шеклтон pad (2.6 cm) -> PAUSED -> RESUME -> TAKE-OFF to 86.88 km
+    -> gate -> leg to Earth orbit (arrival not inside the run window; the same leg ARRIVED in to4).
+  - Bugs found live: the pad spec was lost (sourceObjectId rebound to the body) -> actions.landingSite; a Land leg
+    had no server position (remaining from the Sun, the guide passed at 19 600 km/s) -> body centre; the
+    stale "на поверхности" autopilot panel during take-off -> cleared.
+  - Rendezvous (R5 first part): Ship legs (target ship's position + velocity, arrival 6 km outside its J
+    keep-out, its keep-out does not throttle the approach); live rv1: the leg tracks ship 10 and closes; arrival
+    and the final approach to the arrival profile (formation / follow) NOT done.
+  - Open: intermediate jump systems (no jump runtime), trade actions, orbit survey (= orbit), repair model,
+    the 0.00 g readout during the take-off climb, DEV waypoint names show raw ids on the HUD markers.
+- Fleet reference (d5b537ce, subagent): 17 PROPOSAL ships (1 new hull ТС-6 «Дозор», 13 variants, 3 small craft),
+  2 parts (srw.reactor.sr26, kern.mine.cutter), coverage page; hulls to model 20 (19 new meshes) + 3 small craft;
+  builder kept in Notes/html/ship_reference/tools/.
+- War doctrines (78c53ae4): Notes/Lore/ECONOMY/WAR_DOCTRINES.md (author ideas + PROPOSAL). lore_html.py deleted
+  Notes/html/ship_reference as "stale" (restored from git); it now only prunes mirrored folders.
+
+### Slice map-2 2026-11-06 - hub composition status + pictograms, moon labels, HUB for lunar (world-site) hubs - LIVE DEV RUNS, NOT ACCEPTED
+- Author report: (1) the composition is not trustworthy (as a rule only the station exists): module + "(строится)" /
+  "(в плане)"; (2) the text line ripples: show module images; (3) System map: moon names once the moons' orbits
+  exceed half the screen; (4) HUB from Details (Селена, lunar orbit) did nothing; HUB on the System map for Ворота
+  Луны opened a Details cube without the hub marker.
+- Root causes (live baseline D:/tmp/elite_maps2/b*, d*, e* first runs): Селена / Ворота Луны are unbound world sites
+  ("site:<id>"), not replicated hubs, and (a) the Hub map existed only for replicated hubs (rebuildHubMapFromClientState
+  finds no runtime hub -> composeHubMapSnapshot false -> setSystemMapHubMode returned silently); (b) a System-map CLICK
+  on a site set no selectedHubId (sites are Station-kind objects, navigationHubId empty; only the hub-list path set
+  it), so HUB fell to the free-tactical branch = the terminal-cube SpatialVolume Details (no hub marker, b2); (c) on
+  the Detail map world sites had no navigation hub binding and the presentation builder cleared any selected hub
+  absent from hubScreenPoints, so the HUB button stayed disabled (canOpenHub 0); (d) Lagrange sites were never on a
+  body Detail map. Composition: the panel listed the economy hub_modules TARGET as if built; runtime hubs carry only
+  their station (attached objects: 1 x Station for Высокий / Тихий).
+- Done (source + Debug build):
+  - Catalog Hub map: ClientWorldSitesMapBridge catalogHubRuntimeSample (orbit / Lagrange / heliocentric site at the
+    same presented position as its markers, frame radial / prograde, ONE station module, far player dropped),
+    used by ClientMapService::composeHub for "site:" ids; System-map site objects get navigationHubId = own id;
+    Detail orbit / Lagrange-primary sites are "world_site_hub:<type>" hub targets (hubScreenPoints, selection kept);
+    Lagrange hubs appear on their primary's Detail map; F12 with a site selected = its Hub map; the Hub-map horizon
+    backdrop is skipped beyond 10 parent radii (L1 hub no longer skims Earth). The duplicate selected-hub label of
+    DetailMapGeometryPass removed (the overlay draws it).
+  - Composition: EconomyModel HubEconomyInfo::modules (per type); status in SpaceStateMaps: a type present in the
+    runtime hub (Station -> admin_station, HubHexDock -> shuttle_dock, HubDockServiceBlock -> service_dock; a site
+    hub = its station, a beacon = beacon_core) operates, refuel_dock / service_dock not present "(строится)", others
+    "(в плане)"; "Состав" right after Тип; Доки / Терминалы / Ремонт / Склады carry the same status. Panel: block
+    subheadings + one row per module with a 9x9 pixel pictogram (22 types) drawn with the panel's solid rects,
+    colour by status (cyan operating, amber under construction, dim planned); a status never wraps inside.
+  - Moon labels: a moon is named when its orbit diameter > half the shorter viewport side (or the old 200 km/px);
+    labels ordered planets first, moons by size, a moon label overlapping a drawn label is skipped.
+  - DEV verbs: "panel:hub|detail|system|galaxy|select:<objectId>" (native panel actions), "mapturn:<yaw>,<pitch>";
+    "overlay" lists hidden items and the selected hub's attached runtime objects.
+- Live DEV evidence (--dev-direct-flight, back buffer D:/tmp/elite_maps2/): c1/c2/c3 (System click on Ворота Луны ->
+  HUB = its Hub map, no Earth horizon -> DETAIL = Earth Details with the Ворота Луны marker, HUB enabled); e1/e2/e3
+  (Moon Details, click Селена -> HUB = Hub map of Селена over the Moon -> back); i2 (F12 with Ворота Луны selected =
+  its Hub map); g1 / g2 (Тихий / Селена panel: pictogram rows, only the station operating); h3 / h6 (Jupiter: Ganymede
+  / Pasiphae named at their thresholds, Europa not), k2 (Mars S5: Phobos, Deimos named).
+- Gates: check_navigation_context PASS, check_object_overlay PASS, EliteSystemMapInfoCheck PASS; system_map
+  check_architecture RED pre-existing (DetailMapGeometryPass depends on SystemMapRenderer facade).
+- OPEN: author acceptance; the DEV wheel zoom did not change the System scale (Earth Moon label shown only at the
+  cube-level steps: at S4 the Moon orbit is 275 px < 360, at S5 the Moon is off screen) - a human wheel zoom is
+  expected to cross the threshold; surface sites (Шеклтон, Имбриум) have no Hub map (pads only); the catalog Hub map
+  has no dock geometry / traffic; whether the station's own docking ports count as "челночный док" operating is a
+  rule question (now: planned); moon names are the catalog's English names (Phobos, Ganymede).
+
+### Slice cc-9 2026-11-06 - route window buttons on every map, moons as route points, body avoidance, network corridors - NOT ACCEPTED
+- Author (2026-11-06): no calculate / start buttons for a finish chosen on Details; a moon selected on System /
+  Details gives no route commands; routes are straight lines (Mars - Ceres across the Sun? through a planet?);
+  the hub-to-hub lines near Earth are straight - green zones must follow them. Fortuna names accepted (CANON,
+  02cb5d6a). Map items (hub composition statuses, pictograms, moon labels, HUB button for lunar site hubs) -
+  subagent slice map-2 (9d3cc8ed).
+- Route window (NavigationRouteOverlay footer, every map): РАССЧИТАТЬ / СТАРТ / ПАУЗА | ПРОДОЛЖИТЬ (by the server
+  route state) + the summary line. Live capture rt/detail_buttons.png (Detail map, finish Тихий).
+- Moons: a body without an overlay card gets a synthesized route card in the System context menu (add point /
+  finish). Detail-map moons are 3D bodies without glyphs - still no context menu there (OPEN).
+- Body avoidance: the planner treats the star (20 radii, the Sun ~0.09 AU, heat), planets and moons (r + 150 km /
+  5 %) as obstacles (the same detour as red zones); the server leg keeps 20 star radii (was 150 km over the
+  photosphere). Live ob2: Earth hub -> Neptune / Saturn gets "обход: Земля". No planet was behind the Sun at the
+  run epoch - the star detour shares the code but was not seen live.
+- Network corridors: the world-model scheduled routes between two runtime hubs become green corridors along
+  corridorPath (round the bodies); an official leg between the same ends follows it; the blue gate still applies.
+  Live ob1: Высокий -> Тихий "по коридору сети: Тихий – Высокий" (2 legs, 12 851 km). The dashed network lines on
+  the System map stay schematic chords (aggregate schedule, not flight paths).
+- DEV: Cyrillic body ids in ELITE_DEV_* env vars arrive mangled - Latin aliases added (mercury .. neptune).
+- Author rule (2026-11-06): the station's own docking ports = an operating shuttle dock. Implemented: a Station
+  object's enabled docking_port anchors (hub_semantic_anchors.json, by its hub module id) count as shuttle_dock;
+  the current station model has none, so Высокий / Тихий still show the dock "(в плане)" until a model with ports.
+
+### Slice map-3 2026-11-06 - F12 cube shows what is visible (Moon surface, player, sites), trajectories on Details, site hubs as cubes - LIVE DEV RUNS, NOT ACCEPTED
+- Author report: (1) F12 in lunar orbit: "a cube and some arc", no ship marker; (2) Moon Details: no player
+  trajectory - orbits of all objects on stationary trajectories must be shown; (3) Селена is not a cube.
+- Root causes (live baseline D:/tmp/elite_maps3/b1_f12): the arc was the geometry-pass outline of the Moon (cube
+  scenes had no body rendering); the player WAS in the scene but hidden by the Moon occlusion test (overlay
+  "[entity:9 | hidden]"); the cube scene held only its interior; world sites were added only to body Details;
+  ClientDetailMapBridge cleared playerOrbits ("no fabricated orbit") and nothing drew ship trajectories; Detail site
+  hubs (world_site_hub:*) got the Infrastructure triangle at 0.55 scale. Also: the player's replicated hubId stays
+  earth_orbital_hub after leaving for the Moon, so the Detail badge went to that hub (now only within 50 km).
+- Done (source + Debug build): ClientDetailMapTrajectories.h - osculating conic of each free ship about its dominant
+  body (deepest SOI = d (mu/muParent)^0.4, catalog GM), closed ellipse or the arc within min(SOI, 1e8 m): the
+  player's into playerOrbits (gold, labelled "орбита игрока Pe .. / Ap .."), other free ships' bound orbits dim
+  (DetailMapSnapshot::shipOrbits); orbital world sites get their rail circle in hubOrbits; DetailMapOrbit path
+  offsets (interpolated with the centre). Cube scenes (DetailLocalVisibleReach = 6 half-edges): ships / hubs /
+  beacons / bodies + the world sites of every body in view; DetailMapSnapshot::contextBodies rendered by
+  DetailMapBackend with the body-Detail planet pass (body-centred orthographic view at its projected place and
+  depth scale, far first; skipped when the eye is inside); the player (and the cube's focus) is never hidden behind
+  a body (dimmed); the player reads "игрок" in cubes. Site hubs: Hub glyph, hub colour, full scale. Contracts:
+  MAP_NAVIGATION_CONTRACT (F12 scene, trajectories note), MAP_OBJECT_OVERLAY_CONTRACT (site hub glyph, player kept).
+- Live DEV evidence (back buffer D:/tmp/elite_maps3/): c1_f12 (leg:orbit:moon:100, F12: textured Moon, player
+  marker + badge, orbit "Pe 96.6 km / Ap 103.3 km"); c3_moon_detail_turn (Moon Details: player orbit, Селена rail
+  orbit); d2_moon_turn (Селена as the cyan hub cube on its orbit).
+- Gates: check_navigation_context PASS, check_object_overlay PASS, check_route_plan PASS; check_architecture RED
+  pre-existing (DetailMapGeometryPass -> facade).
+- OPEN: author acceptance; F11 in lunar orbit opens EARTH Details (stale motion.hubId earth_orbital_hub, b2_f11) -
+  not fixed; the cube body is an orthographic impostor (no perspective distortion near the eye); a ship under J
+  thrust draws its instantaneous conic (changes while thrusting); heliocentric conics are not drawn; other ships'
+  open (hyperbolic) arcs are not drawn; Ворота Луны (L1) has no orbit line (not a Kepler orbit).
+
+### Slice cc-10 2026-11-06 - tangential orbit insertion, finish choice, station hand-over jump, Высокий docks back - NOT ACCEPTED
+- Author (2026-11-06): the orbit leg flew into the body's centre and "magically" had the circular speed; a finish on
+  a body must offer an arbitrary orbit / its altitude with v1 / a landing; the route card must report completion;
+  Селена "Рассчитать" did nothing; the HUD terminal disappeared; freezes on the Moon-orbit -> Earth-hub flight; the
+  station jumped at the stabilization hand-over; give Высокий back its docks (the cylinder with the blue zone and
+  the hex dock). Map items -> subagent slice map-3 (857189b7).
+- Orbit leg (GameSimulationRoute Orbit): the plane fixed at the leg start (position x motion), the aim = the tangent
+  point of the orbit circle seen from the ship, the arrival velocity = v1 along the tangent. Live tg1: ARRIVED 18 m
+  from the aim, orbit 100.0 km at 1633 m/s (circular). The approach angle is not logged - tangency is by
+  construction, not measured.
+- Finish choice: the System context menu of a body adds "ФИНИШ: ОРБИТА N КМ (v₁ …)" x3 (J floor x1 / x3 / x10) and
+  "ФИНИШ: ПОСАДКА (АВТОМАТ)" for airless bodies (SystemMapRenderer::setBodyFlightFacts from the client catalog).
+  Not yet clicked live.
+- Route complete: the route window shows "МАРШРУТ ВЫПОЛНЕН" when the server route ends. Catalog site hubs as targets
+  (marker position; a clear "нет координат цели" otherwise). Not verified live.
+- HUD terminal: it was shown only on docking / BITE / ignition / alerts - now always in flight (author's wish).
+- Freezes: NOT reproduced on the same flight (Moon orbit -> Высокий, 0 frames > 30 ms besides the capture frames);
+  the author's 17:08 session had 0.2-0.6 s stalls every ~2 s with every phase inflated (hud, session_advance,
+  scene_prepare). CLOSED (author 2026-11-06): he was switching windows during that session - an unfocused /
+  background window, not a bug; reopen only for stalls with the game window focused.
+- Station hand-over jump ROOT (DEV ELITE_DEV_HUB_POSE_TRACE): the station's orientation is continuous (0.000 deg at
+  the switch); its POSITION relative to the player jumps 570-660 m when the station's presentation switches from the
+  world pose (interpolated snapshot) to the hub-frame pose - an ~19-22 ms epoch mismatch at 30 km/s heliocentric
+  between the free-flight frame and the objects (snapshots every 0.06 s, the station refreshed every snapshot).
+  Mitigation: the relative pose difference is carried over and faded out in 1 s (live hp6: step 0.00 m at the switch,
+  <= 11 m/frame after). The epoch mismatch itself is OPEN (the station is drawn ~0.6 km off in free flight near a hub).
+- Высокий docks: commit 5497cf37 turned the HubMotionLab off - the same flag spawned the hex dock, its service block
+  and the guidance cylinder; now spawned independently (live: attached objects 10/11/12, capture docks.png).
+
+### Interim architecture audit 2026-11-06 (subagent, read-only; full report docs/ARCH_AUDIT_2026-11-06.md)
+- Python gates: 209 check_*.py, 122 pass / 87 fail (mostly stale token-greps; they hide real new reds:
+  GameServer.cpp includes the client RoutePlanner.h, system_map facade coupling, stale wire-schema token list).
+- High: NAVIGATION_V2 §1 / §11b say route execution is client-owned via ShipControlState - the J autopilot, route
+  legs, take-off, rendezvous and the landing pilot are server-owned (two owners, hand-over unspecified); zone fines
+  computed / summed on the client; Высокий's docks still hang on diagnostic ids / HubDockingFlightTestScene; DEV
+  commands accepted from any client; ActiveFreeFlight ~70 fields / 7 sub-machines on booleans and bare phases 1..11.
+- Single-source breaks: 5 sphere-of-influence implementations, body clearance client vs server differ, the client
+  planner's 260 t + Cobrett charge constants for every ship, 3 "airless / landable" criteria, J ramp / ApproachTauS
+  twice, Pe/Ap twice, WorldSitesCatalog loaded 3x, route state in 3 forms; route legs as an unversioned string
+  protocol (km vs m, magic indices 0/3/4).
+- God functions: SpaceState::updateDockingAdvisory 3894 lines, SpaceState::update 1816 (~400 DEV interpreter),
+  renderHUD 1115, updateFreeFlights 726. 65 ELITE_* env vars, some read per tick / frame and changing gameplay.
+- Threading: ModelAssetGpu loader has no try/catch, MeshGPU never frees GL objects, detached terrain threads,
+  call_once bodies that can throw in ObjectDescriptorRegistry / ObjectAssemblyRegistry.
+- Tests: WireDataPlaneContractTests not built since schema 35 -> 38; no tests for the new pure logic (route codec,
+  charge, J floor, settlement layout, SOI, conics); SystemMapBehaviorTests does not compile.
+- Recommended order: gate triage + known-red allow-list; one SOI function + test; one route-safety module shared by
+  planner and server (JDrive.h to a neutral layer); J figures from the ship descriptor; hub docks from data;
+  DEV gating; zone fines + route completion on the server; typed route DTO in the wire schema; ActiveFreeFlight
+  state machine; decompose the giant SpaceState functions; loader hardening; NAVIGATION_V2 ownership update.
+
+### Gate triage 2026-11-06 (audit item 1; source/offline only, no live flight)
+- Python gates 209: before 122 pass / 87 fail, after 196 pass / 13 known red / 0 new red. Nothing deleted; 74 stale
+  checks updated to the current design (split SpaceState* / GameSimulation* units read as one, CURRENT_TASK/STATE
+  markers dropped, exact version / schema pins -> minimum, retired subjects PredictivePilot / navigation_guidance /
+  rear monitor / B-spline smoother asserted as gone, model-asset hash locks re-baselined at 0.10.87, regex bugs).
+- One runner: `python tools/run_gates.py [-k text] [-v] [--timeout s] [-j n]`; exit 1 on a red not in
+  tools/gates_known_red.json or on a stale allow-list entry. Allow-list = REAL reds left for the main session:
+  GameServer.cpp:1 includes client RoutePlanner.h (4 gates, rec. 6); std::chrono in SegmentedRouteComposer.cpp:5/597/842;
+  Sol body ids in client SpaceState.cpp:1409+ (DEV script, rec. 8); missing EOF newline SystemMapRenderer.h /
+  SystemMapSceneRenderer.cpp; model-asset editor purity regressions (attachments.js:125, viewport/scene.js:11) and a
+  function census frozen at v0.10.73 (4 gates, editor re-baseline slice).
+- Production change: src/game/system_map/PlanetMapAxes.h holds the planet axis helpers; DetailMapGeometryPass.cpp no
+  longer includes the SystemMapRenderer facade, DetailMapPlanetPass.cpp lost its duplicate copy (both objects compiled;
+  tests/system_map/check_architecture.py green). Tracked __pycache__/*.pyc under tests/ get dirtied by direct gate runs.
+
+### Audit items 1-4 (author order 2026-11-06: "начинай с пунктов 1-4") - BUILT, gates + offline check + live DEV runs
+- 1 Gates (subagent, 78855be7 + main): tools/run_gates.py + tools/gates_known_red.json (explicit allow-list,
+  exit 1 on a new red or a stale entry). 122/87 -> 201 pass / 8 known red / 0 new red. Left red (allow-listed):
+  SegmentedRouteComposer std::chrono in pure route code; Sol body ids in the DEV script inside SpaceState::update;
+  model-asset editor purity regressions + 4 census gates frozen at v0.10.73 (re-baseline slice). Fixed here:
+  GameServer.cpp no longer includes the client RoutePlanner.h (the legs + codec moved to the neutral
+  navigation/route/RouteWire.*: 4 gates green); planet-axis helpers in system_map/PlanetMapAxes.h (subagent);
+  EOF newlines (check_map_architecture green).
+- 2 One rules module: src/game/navigation/rules/BodyFlightRules.h - dominantBody (Laplace SOI; parent = catalog
+  parentId, else the id prefix, else the star), floorAltitudeM, clearanceM (star 20 R; max(R + 150 km, atmosphere +
+  50 km)), isAirless. Used by the server referenceBody, the client planner bodyAtPoint, the Detail-map trajectories,
+  the route leg obstacles, the planner obstacles, the landing check and the map's finish rows. JDrive.h moved to
+  navigation/rules (namespace game::navigation::jdrive) with DriveRampDoublingS / ApproachTauS (no duplicates).
+  Offline EliteBodyFlightRulesCheck: 18 checks PASS (SOI Earth / Moon / 300 000 km / 1.5 AU, prefix == catalog
+  parent, floors, clearances, airless, route codec round trip incl. a pad spec with ':', charge monotonic).
+- 3 J figures from the ship: ShipParams jumpCoreRatingT / jumpChargeCapacityT (Cobrett descriptor 500 t / 3 t);
+  motion shipMassT / jumpCoreRatingT / jChargeCapacityT set at spawn and replicated (schema 39); the planner uses
+  them (no 260 t, no Cobrett constants); no jump core = J refused / no J route; route legs now charge the J (live:
+  Earth -> lunar orbit 3.000 -> 2.992 t). Regression found and fixed live: the capacity was set only in free flight
+  (0 in a hub) -> the planner "inserted a refuel" at the finish hub and lost the finish; also never inserts a refuel
+  at the failing point's own hub.
+- 4 Hub docks are data: initial_world_state.json orbital_hubs[].dock_modules (Высокий: hub_hex_dock_a,
+  hub_hex_dock_base, guidance_dock_cylinder_b), spawned for ANY hub by spawnHubDockModules after the hub registers;
+  the guidance-lab stress objects stay a diagnostic scene (off). Live: [HubDocks] 3 attached; the player's entity id
+  is now 12 (the docks spawn first) - DEV scripts naming ship ids change.
+
+### Audit rec. 8 / 10 - SpaceState god functions decomposed (subagent 2026-11-06; behaviour-preserving, BUILT + gates + live DEV runs)
+- DEV script interpreter out of SpaceState::update (1816 -> 1233 lines): src/game/dev/DevScriptRunner.{h,cpp}
+  (friend of SpaceState, one call per frame; every ELITE_DEV_* var of the block read once into a Config; latches
+  have process lifetime like the old function-local statics; verbs split by group in the original dispatch order;
+  log strings unchanged). The Sol body / hub ids are its DEV data table (per-verb alias tables kept exact), so
+  check_feature_contracts is green and left the known-red list (no gate change needed: it reads SpaceState*.cpp).
+- updateDockingAdvisory (3894 lines) -> 697-line orchestrator (helper lambdas + the frame aggregate) + phases:
+  checkDocking{Newtonian,Assisted}Authority, updateDocking{SecuringCourse,Stabilizing,Planning,Executing},
+  settleDockingCraftBeforePlanning, secureDockingCourseWhilePlanning, compileDockingTrafficRoute,
+  checkDockingEntryHandoff, publishDockingAdvisoryPresentation, free runDockAdviceWorker (the detached thread body).
+  Mechanical: blocks moved verbatim, outer locals bound by reference through a local aggregate (member templates
+  so the lambdas keep their closure types), top-level `return;` -> `return false;` = "stop this update".
+  Largest left: updateDockingStabilizing 567, runDockAdviceWorker 402.
+- renderHUD (1115) -> 209 + renderHudWorldLabels 88 / GuidanceAndCompass 196 / CockpitInstruments 107 /
+  DockingTerminal 535 (typed parameters, call order unchanged).
+- Gates: 203 pass / 6 known red / 0 new red. Updated to the new locations, intent kept: foundation_lock checks the
+  whole SpaceStateDocking.cpp; recent_navigation_regressions checks the draw order via the section calls in
+  renderHUD; assisted_docking_entry accepts `return false;` after the exhausted-rebind recoverOrFail.
+- Live (build_agent, --dev-direct-flight): freeflight/home/insert/jstate/report verbs log as before; finish:hub:
+  earth_hub.tikhiy + route:official -> "[Route] ship 12: ROUTE of 2 legs", route:pause / resume OK;
+  ELITE_DEV_DOCK_REQUEST_AT=15 -> request, planner worker (3.1 s), phase=executing, [DockClientTrack] tracking.
+  Not done: an A/B log diff against the pre-split binary; further split of updateDockingStabilizing /
+  renderHudDockingTerminal / the orchestrator's helper lambdas.
+
+### Audit remaining items (author 2026-11-06: "продолжай с остальными пунктами аудита") - BUILT, gates 203 / 6 known / 0 new
+- Hardening (edc98b5f): core::safeCallOnce (a throwing init rethrows to every caller, no MinGW deadlock) in
+  ObjectDescriptorRegistry / ObjectAssemblyRegistry; the ModelAsset prewarm worker catches and falls back to
+  on-demand. The pure route composer owns no clock (setSegmentedRouteDiagnosticClock, installed by main).
+- DEV commands gated on the server: the embedded game allows them, the dedicated EliteServer only with --dev /
+  ELITE_DEV_COMMANDS=1 (live: "[Server] DEV commands rejected"); gated: weapon-type cycle, combat target, equipment
+  failure (the physical-model selection stays a player setting).
+- Zone fines on the server (7474bc25): GameSimulationZones (red entry, skipped blue gate) with motion
+  zoneFinesTotalCr / zoneViolation* (schema 40); the client only shows the notice; zone catalog + geometry in the
+  neutral route/RouteZones. The server loads the 3 Sol zones; a violation was NOT triggered live (no DEV path into
+  a red zone; a straight Earth -> Moon leg passes the customs gate, correctly no fine).
+- NAVIGATION_V2 §1 / §11b (80aab8f6, 05931c7f): two owners by scale; the hand-over cancel rule marked OPEN.
+- SpaceState decomposition (subagent, 4205d26d): DevScriptRunner (src/game/dev, update 1816 -> 1233 lines, env vars
+  cached, the Sol DEV aliases out of SpaceState: check_feature_contracts green); updateDockingAdvisory 3894 -> 697
+  + named phases; renderHUD 1115 -> 209 + 4 sections; live: verbs, a route, a dock request to "executing".
+- Free-flight state (this commit): navigation/FreeFlightCodes.h - FlightRefusal (0..9) and AutopilotDisplayPhase
+  (0..12) named, wire values unchanged, used by the server and the HUD; the internal AutopilotStage enum (0,1,2,3,
+  9,10,11 - the two numbering spaces no longer share bare ints); ActiveFreeFlight sub-machines grouped (legRun,
+  ground, landingPilot; 114 accesses). Bug fixed by the naming: the J charge was spent during the pad descent
+  (display phase 4 counted as a J phase). Live regressions: Shackleton landing 3.7 cm / take-off to the J floor;
+  the Tikhiy route starts.
+- Left: the autopilot fields of ActiveFreeFlight are not grouped yet; the station epoch mismatch (faded) OPEN; the
+  model-asset editor reds (6 allow-listed); build_agent/ (6 GB, untracked) removed.
+
+### Architecture re-check 2026-11-06 (author: "всё ли уже хорошо?")
+- Built and RUN the contract tests: wire_data_plane_contract_tests PASS on schema 40 (tests/architecture_contracts,
+  separate CMake project, D:/tmp/elite_contracts); SystemMapBehaviorTests compiles again (bbfeb8af: stale mock +
+  missing sources) - 28/33 PASS, 5 FAIL to triage (rotation pivot, zoom pivot target, explicit cube selection,
+  the initial fit distance 5000 vs 94.5, the mouse/scroll trace) - stale expectations after the map navigation
+  redesigns or real regressions: not decided.
+- Still open from the audit: the airless rule duplicated by the settlements / renderer (surface pressure < 100 Pa
+  vs the atmosphere radius); the player's Pe / Ap computed by the server and again by the Detail map; the
+  WorldSitesCatalog loaded 3x (client service, settlements, dock traffic); the route command still a string
+  protocol (neutral RouteWire + a round-trip test, but pause / resume / cancel are indices 0/3/4 and the bare DEV
+  leg target is in km); HubDockingFlightTestScene / NavigationRuntimeLabEnabled constexpr in production; 65
+  ELITE_* env vars (the DEV runner's cached, the rest not); the autopilot fields of ActiveFreeFlight ungrouped; the
+  hand-over cancel rule not enforced; the station epoch mismatch; MeshGPU never frees GL objects; detached terrain
+  loader threads; the 6 model-asset editor reds; the contract tests and the map behaviour tests are not run by
+  tools/run_gates.py.
+
+### Map behaviour test triage + C++ suites in run_gates (2026-11-06)
+- SystemMapBehaviorTests 28/33 -> 33/33 (compiled, D:/tmp/elite_sysmap_tests). All 5 reds were STALE expectations
+  of deliberate map redesigns, none a production regression; production untouched:
+  rotation pivot (press = PendingClick, pivot at drag start: near object > pressed body / hub / layer point >
+  target plane, never a cube centre - 97b39d73); zoom pivot (body pivot needs the resolver's hover body; else the
+  point under the cursor - 97b39d73); explicit selection (cubes are targets only with the G grid overlay -
+  2eb47aad; body click selects the body + its child cube of the parent, anchor not moved - b2d39fd2); initial fit
+  (S0 root fitted, hierarchyFitHalfHeight, not fittedSystemRadius*padding - b2d39fd2); mouse trace (the drag-start
+  frame does not turn; plan view default turns only yaw - ac71cfb6; a free-3D replay added). The stale §7 bullets
+  of MAP_NAVIGATION_CONTRACT.md updated to the 2026-10-31 b camera contract.
+- tools/run_gates.py: `--cpp` (Python gates + C++ suites) / `--cpp-only`; configures (Ninja Debug, if no cache),
+  builds and runs cpp:wire_data_plane_contract_tests (D:/tmp/elite_contracts) and cpp:system_map_behavior_tests
+  (D:/tmp/elite_sysmap_tests); allow-list keys `cpp:<target>`. Off by default (cold build minutes). Run:
+  `--cpp` 211 gates: 205 pass, 6 known red (model-asset editor), 0 new red; both C++ suites PASS.
+
+### Client-owned global flight G2..G4 (author 2026-11-06: "делай подряд все 4 пункта") - BUILT, live DEV runs; NOT ACCEPTED
+Scope (NAVIGATION_V2 §1 author decision): the planners and autopilots on the CLIENT, the server = plant + authority.
+- Step 1 (extraction, behaviour-preserving): `navigation/globalflight/BodyAutopilot.{h,cpp}` - the J transfer onto the
+  tangential parking orbit, the coast, the de-orbit in normal flight, the hand-over, the terminal landing pilot, moved
+  out of GameSimulation (updateFreeFlightAutopilot / updateNormalDescent / updateSurfaceLanding). Neutral: a ship
+  sample + callbacks (bodies, body orientation, terrain, keep-out) in, the ShipControlState command out.
+  The command surface (ShipControlState, wire protocol 25): globalFlightCommandValid; a J WORLD VELOCITY TARGET +
+  the client's acceleration limit (instead of G1's raw acceleration: deadbeat tracking on the server tick, robust to
+  latency); globalMainAccelWorldMps2 (main engines, |a| <= the hull's thrust); an attitude target; globalFrameRequest
+  (1 normal flight, 2 ground stabilization, 3 stabilization = hub capture / ground / own orbit); globalFreeRotationRequest.
+  The plant (GameSimulation::applyGlobalFlightCommand + applyGlobalFrameRequests): the J field toward the target within
+  min(client limit, 1e5 g, its own ramp 1 g doubling / 2 s); in a hub/ship keep-out only the gentle 1 g; below a J
+  floor none; an empty charge none; the attitude slew (J: 2 rad/s, else the hull rate). Rules, not intentions.
+  Behaviour change on purpose: the de-orbit's ground turn uses the module's own last basis (the server's `lastBasis`
+  was overwritten the same tick - the turn read ~0).
+  LIVE ba1 (server-run through the module + plant, Shackleton pad): ON ORBIT 86.9 km / 1639 m/s at t+190.9 s (baseline
+  194), hand-over 1948 m / 0.19 m / 79.9 m/s, LANDED t+561.6 s (baseline 564.5), 1.53 / 0.10 m/s, 0 m from the chosen
+  site, regolith, slope 0 - soft, no damage.
+- Terrain probe moved to `navigation/globalflight/BodyTerrainProbe` (process-wide field cache: an embedded server and
+  its client load one field per body). GameServer::terrainHeight delegates.
+- Step 2 (client body autopilot): src/game/SpaceStateBodyAutopilot.cpp - the module on every new server snapshot (dt by
+  server time), bodies from the client's celestial runtime AT THE SNAPSHOT'S universe time (GameClient::
+  resolveCelestialSystem), the ship from the replicated travel frame (+ local motion), keep-out from the replicated
+  hubs / ships; out through submitInput (the docking autopilot's channel); HUD reads the client's display overlay;
+  PAGE DOWN / map O / DEV autopilot: engage the client's. Restore of the flight law / free rotation after a landing.
+  Bugs found live: (ba2) the replicated worldPosition / worldVelocity stay at the hub-frame values in normal flight ->
+  the sample froze at the hub exit -> the travel frame; (ba3/ba4) the docking advisory released the shared control
+  slot every frame (cleared the buffer the runner resends) and the keyboard path re-took the stream -> the server saw
+  alternating valid / empty commands, the plant's ramp reset (~1/5 of the drive) -> ownership flags respected.
+  LIVE ba5 (client body autopilot, the same Shackleton script, pre-G4 build + the fixes): keep-out exit at 1 g as ba1,
+  phase 2 at t+77.6 s (ba1 78.4), ON ORBIT 86.89 km / 1638.95 m/s at t+190.74 s (ba1 190.94), the de-orbit pilot
+  matching ba1 within ~1 deg of nose, hand-over 1946.7 m / 0.11 m / 79.55 m/s at t+537.66 s (ba1 537.92), the ground
+  frame by the frame request, LANDED t+563.46 s, 1.54 / 0.12 m/s, 3.7 cm from the chosen site, regolith, slope 0 -
+  soft; "landing pilot OFF (client)" - the law / free rotation restored, the keyboard owns the stream again.
+- Step 3 (client route): navigation/globalflight/RouteLegPilot (updateFreeFlightLeg + the take-off moved, same laws /
+  logs) and src/game/SpaceStateRouteRun.cpp - the route of the planner's RoutePoints (launchPlannedRoute no longer
+  sends it): legs in order, pass-through guide points, landing legs on the body autopilot, a stop ends in the frame
+  request "stabilization" (hub capture / ground / own orbit), refuel / repair = the server's timed service stay
+  (RouteLeg command index 5 -> GameSimulation::startHubService: the ship stays in the hub frame 20 s, the server fills
+  the J charge), "pause" points and PAUSE / RESUME client-side, the route state for the window / HUD from the client.
+  DEV leg:hub / leg:orbit = a one-stop client route.
+- Step 4 (server = plant + authority): deleted the server-run body autopilot (setFreeFlightAutopilot / sample /
+  environment / dispatch), the landing-pilot control override (applySurfaceLandingPilots), the route legs, take-off,
+  routes / pause / resume (FreeFlightLeg, ActiveRoute, legRun, landingPilot, m_pendingJExit); GameServer ignores the
+  FreeFlightAutopilot command and route commands other than the service stay. The server keeps: the plant, J rules,
+  the charge, ground contact / damage, zones, the service stay. Diagnostic: "[Plant]" log every 2 s of a J command.
+- Gates (post-G4 build): run_gates -j 6 209: 203 pass, 6 known red (model-asset editor), 0 new; --cpp-only 2/2 PASS
+  (wire_data_plane_contract_tests, system_map_behavior_tests).
+- Process note: the G4 patch was applied before the G2/G3 commit by a mistaken invocation (a dry-run flag the script
+  does not parse) - so G1..G4 are one commit; ba1 / ba5 evidence comes from the intermediate builds named above.
+- OPEN: not author-accepted; zone fines / service stay not hit live; rendezvous (Ship legs) not flown live; motion.
+  routeState / routeLeg* and freeFlightAutopilot* stay in the wire but the server no longer writes them (client overlay)
+  - candidates for removal; the hand-over cancel rule (a pilot action during a client route) still OPEN; client
+  autopilot is single-player (NPC global flight would need its own server-side or client-side runner); the older
+  Orbital Transfer (hub -> hub around one body, requestOrbitalTransfer) is still planned and flown by the SERVER - the
+  same migration applies to it (next). A landing leg engaged at full J speed (past a guide point) restarts the drive
+  ramp from 1 g like the old server autopilot did (it overshoots the body and comes back) - carry the ramp (proposal).
+- LIVE rt5 (post-G4 build, client route: guide gate -> Shackleton pad + pause -> RESUME -> gate -> Earth orbit): gate
+  passed at 12 636 km/s, the landing leg on the client body autopilot (ON ORBIT, hand-over 0.11 m, LANDED 0 m from the
+  pad, 1.54 m/s), PAUSED, RESUMED -> TAKE-OFF STUCK: on leaving the ground frame the contact re-landed the ship (0.06
+  m/s down) before the first climb command, and only the HOME latch / the laws' lift-off freed it (the old server
+  take-off dodged it by its order in the tick). FIX (plant rule): a main-engine command pushing up harder than the
+  local weight lifts a landed ship off ("[Plant] LIFT-OFF").
+- LIVE rt6 (same route without the pause, post-fix): gate 12 641 km/s -> landing leg ON ORBIT 86.89 km -> hand-over
+  0.10 m / 79.5 m/s -> LANDED 0 m from the chosen site -> TAKE-OFF -> LIFT-OFF -> complete at 86.88 km (J floor 86.87)
+  -> gate 12 630 km/s -> orbit of Earth (382 km): ARRIVED 18 m / 3.0 m/s -> stabilization (own ballistic frame) ->
+  ROUTE COMPLETE (client) / "МАРШРУТ ВЫПОЛНЕН".
+
+### Work queue after G2..G4 (author 2026-11-07: open items are closed in the same run, not left OPEN) - IN PROGRESS
+Queue (from the G2..G4 OPEN list + author remarks 2026-11-07 on the live runs):
+1. Orbital Transfer (hub -> hub around one body) planned / flown on the client; the server path removed.
+2. A landing leg engaged at full J speed keeps the drive ramp (no restart from 1 g).
+3. Dead wire fields (routeState / routeLeg* / freeFlightAutopilot*) removed, protocol version bump.
+4. Live DEV runs: service stay (refuel), zone fines, rendezvous (Ship leg).
+5. NPC global flight: check whether NPCs use the removed server autopilot at all.
+6. (author) Landing profile like an aircraft: a descent along an arc with the nose along the path, then a hover
+   over the pad and a vertical touchdown - instead of nose-down / tail-down; the player watches a moving picture.
+7. (author) Assisted: the velocity marker is often perpendicular to the hull - diagnose and fix.
+8. (author) The highlighted patch on the body under the ship in flight - remove; all lines a bit brighter.
+9. (author) Moon spaceport: a crater / mound drawn with very dense levels - screen ripple (aliasing) - fix.
+Author-only: the hand-over cancel rule (a pilot action during a client route); acceptance of everything.
+Progress (source + builds; live evidence per item below):
+- 1 DONE in code: GameSimulationOrbitalTransfer.cpp, OrbitalTransferPlanner.{h,cpp}, the EliteOrbitalTransfer
+  library and EliteOrbitalTransferCheck deleted; "transfer to the selected hub" / DEV transfer: = a one-stop client
+  route Hub leg (startClientRoute); handOverToHub moved into GameSimulationFreeFlight.cpp. LIVE q6 (Высокий ->
+  Тихий): ARRIVED after 140 s, 120 m from the aim, 20 m/s vs the hub, handed over to earth_hub.tikhiy (25 km,
+  23 m/s), ROUTE COMPLETE.
+- 2 DONE in code: the plant keeps the J ramp over a command gap <= 0.5 s (globalIdleSeconds); a landing leg after a
+  pass-through point hands the leg pilot's drive seconds to the body autopilot (carryDriveRamp). LIVE q7/q9: the
+  landing leg after the gate started at the full drive (980 665 m/s2 at t+0.06 s, the plant's ramp going on from
+  52 s) - no restart from 1 g, no overshoot of the Moon.
+- 3 DONE: ClientShipCommand RequestOrbitalTransfer / CancelOrbitalTransfer / FreeFlightAutopilot removed, RouteLeg
+  -> RouteService (the stop's service stay only); motion freeFlightAutopilot* / route* off the wire (client display
+  only); WireProtocolVersion 26.
+- 4 zone fines: the dominant body between Earth and the Moon is the Sun (its pull is the larger there; q1 log:
+  primary Земля -> Sol -> Луна), so the gate rule's body chain read Earth -> Sun -> Moon and could never fine a
+  skipped gate. FIX (source): the star is not a step of the chain. CORRECTION of my first reading: q1 / q6 (Earth
+  -> Moon straight) were not violations - the straight line passes the midpoint gate (15 000 km sphere), so "no
+  fine" was right there; a gate-skipping flight (an off-axis via point) was NOT flown live - the fix is
+  source-audited only.
+  Rendezvous: LIVE q6 FAILED - the traffic target (VYS-1702) sat inside Высокий's J keep-out; the leg aimed at the
+  ship, entered the keep-out at 1.4 km/s on the gentle 1 g and oscillated in/out for 200 s. FIX: a target inside a
+  hub keep-out (RouteLegResolver::hubAround) ends the leg matched at that hub's keep-out edge (the rest is a local
+  approach). LIVE q8 (from Тихий, leg:ship:any): "target inside the keep-out of earth_orbital_hub", ARRIVED 120 m /
+  20 m/s, handed over to earth_orbital_hub, ROUTE COMPLETE. DEV leg:ship:<callsign|any> added.
+- 5 DONE (no change): NPC traffic never enters free flight / J (no caller of toggleFreeFlight / the global command
+  outside the player's client) - nothing was lost by removing the server autopilot.
+- 6 landing profile - two FAILED live attempts recorded:
+  q2 (nose along the velocity, the old guidance: circular speed to the site, braking late, then a 57 km vertical
+  drop): CRASH at 163 m/s, 78 m from the site. q3 (an S-curve height profile, uniform braking along the arc):
+  CRASH 18 km short - the glide lagged, the late flare needed ~45 m/s2 up, the nose went 45-60 deg off and the
+  alignment gate held the engine off. Diagnosis by an offline 2D model (D:/tmp/elite_glide, reproduces q3:
+  hand-over 597 m / 19.9 km / 353 m/s vs live 588 m / 18.8 km / 350 m/s): this Assisted Cobra has NO keypad RCS in
+  normal flight (manoeuvre authority 0) - the vertical comes only from the tilt of the axial thrust; within
+  +-25 deg pitch the ship cannot descend ~80 km in ~300 km AND stop the sink. Design now (BodyAutopilot::stepGlide,
+  ships with a fore braking bank): phase 1 nose +15 deg, fore bank pushing back+down (re-planned every 1 s),
+  phase 2 nose -20 deg braking; ends at 450 m/s ~8-11 km high 15 km out (model: 285 / 330 / 400 km starts all
+  end within 0.4 km of the aim, pitch -20..+15 throughout); then the ground stabilization (its vectoring
+  thrust: 30-47 m/s2 any direction, hull level) stops the sink, flies the level approach, a 4 s HOVER over the
+  spot (new in LandingAutopilot) and the vertical touchdown.
+  LIVE q4 (nose +15 deg, Shackleton pad): GLIDE from 287.9 km / 82.7 km, braking (nose -20) at 29.5 km / 27.5 km
+  high, HAND-OVER 6.85 km high 15.2 km out at 449 m/s, hover at ~100 m (vertical -1 m/s), LANDED 0 m from the
+  site; descent 365 s (old 370 s). Frames: phase 1 at +15 deg showed ONLY STARS (the horizon is ~18 deg below the
+  local horizontal from 80 km, the cockpit sees ~12 deg below the nose) -> +8 deg (model: 330-400 km arcs, pitch
+  -20..+8, the insertion lead 340 km). LIVE q5 (+8 deg): GLIDE from 332.5 km, braking at 21.8 km / 19.7 km, HAND-OVER
+  6.77 km / 15.2 km / 449 m/s, hover at ~65 m, LANDED 2.6 cm from the site, descent 423 s. Frames: phase 1 STILL
+  stars only (the geometry: at 80 km the surface needs the nose ~ -15 deg or lower, which needs a sink the axial
+  engine cannot stop) - see the author question below; phase 2 and the level approach show the surface flowing
+  (the hull level, the horizon in the lower third). The transit re-accelerated after the hand-over (403 -> 500 m/s)
+  -> FIX: a transit entered fast never exceeds its entry speed (LandingAutopilot m_transitCapMps).
+  LIVE q7 (the full route below, transit cap build) FAILED: the 15 km transit at 160 m/s from 7 km sank at the
+  150 m/s clamp against the ground UNDER the ship and met the rising Shackleton rim (pull-up to 22 m, then a crash
+  421 m short). FIX: the transit holds its height over the highest ground 3..12 s AHEAD (terrain probe) and never
+  sinks faster than it can stop over it. LIVE q9 (same route): lowest 840 m over the rim, hover at 32 m, LANDED
+  9 cm from the site.
+  HUD "МАРШЕВЫЕ АВТОПИЛОТА +0.5 g (разгон)" while braking -> the autopilot's acceleration is now signed along the
+  velocity ("-0.4 g (торможение)", q5 frames).
+- 7 Assisted velocity marker: DEV log [HudVel] (hull-to-velocity angle, law, free hull, reference, autopilot
+  phase every 2 s) added to find WHEN it is ~90 deg; analysis pending.
+- 8 DONE in code: one line weight for the globe and the local terrain (0.65; was 0.45 globe / 0.8 terrain, the
+  haze floor 0.5 both); no extra fine contour set on cratered bodies (it drew the denser patch). Visual: pending.
+- 9 in code: cratered-body contours >= ~20 px apart (was ~7 px; 12 px still busy in q4 x570), the level blended
+  continuously (the finer set fades as it closes up) instead of a hard per-pixel switch. q5 x610 (20 px build):
+  the crater rings by the port only slightly sparser (~8-10 px) - another source is likely (the globe and the local
+  terrain drawn over each other, or the known terrain-mesh "staircase"); OPEN - next: an A/B in Planet Lab.
+- DEV frame captures were silently skipped: the game window was minimized (no drawable surface, no frame drawn).
+  Now logged, and the DEV capture restores the window once (q4/q5 captures written).
+- Gates (post-change build): run_gates -j 6: 209 / 203 pass / 6 known red / 0 new; --cpp-only 2/2 PASS
+  (wire_data_plane_contract_tests after the protocol 26 change).
+- LIVE q9 - the whole client route with ELITE_DEV_ROUTE_CHARGE_T=0.2 (official: refuel stop inserted by the
+  planner -> the gate -> Shackleton pad -> the gate -> Earth orbit): ARRIVED at Высокий 119 m / 19.9 m/s ->
+  SERVICE STAY (refuel; the server's stay, "done, J charge 3 t") -> the gate passed at 12 618 km/s -> the landing
+  leg with the carried ramp -> GLIDE 330 km -> braking at 21.5 km -> HAND-OVER 6.84 km / 15.1 km / 449 m/s -> hover
+  -> LANDED 9 cm -> TAKE-OFF, LIFT-OFF, complete at 86.87 km -> the gate -> Earth orbit ARRIVED 18 m / 3.0 m/s ->
+  ROUTE COMPLETE. (Item 4: the service stay is now live-checked; the fine path is not.)
+- 7 analysis ([HudVel], q4): the HUD's velocity reference matches the autopilot's ground velocity (ground frame:
+  HUD 432 m/s vs the autopilot's 449). Large hull-velocity angles are where the hull is deliberately held off the
+  velocity: the glide's phase 1 (up to ~50 deg, the nose +8..15 while the path bends to -40), the vectoring
+  terminal (the hull level, the velocity down: ~90 deg in the vertical descent). No reference bug found; asked the
+  author WHERE they saw it (manual flight or the autopilot). The log stays behind ELITE_DEV_HUDVEL_LOG=0 to mute.
+- The offline glide model is kept in tools/research/landing_glide (README there).
+- Author question (item 6): in the glide's first ~300 s the cockpit shows stars (physics + cockpit geometry, above);
+  options: (a) accept - the drone view F3 shows the ship over the surface; (b) the autopilot switches to the drone
+  view for the glide; (c) a shorter, steeper glide (nose lower, a harder final braking up to ~-35..-45 deg).
+
+### Docking freezes / the final-approach hang (author 2026-11-07, live play) - FIXED in code, DEV-verified, NOT ACCEPTED
+- Author: "при обычном докинге периодическое лёгкое подфризывание ... в финале кошмар ... игра повисла, закрыл".
+- Evidence (D:/tmp/elite_hitches.log, the author's session 13:09): frames of 85-280 ms every few s, all in
+  "dock_output_handling" (the client docking autopilot + its logs), then 0.5-2 s frames with hud / render_tail /
+  ev_poll_hotkeys inflated too, one frame 26.8 s (20.7 s in the docking span).
+- Root cause: std::cerr on Windows is unbuffered - every `<<` is its own write; into a console window one docking
+  trace line (~60 inserts) costs tens of ms, and a console with a text selection (QuickEdit) blocks every write
+  (a "hang"). The docking, dock-traffic and HUD logs are densest on the final approach. (stdout had been silenced
+  for the same reason long ago; cerr had become the main log.)
+- FIX: core/AsyncStderr.h - std::cerr appends to a memory buffer, a background thread writes it to the real
+  stderr every 50 ms (8 MB cap, the excess counted and dropped); the SEH filter / terminate handler drain it
+  synchronously. Finer hitch marks inside the Assisted docking step (dock_advisory_enter/_setup, dock_planning,
+  dock_assisted_pre_autopilot / _autopilot_update / _handle_output).
+- DEV A/B (automatic docking at Высокий, ELITE_DEV_DOCK_REQUEST_AT=15, hitch threshold 60 ms): before (dk1) 26
+  slow frames, many with dock_assisted_handle_output 30-48 ms; after (dk2) 0 slow frames through to "docked"
+  (only the two known start-up load frames). Gates 209: 203 / 6 known / 0 new. Author re-check pending.
+
+### Author remarks 2026-11-07 (map, route window, undocking) - BUILT, partly DEV-checked, NOT ACCEPTED
+- Detail map zoom: the map frames the planet's whole neighbourhood (Earth: the Moon's orbit); x16 left Earth a dot.
+  Now max x4000, wheel step 1.15; zoomed in (> 1.5 x the fit) the pan / cursor pivot work in the spatial volume
+  (before: the pan was forced to 0 - only the centre could be magnified). Visual check: author.
+- Beacons (nav_relay world sites) as hubs ("маяк по сути модуль хаба"): Detail map kind world_site_hub:nav_relay
+  (selectable, double click = its catalog Hub map with one module), System map: a relay without a parent hub is a
+  hub target; a route point there = the catalog-hub Point stop at its marker (existing planner path).
+- Route window: START / unofficial START disabled until РАССЧИТАТЬ succeeded for exactly this route
+  (RoutePlan::planSignature: the author's points, roles, order, programs, actions; planner-inserted points
+  excluded); any change disables them again until the next calculation.
+- Undocking: Ctrl+L (plain L kept) = LAUNCH (the terminal hint says CTRL+L: LAUNCH). The station now flies a pilot
+  ship the same axial departure as the traffic (out along the dock axis, flip, brake) and releases it AT REST
+  beyond the queue gates (departureTurnZ -11 km) instead of at the portal. DEV dk3: the request was accepted, but
+  the dispatcher never cleared it in ~10 min (queue position 2 behind VYS-1701, cleared only at the run's end) -
+  departure starvation by the arrival flow: OPEN, next with the docking polish (the release beyond the gates is
+  therefore not yet flown live).
+- Next (author): docking polish, then the approach to a chosen ship and taking station in a formation.
+- Gates 209: 203 / 6 known / 0 new; --cpp-only 2/2.
+
+## Next step
+- Fourth pass follow-ups (after the user's review): human acceptance of the
+  hybrid System Map and of a full live Vysokiy -> Baikonur transfer to arrival
+  and docking (3.1 h); LEO -> GEO transfers (Hohmann / spiral phasing);
+  ship attitude slaved to transfer thrust; dock sectors + physical traffic at
+  the other Earth hubs (cross-hub flight objects); route click info;
+  settlement zoom-to on the Detail Map; reputation / warrants for the
+  relation-to-player line.
+- After the user's review of the spatial layer: Stage 4 runtime communication
+  (beacon coverage / relay delays in the client: messages, bank, warrants,
+  sync on return to coverage), then Stage 5 (passenger / cargo flows ->
+  schedules -> hub traffic), Stage 6 (seeded belts / asteroid ids, city
+  placement by the runtime terrain sampler, night lights per style), Stage 7
+  events (epidemics, piracy, failures, rescue, anomalies; perception layer
+  for the World's Ass), Stage 8 law in runtime, Stage 9 information
+  (KnowledgeRecord propagation, Public / Freeband radio and news).
+- Economy runtime (after the author's review): persistent ShipInstance /
+  component registry (legal status, age), Sol market with stocks, C20
+  container contracts, banking and storage fees.
+- After the user's review: the separate stage INTERSTELLAR NAVIGATION
+  (connected domain, ephemerides, gravity, InterstellarNavigationEnvironment
+  hazards, icy fields, rogue objects, refuelling, ship-specific risk).
+
+
+### User order 2026-11-05 w - fleet engineering context, unified spares and ship passports
+Status: DATA FOUNDATION / PROPOSAL-model; frame passports deliberately deferred.
+- Engineering inventory frozen as context: 18 economic classes -> 19 engineering types (Cobrett N1 and A3 are distinct propulsion architectures) -> 21 current model passports.
+- 10 ship integrators grouped into 6 industrial-cooperation ecosystems: Sol, Cognium pool, Heavenly Pact, Southern circle, Citadel compact, Free Belts. Cross-group scores describe industrial compatibility/supply, not ideology.
+- New machine-readable sources: canon/fleet_engineering_context.json, canon/ship_parts_unified.json, canon/ship_passports_3126.json. Human context: Notes/Lore/ECONOMY/FLEET_ENGINEERING_CONTEXT.md.
+- Spare-parts unification: 121 legacy product SKUs -> 102 canonical replaceable SKUs (66 major technical LRUs + 36 mission/survival/weapon/payload modules). Drives 17 -> 10; propulsion reactors 15 -> 5; service reactors 7 -> 5.
+- Accepted engineering rule: a larger standard engine may be derated to the ship rating; reactor power may be composed from parallel banks of the same smaller standard reactor. Rated ship thrust/power are unchanged in this pass.
+- All 102 canonical parts have equipment envelope + service-clearance geometry. Cobrett anchors: CR-1 emitter dia 5 m, ER-5 cooling pad 11 x 11 m; other dimensions are PROPOSAL/model scaling by mass/power using ship_designer.py-style effective densities.
+- Southern-circle legacy component names mizan.* are not canonical in the new parts database: they resolve to kapehu.core.k5 / kapehu.core.k12 / kapehu.mc.k1; legacy ids are migration aliases only.
+- Cobrett N1/A3 jump installation is explicit in both the engineering passport and CobrettPassports.h: Z-0.5 jump core + jump-charge tank.
+- Not done: hull/frame passports, exact mount coordinates for future 3D models, runtime migration to unified parts, flight-performance rebalance.
+- Static data invariants checked: engineering types=19, model passports=21, canonical SKUs=102; every passport BOM resolves to a canonical part and every canonical part has geometry. Dry-mass deltas use ship override or ship_economics class mass; 3 passports exceed the 5% mass-delta threshold and are flagged for frame revalidation.
+
+
+### User order 2026-11-05 x - interactive HTML ship/parts reference
+Status: DONE / static engineering reference.
+- Added Notes/html/ship_reference/: index.html, ship.html, style.css, app.js, data.js, README.md. No server is required; open index.html directly.
+- Main view groups ships by industrial/political bloc and manufacturer; right pane shows passport, design language, weapons and replacements; one-click detail page opens the ship assembly.
+- Ship page presents functional equipment tree rooted at 35 with A1 propulsion, A2 manoeuvring/RCS, A3 cooling, A4 power, A5 jump, A6 avionics/sensors, A7 comms, A8 life support, A9 cargo/passenger, A10 survival, A11 service/docking/tow, A12 weapons, A13 protection/landing.
+- Part view prioritises equipment envelope + service clearance and renders an automatic schematic sketch from dimensions; reactor cooling pads, radiators and weapon/missile sub-passports get specialised annotations.
+- Design-language doctrine is stored in fleet_engineering_context.json per cooperation group and per ship integrator (modular vs monolithic, cost/technology, maintainability, visual signature, redundancy).
+- ship_parts_unified.json carries a same-group replacement and a foreign/enemy functional analogue where one exists; external analogue is explicitly not assumed plug-and-play.
+- ship_passports_3126.json carries inherited design language, ship-level standard/foreign analogue, functional groups and weapon summary.
+- canon/weapon_system_reference.json bridges ship weapon hardware to combat weapons.json. Current laser/missile dynamics remain from combat data; physical missile/emitter dimensions and mount bindings are PROPOSAL/model for model construction.
+- Cobrett PD-1 is presented as a twin-emitter mount (proposal) to reconcile the engineering BOM with the legacy runtime's two laser hardpoints; legacy missile capacity=4 remains visibly flagged because a separate VLS-4 hardware passport is not yet authored.
+
+### Docks as objects, hold points for the pilot, docking widget (author 2026-11-07) - IN PROGRESS
+Author decisions:
+- The dock (not the station) owns docking: a station / terminal has docks; each dock = entrance(s), places, holds.
+  Dispatchers: "as many as needed - it is a game"; one per hub is fine if it copes.
+- Dock kinds: rotating drum (current 6-place, artificial gravity; Assisted ships, they manoeuvre easily), a
+  non-rotating "railway station" terminal of parallel tracks for Newtonian ships (later; one dock per arrival, NO
+  holds), a surface pad (the Moon).
+- Allocation criteria in order: 1) does the ship fit, 2) occupied / free, 3) the dock's purpose vs why the ship
+  goes there; plus ship size.
+- One entrance cannot serve two ships at once -> the dispatcher queues arrivals / departures.
+- 6 hold points in front of the drum entrance, off the rotation axis, far enough for "clearance -> onto the axis ->
+  roll to the entrance -> in"; the straight departure along the axis always stays free. Green light at once ->
+  the autopilot docks directly as now, else a hold is the route's intermediate point.
+- Player widget: calculating / moving / distance / dock queue position / estimated wait.
+- Later (design): how a piece of a mesh model is marked as a dock (what the dock part contains, how places are marked).
+Found in code (2026-11-07): the hex drum already has 6 holds (r 450 m, z -1600, FIXED frame) used by the traffic;
+the pilot uses "direct entry" (requested by the server only when the ship is already on the axis; while it waits
+nothing else is cleared) -> no hold for the pilot; one dispatcher hard-wired to hub_hex_dock_a; the cube service
+block (80 x 80 x 600 m tube) is not a dock; the dispatcher prefers the older of arrival / departure, and arrival
+pipelining kept the lanes busy (dk3: a departure waited ~10 min).
+Queue: (1) departure fairness; (2) the pilot asks the dispatcher when docking is engaged, green -> direct, else
+the assigned hold -> wait -> axis -> entry; (3) the widget; (4) dock kind / purpose / fit / free allocation in the
+dock model; (5) mesh-as-dock marking (proposal for the author).
+Done in code (2026-11-07, this pass; offline evidence, live pending):
+- (1) Departure fairness: arrivals and departures alternate when both wait (DockTrafficController lastClearedArrival).
+  EliteDockTrafficCheck now also reports max departure wait / max hold wait / the wait-estimate error. A/B on the
+  old 4 profiles (cobretts/interval 4/600, 4/1549, 9/600, 6/300): max departure wait 816/494/1272/1054 s ->
+  606/206/964/916 s; max hold wait 707/392/1622/1658 -> 1016/572/1622/1643 s; 0 violations.
+- Lively docking (author 2026-11-07 "влеты в станцию бодрее, кобра может дрифтом заходить на площадку"): portal
+  crossed at 12 m/s (was 4), corridor to 8 m/s (was 1.5), in the chamber a drift onto the pad (one arc from the
+  axis to above the pad, the hull swinging nose-to-exit, braking 1 m/s2), touchdown 6 s (was 12), departure lift
+  6 s / to the gate 22 s (was 12 / 35), out at 12 m/s (was 5); the pilot's capture keeps its own closing speed
+  (was a smoothstep from rest at 4 m/s, up to 150 s). Offline 4 profiles: 17.3 / 16.3 / 17.2 / 16.7 arrivals/h
+  (was ~12), max departure wait 286 / 106 / 566 / 416 s, max hold wait 360 / 360 / 1094 / 1116 s, 0 invariant /
+  separation / structure violations, min gap 34.9 m (neighbouring pads). Wait estimate = lane movements ahead x
+  110 s, mean abs error 57 s (4/600) / 134 s (9/600).
+- (2) Pilot hold points: ClientShipCommand::RequestDockArrival (wire 27) sent when automatic docking into the hex
+  dock starts (cancel when the request is dropped); the server asks dispatcher.entryFreeNow(): free -> direct entry
+  (as before), busy -> queued, hold nearest to the ship's azimuth; at the hold (< 60 m, < 2.5 m/s) the server
+  reports AtHold; drop radius 20 km. Snapshot carries the wait estimate, movements ahead and hub-local hold / entry /
+  axis. Client gate (SpaceState::updateDockingDispatcherGate): waits for the answer, flies to the hold (straight,
+  a detour around hub obstacles, 90 m/s cruise, 1.2 m/s2 braking, terminal hold facing the dock), waits; on
+  EntryCleared plans the normal docking from the hold - the route then starts at the new portal
+  hex_dock_a.axis_approach (axis z -900) instead of the far blue cylinder. DEV ELITE_DEV_DOCK_FORCE_HOLD=1.
+- (3) Widget: presentation/DockingWidgetText.h + SpaceState::renderDockingWidget (status: request / preparing /
+  calculating / moving / to the hold / waiting / entry cleared / station control / docked + Ctrl+L / departure
+  queue; distance to the entrance and speed; queue position, movements ahead, wait estimate).
+- (5) PROPOSAL for the author - a dock inside a mesh model (Model Asset editor sockets already have kinds and
+  local position / rotation; the editor colours "dock" sockets): a dock = a named group of sockets, the game builds
+  DockFacilityDescriptor from them at load instead of HexDockFacility.h constants:
+  dock_root:<id> (kind drum / track / pad, spin axis + rate for a drum, purposes); dock_portal:<id> (centre of the
+  entrance, -Z = inbound, scale X / Y = aperture); dock_pad:<id> (surface centre, +Y = pad normal, -Z = parked
+  nose, scale = footprint; size class, purposes); optional dock_hold:<n> (else 6 generated in a ring in front of
+  the portal) and dock_lane:<id> polyline (portal -> pads). Collision stays the part's collision boxes.
+  Track terminal = one portal + one pad per track, no holds. Author decision pending.
+Author decisions 2026-11-07 (later the same day):
+- A ship may or may not have an autopilot installed. The docking request builds a GREEN corridor (with a BLUE part
+  where required) and that corridor may lead to the hold point; the hold point is marked by a VOLUME.
+- The widget is a small panel with the key values (no long phrases); the status text goes to the HUD console
+  (the docking terminal), which exists for that.
+- Proposed (no answer yet): positioning tiers (exact in station / beacon range, inertial-navigation uncertainty
+  circle between them shrinking on celestial / beacon fixes, star and planets always visible as references).
+Results of the pass (2026-11-07, DEV live runs dk4..dk11, Assisted Cobra at Высокий, NOT author-accepted):
+- dk4: the hold path worked (H4 reached to 4.5 m, wait, clearance) but the planner route from the hold was 44.9 km
+  (route speed 500 m/s sized a multi-km terminal approach) -> near-dock route speed cap 35 m/s; dk5: still 5.8 km
+  (the ordinary 1000 m minimum start straight) -> near-dock lead = 8 hull lengths; dk6 (holds at -1600): 4.9 km,
+  the ship reached the axis then looped out to z -1900 (the planner's ~900 m terminal straight starts at z -1400,
+  the hold was inside it) -> holds moved to z -2600 (HexDockFacility holdZ); dk7/dk8: the loop stayed (the axis
+  portal at -900 / -1800 inside the planner's terminal geometry, 6.0 / 3.5 km).
+- Decision: from a hold the entry is always the same geometry -> a dedicated hold-entry path (client gate): a
+  quadratic arc from the hold onto the axis 1600 m out (control 2200 m out), the axis straight to 150 m out, flown
+  at 35 m/s on the arc / 20 m/s on the axis (law-neutral stabilize controllers, cross-track correction); the
+  station captures it on the axis (capture now < 25 m/s, z > -1000) and aligns the roll. dk9: clearance -> capture
+  72 s (dk5 215 s, dk8 109 s), cross-track <= 16 m, 2.4 km path; full cycle to "released to the pilot beyond the
+  dock lanes". The planner route from the hold (axis_approach portal) stays for starts in front of the dock.
+- Lively entry live: capture -> latched 53 + 36 s (dk9; was ~4.5 min in run5); direct entry dk11: request 10.7 km
+  away -> latched 272 s; departure request -> cleared after the alternation (162 s, a traffic arrival + departure
+  ahead) -> released ~210 s later at rest beyond the gates.
+- Docked = the docking request is complete (the client clears it; nothing replans a docking after the release).
+- Green corridor (source StationTrafficControl, priority 150, green in GuidanceCorridorRenderer): to the hold
+  (detour point included) + the hold volume (a 160 m box of frames facing the axis approach), then the entry path;
+  hub-local, placed with the RENDER reference frame; the request enables the HUD corridor + server guidance modules.
+  Requests without an autopilot (guidance mode) now also go to the dispatcher: corridor shown, nothing flown
+  (source-audited; the manual request UI/key not yet added).
+- Widget = a compact panel (title, status chip, label/value pairs: to entrance, speed, ahead / queue, wait, place,
+  Ctrl+L); the phrase goes to the docking terminal as its own "dispatcher" line (printed on change, no RECOVERED).
+- Offline final (holds at -2600): EliteDockTrafficCheck 4 profiles 14.8 / 14.8 / 14.8 / 14.5 arrivals/h, max
+  departure wait 364 / 163 / 506 / 516 s, max hold wait 582 / 454 / 1260 / 1288 s, 0 violations, min gap 34.9 m;
+  wait estimate (120 s per lane movement) mean abs error 58..238 s. docking_infrastructure_api_tests PASS (new:
+  purpose, entry-or-hold, alternation). Gates 209: 203 pass, 6 known red, 0 new; --cpp-only 2/2.
+- OPEN / next: the manual docking request (key / dock card) and HUD markers for a manual pilot inside the corridor;
+  the far direct route through cylinder B is long (dk11: 48.65 km plan at up to 217 m/s from behind the dock -
+  pre-existing planner behaviour); roll indicator for manual entry; the Track terminal / shuttles in the cube
+  block (model ready: DockKind, purposes); positioning tiers (author answer pending).
+Author 2026-11-07: "трафик нет смысла делать затянутым - обычное ожидание до 5 мин, но в случае эвакуации или
+боевых действий нагрузка может и расти"; "маяки должны быть не только возле планет, но и по маршрутам; маршрут
+меняется из-за движения планет"; dock markup - "главное, чтобы был механизм считывания этой разметки" (queued).
+- Flow control (DockServiceTraffic::flowHeld, TrafficConfig normalWaitLimitSeconds 300 / emergency): scheduled
+  traffic (a Cobrett at its far point, an inbound shuttle before it enters the zone) is held while a new arrival
+  would wait longer than 300 s less its trip in, or while no pad would be free for it (known arrivals + inbound
+  >= free pads); pilots are never held; ELITE_DOCK_TRAFFIC_EMERGENCY=1 / --emergency lifts it. Dispatcher API:
+  predictedNewArrivalWaitSeconds, knownArrivals, freePadCount, TypicalMovementSeconds 120.
+  Offline 4 profiles: max hold wait 234 / 216 / 276 / 230 s, max departure wait 240 / 186 / 199 / 261 s,
+  12.2..12.5 arrivals/h, flow holds 134..348 per 6 h, 0 violations; emergency 9/600: 1260 / 506 s (unchanged).
+  Gates 209: 203 pass, 6 known red, 0 new; API tests PASS. Live: not run for this slice (game build OK).
+Author 2026-11-07 (regression report): "исчезла траектория на карте хаба ... мы теперь не проходим через синюю зону ...
+верни". Root cause: the hold flow erased the planner's route (the Hub Map draws only the docking computer's corridor
+id dock:<module>:<anchor>) and flew straight to the hold / from the hold (and the planner's near-dock start skipped
+the cylinder). Fix: the planner's near-dock start (axis_approach portal, 35 m/s cap, short lead) REVERTED - the
+direct route is again cylinder_b.entry_front -> dock front; the hold path now goes ship -> 700 m straight -> through
+the guidance cylinder (blue lane) -> 150 m beyond -> the hold (free legs bent around obstacles), corner speed caps
+braked into; the Hub Map gets the whole trajectory (to the hold + the entry preview into the dock) under the
+docking computer's id. dk12: hold path 20 km through the blue lane, cross-track in the cylinder <= 14 m, but ~1 km
+wide after the exit turn at 90 m/s -> corner caps (dk13 pending).
+Author 2026-11-07 order: interstellar JUMPS next - charging 5..10 min max (not 6..30 h), limits: fuel + the
+procedure; target (orbit / hub) -> "рассчитать прыжок" -> straight legs avoiding hazards, preferring inhabited
+systems, fuel check + refuel points -> "старт"; a cartoon-style effect (shake, tail up, jerk, cockpit distortion,
+new sky); the exit's direction and speed chosen to reach the hub / orbit, else hang in space. Beacons stay as they
+are. Readiness audit (2026-11-07): server/client already follow the active system (GameServer::
+resolveSingleActiveSimulationSystemId, client snapshot by playerNavigation.currentSystemId), ephemerides exist for
+all 61 systems, the starfield is observer-relative (changes after a jump); MISSING: any code that moves a ship to
+another system, runtime hubs outside Sol (all 10 orbital_hubs + 8 runtime bindings are Sol; 539 sites in 28
+systems are map markers only), interstellar routes / max hop / neighbour table, jump charge consumption and
+charging time, a cross-system planner, the zones (jump_distortion / unstable_navigation) are not loaded.
+Author 2026-11-07: "мне кажется или у тебя полностью сломался и планировщик и автопилот?" / "а зачем нам к доку
+лететь по ломаной? ломаная нужна была для прыжков" / "прыжок доставляет к хабу, а возле хаба уже действует обычная
+механика стыковки". Diagnosis: the planner / autopilot code was not changed, but the client dispatcher gate took the
+control stream away from them whenever the dock was busy (a home-made polyline pilot: 20 km to the hold, up to
+~330 m off its own corridor; guidance-mode requests got no planner at all; a 4 s pre-wait). DECISION: the gate no
+longer flies or draws anything - it only tells the dispatcher (RequestDockArrival, always a direct-entry request:
+first in the queue, captured on the approach axis once cleared) and ends the request when docked. REMOVED: the
+hold path / entry path pilots, the hold / entry corridors and the hold volume, the green frame colour (my misreading
+of "green corridor" = the zone type, not a colour), ELITE_DEV_DOCK_FORCE_HOLD. Kept: dispatcher alternation, flow
+control (<= 5 min), lively entry + drift, the panel + console line, holds at z -2600 for the traffic. The DEV dock
+request now enables the same guidance modules as a dock-card request. Live dk16/dk17: route stages free ->
+capture cylinder_b.entry_front -> blue lane (hard) -> release -> terminal; Hub Map trajectory shown; request
+10.7 km out -> latched 272 s; full cycle to the release beyond the gates. A pilot hold point needs the planner
+itself to plan a stop there (not done).
+Author 2026-11-08: "почему после отстыковки не возвращается управление кораблем?" then "управление обратно отдано,
+но уже и из дока вылетел и виджет пропал. на терминале ХУД хоть какую-то информацию выдавать надо". Diagnosis: the
+station flies a departing pilot ship along the axis to rest at departureTurnZ (-11 km, ~2-3 min) and releases it
+only there; the dispatcher marks it Departed at the lane clear point (-2.4 km), so the widget (hidden on Departed)
+vanished while the station still held the ship. Author rule (same day): touching the controls while an autopilot
+flies -> a warning, after 3 s the autopilot is off and the route is dropped; a route flown by hand (guidance mode)
+is dropped only by removing its card on the map (maybe later a button).
+DONE (source + live DEV): SpaceState::updatePilotTakeover - the pilot's controls are sampled every control frame;
+owners: the docking autopilot (automatic request), the client route, the body autopilot, the station on the
+departure axis (beyond the gate). Touch -> "ВНИМАНИЕ: руль - ... через 3 с"; letting go > 1 s cancels; 3 s of
+handling -> docking request cleared (dispatcher cancel) / route cancelled / body autopilot cancelled / station
+asked to release (ClientShipCommand::RequestDockDeparture index 1 -> DockServiceTraffic::releaseExternalToPilot,
+AxialOut only, never inside the chamber). Inside the dock: only a notice. A released departing pilot off the axis
+(radial > 300 m) frees the outer lane. Widget: the departure stays on the panel until the station lets go
+("ВЫЛЕТ / СТАНЦИЯ ВЕДЁТ", ДО ВЫПУСКА km, СКОРОСТЬ, ПЕРЕХВАТ руль 3 с), then "УПРАВЛЕНИЕ ВАШЕ" for 8 s; console
+lines without changing numbers (no repeats); the HUD console gets a separate pilot notice (warning severity,
+6 s life). Live DEV dk19: docked -> departure queued 2nd, cleared after 177 s -> beyond the gate a 4 s yaw ->
+warning -> "released early" at z -175, free flight. dk20: a 1 s yaw during the docking autopilot -> warning ->
+"continues"; a 5 s yaw -> "АВТОПИЛОТ ВЫКЛ.: стыковка прервана", dispatcher cancel. Gates 209: 203 pass, 6 known
+red, 0 new; docking API tests PASS; DockTrafficCheck 0 violations. Not flown by the author yet.
+Author 2026-11-08: "иногда мне кажется, что повороты корабля на столько рваные, что я принимаю их за фризы".
+Measured (DEV ELITE_DEV_ROT_TRACE=<csv>, the rendered attitude per frame): steady 90 deg/s yaw / pitch / roll,
+hub frame and free flight: no stalls, frames <= 18 ms, the per-frame step follows the frame time (corr 0.64-0.73,
+one-frame offset). Hypothesis "the render blend towards a tick-stepped target pulses" - a rate-propagated render
+attitude was tried with a pre-registered PASS (frame-jump p95 <= 12 %): FAIL (no measurable change) -> REVERTED.
+The author's 00:05 session hitch log had almost no frames >= 80 ms in flight. OPEN: catch the real case - a turn
+exposes any 30-80 ms frame stall (4.5 deg at 90 deg/s) that the 80 ms hitch log misses; next author session with
+ELITE_DEV_HITCH_MS=35 (+ ELITE_DEV_ROT_TRACE) to see which phase stalls.
+Author 2026-11-08 (jump plan): the reading of points 1-6 confirmed; hubs exist only where they are written in (each
+with its reason to be there); without a hub the jump exits on a planet orbit or just in space - START WITH ORBITS.
+Author 2026-11-08 (Assisted route): "ассистед, выбрал соседний околоземный хаб, нажал перелёт - всё время вектор
+главной скорости не совпадал с вектором тяги ... если полёт происходит в режиме стабилизации, не надо из него выходить;
+если выходим, ассистед должен вести себя как ассистед". Reproduced (DEV D:/tmp/elite_as1, Высокий -> Тихий, A3):
+HUD hull-to-velocity 106-110 deg from the first second, 95 deg on arrival. Root causes: (1) the route leg switched to
+normal flight and the server reset the velocity reference to the dominant body (Earth, 7.6 km/s orbital), while the
+client pilot flew against the hubs - the marker showed the orbit, the nose pointed at the destination; (2) inside
+the departure keep-out the nose pointed at the destination while the field pushed AWAY from the hub; (3) the client
+ramp ran on while the plant dropped the field under Earth's J floor (the chord between two 420 km hubs dipped to
+293 km < 319 km floor) -> braking planned on 1e5 g with 2e2 g real -> 8 000 km overshoot, nose 170 deg off.
+DONE (source + live DEV, wire protocol 28): ShipControlState::globalReferenceHubId - the route pilot names the hub it
+flies against (the departure hub inside its keep-out, then the destination; a guide point before a hub flies
+against that hub); the server keeps that hub as the velocity reference (kind 0, HUD "скорость ... отн. хаба Тихий",
+the Assisted alignment, END); the nose = the wanted velocity against that reference (the J field bends the real
+one onto it); the pilot follows the plant's real J level (held 0.5 s, replication lag) and plans braking with the
+ramp time still ahead; route clearance never under a body's J floor + 10 km (BodyFlightRules clearanceM,
+EliteBodyFlightRulesCheck PASS). Live as2..as4: as3 showed a false ramp sync at the guide point (lag) -> fixed by the
+0.5 s hold; as4: departure 25 -> < 1 deg within 8 s, transfer and arrival 0-4 deg, no overshoot, arrived 119 m /
+20 m/s, route complete (143 s). Remaining: at the reference switch (departure hub -> destination) the two hubs
+differ by 8-11 km/s - the nose turns at once, the velocity follows in ~17 s (130 -> 15 deg) - an Assisted turn,
+not removable while the thrust stays along the nose. Gates 209: 203 pass, 6 known red, 0 new. Not flown by the
+author. OPEN reading (asked): "не выходить из стабилизации" = keep the hub reference (done) or literally fly the
+in-keep-out departure / final approach in the stabilization mode on ordinary engines.
+### Jump stage J1 2026-11-08 - interstellar jump to a planet orbit - LIVE DEV, NOT AUTHOR-FLOWN
+- Survey: the runtime is keyed by systemId end to end (the server's simulated system = the player ships' system,
+  GameServer::resolveSingleActiveSimulationSystemId; gravity / celestial snapshot / client sky + maps follow); every
+  system sits at its own origin; nothing ever changed a ship's system before. Hubs exist only for system 0 (spawned at
+  startup) - none elsewhere, as the author wants (a hub only where it is written in).
+- Rules (navigation/rules/JumpRules.h, shared): hop <= 32 ly (canon max_hop_ly of 3126), mass <= jump core rating,
+  charge q*d*(alpha+M) (JDrive.h logistics rule), charge-up 5..10 min by distance, refusal codes + texts.
+- Server (GameSimulationJump.cpp): ClientShipCommand::RequestJump (index = system, -1 cancel; wire protocol 29,
+  snapshot schema 41 - motion.jumpState / target / distance / cost / charge elapsed+duration / refusal + serials);
+  START only in normal flight; the charge-up is silent and is lost if the ship leaves normal flight; at its end the
+  jump waits until the ship is clear of objects and above every J floor (jEngineBlocked), then: charge spent, motion
+  AND travelFrame systemId switched (the replicated frame identity carries the client's system - first run showed the
+  client still in system 0), a placeholder until the new system's bodies are in the gravity context, then a circular
+  orbit of the exit planet at its J floor + 100 km on the lit side (the planet with the most world sites, else the
+  heaviest; no planet -> 1 AU from the star at rest); the automatic stabilization takes the closed orbit.
+- Client (SpaceStateJump.cpp): galaxy map star context menu РАССЧИТАТЬ ПРЫЖОК -> notice (distance, charge, charge-up
+  time or the refusal) -> ПРЫЖОК: СТАРТ (enabled only for the calculated star) -> ОТМЕНИТЬ ПРЫЖОК while charging;
+  HUD panel (target, ly, charge-up m:ss with a bar, cost; "ЗАРЯЖЕНО: отойдите от объектов"); refusals in the HUD
+  console; the jump = a cartoon ripple (flash + 4 dotted rings, 1.6 s). DEV: ELITE_DEV_JUMP_CHARGE_S, verbs
+  jump:<id>[:<body>] / jump:cancel / jumpui:calc|start|cancel:<id>, the DEV pointer can click galaxy stars
+  (galaxy-system:<id>), ELITE_DEV_JUMP_DIAG, ELITE_DEV_JUMP_NOSE_DOWN.
+- Live DEV (D:/tmp/elite_jp1..12, Высокий -> Fomalhaut 25.1 ly, 0.91 t of 3 t): START before РАССЧИТАТЬ ignored;
+  menu rclick + РАССЧИТАТЬ through the real map input (jp3); waited at 5 km from the hub, jumped at 20 km; exit on an
+  840 km orbit of Fomalhaut_g, stabilization ON 5 s later; client system 61, snapshot 61, renderer alt 840 km.
+  Gates 209: 203 pass / 6 known red / 0 new; C++ wire / map contracts PASS.
+- Found, open: (1) Fomalhaut_g (Venus-like, 932 bar CO2, little relief) renders in the Elite style as a BLACK disc
+  with no contours - nose-down frame has no stars at all, so it is drawn, but looks like nothing (author decision on
+  the look of featureless / dense-atmosphere bodies); (2) for ~1 s after the jump the radar showed Sol's ships
+  (12 tracks) - other-system ships are still replicated; (3) multiplayer: players in different systems not handled
+  (the server simulates one system); (4) next: J2 multi-hop planner (hazards, inhabited systems, charge, refuel points)
+  needs hubs in other systems (spawn from the written-in world sites).
+### Assisted route = Assisted, jump exit + radar 2026-11-08 - LIVE DEV, NOT AUTHOR-FLOWN
+- Author's reading resolved: "Assisted always turns along the main velocity vector; leaving the stabilization the
+  ship lines its thrust up with the ORBITAL velocity and flies to the other hub from that attitude" - the main
+  velocity is the one against the dominant body, not a hub (the ce884a11 hub reference made the motion look
+  sideways). RouteLegPilot (Assisted law only; Newtonian keeps the old law): the reference = the plant's primary
+  body (its velocity differenced on the client); LINING UP first (velocity held, nose onto the main velocity, < 3 deg);
+  then the nose leads the real main velocity by <= 2 deg towards the wanted one and the commanded velocity stays
+  within 2 deg of the hull; speed only while the hull is within 45 deg of the wanted direction (none beyond: as7 showed
+  circling at 300 km - turning radius v/omega); a motion under 50 m/s frees the nose onto the wanted direction (as8
+  freed it by a relative threshold at 7 km/s -> 20-28 deg); alignment kept past a guide point.
+- Live DEV earth_orbital_hub -> earth_hub.tikhiy (D:/tmp/elite_as5..9): as9 HudVel hull-velocity <= 2.5 deg in 73 of 75
+  samples (20 deg at 403 m/s while turning in place, 11 deg at the guide point - since fixed, not re-flown), arrived
+  120 m / 20 m/s, route complete. Newtonian-I same route (elite_nw1, ELITE_SHIP_PHYSICAL_TEST_MODEL): arrived 119 m /
+  19.8 m/s, complete (nose free, as Newtonian).
+- Jump exit body chosen by the server: world sites > canon (observed/authored) planet > heaviest. Fomalhaut has no
+  world sites -> Lexie (jp13/15: orbit 444 km, stabilized). Fomalhaut_g (Ananke, procedural) was the old choice.
+- Radar blinded by the jump: from 3 s before the charge completes, while charged/waiting and 3 s after - no
+  contacts, snow + streaks drawn on the scope (RadarWidgetBase::setJamLevel; shader effects also forced). jp15 frame:
+  snow visible, 0 tracks; after the jump 0 tracks (no Sol ghosts).
+- Gates 209: 203 pass / 6 known red / 0 new.
+- OPEN (author directive 2026-11-08): "the server must simulate the systems or parts of systems where players are" -
+  multi-system runtime (today one active celestial context; a second player in another system blocks a jump exit).
+### Multi-system server + 153-player load test 2026-11-08 - BUILT, HEADLESS LOAD TEST + 1 LIVE DEV JUMP, NOT AUTHOR-FLOWN
+- Author directives: "сервер должен считать те системы ... где находятся игроки"; "по 2-3 нпс в каждой из 61 систем ...
+  нпс = имитация игроков"; "в населенных системах есть хабы? если нет - хотя бы по одному на жилую зону"; "погоняй ... с
+  перемещениями, прыжками нпс, тиками по экономике".
+- Multi-system tick: GameServer::update runs one GameSimulation::update pass per system that has a ship (plus the start
+  system), after switchSimulationContext(systemId) (bodies from the analytic ephemeris at this universe time, gravity
+  parameters on the first visit). GameSimulation parks / restores the per-system celestial context
+  (m_parkedCelestialContexts); hub frames / velocities stay global (hub id keyed), each pass rebuilds its own system's.
+  Pass 0 runs the once-per-tick work (clocks, combat, shells, dev scenarios, diagnostics); passOwns() filters the
+  free-flight / jump / hub-service / reference-binding / zone loops. resolveSingleActiveSimulationSystemId removed;
+  4 textual contracts (active_system_context, kinematic_frames, multiplayer_session_navigation, system_membership)
+  rewritten to the pass-loop contract.
+- World-site hubs: GameServer::materializeWorldSiteHubs - one runtime orbital hub per body with world sites outside Sol
+  (the most populated orbital site; surface / belt sites -> 300 km above the J floor), command_station module:
+  99 hubs in 27 inhabited systems (107 with Sol's 8). 33 systems have no sites -> no hubs.
+- Replication per session: only the session's system's objects / hubs / signals (was: all 110 objects / 107 hubs of
+  all systems in every snapshot, 134 KB, 2.2 MB/s per player); on a system change the old system's rows are removed.
+  Also: the source id sets built once per publication (ReplicationSourceIds + fingerprints; were rebuilt per session),
+  materializeCanonicalFromFullSet (moves the omitted graph fields; the generic merge deep-copied each ship 2-3 times).
+- Jump exit: every ship its own point on the lit side (+-60 deg by ship id) - the load test showed all ships jumping
+  to one planet exiting INSIDE each other and blocking each other's J engine / next jump for good.
+- EliteServer --load-test [K|2-3] [SECONDS] [move] (build-relwithdebinfo, -O2): every bot is a real session (account,
+  bootstrap player ship, own transport encoding every snapshot with the TCP wire codec), control state every tick,
+  time sync 2 s, galaxy map 60 s; move = 4-min travel cycles (stabilization off, J on, full 37 s, brake 40 s; every
+  other cycle a jump to a < 30 ly neighbour). ELITE_DEV_ECONOMY_TICK_S: a DEV server economy round (market / events /
+  board of every economy hub, a new day per round) spread over the round's ticks. ServerTickProfile = per-stage timing.
+- Results, 153 player bots in 61 systems, 50 Hz (20 ms budget):
+  first run 48.6 ms avg / 123 ms p95 per tick, 2.4 MB/s per player; after the fixes (static): 14.8 ms avg, p95 22.8,
+  74 % of one core, 165 KiB/s per player, 278 MB. Move scenario 480 s (jumps charge 20 s, economy every 10 s):
+  15.3 ms avg, p50 11.9, p95 23.7, max 68 ms, 77 % of one core, 144 KiB/s per player, 291 MB; 141 jumps requested,
+  101 done, 0 stuck exits, all 153 ships present. Per tick: simulation 11.1 (61 passes; physics 2.8, AI/controls 2.1,
+  signals/radar 1.8, frames+free flight 1.6), snapshot build 1.0, selection 0.9, encode 0.9; economy 84 ms per
+  full round (all hubs) = 0.31 ms per tick spread (all at once: 57 ms -> a 170 ms tick). Baseline 1 player in Sol:
+  0.55 ms per tick.
+- Found, open: (1) the bots' blind J runs hit planets (100 dense-layer entries, 46 surface contacts at up to 2000
+  km/s): the J floor switches J off correctly, but the momentum carries the ship in and nothing happens to it (no
+  damage / loss) - author decision on impact consequences; (2) the own ship is ~5.3 KB per snapshot (16.7/s) - the
+  remaining wire load (ships' graph / systems payload); (3) the snapshot tick (every 3rd) is ~2x an ordinary one
+  (p95 23 ms) - publication could be spread over the ticks; (4) 14 jump refusals "need normal flight" are the bots'
+  toggle desync (open-loop script), not the server.
+- Live DEV (EliteGame, jt1): Sol -> Tau Ceti jump, exit on Tau_Ceti_m orbit 418 km, stabilization ON, radar 0 tracks.
+- Gates 209: 203 pass / 6 known red / 0 new.
+
+### Impact destruction + staggered snapshot publication + sound effects off 2026-11-08 - BUILT, HEADLESS LOAD TEST + 1 LIVE DEV DROP, NOT AUTHOR-FLOWN
+- Author decisions: "при ударе корабль разрушается"; "сделай рассылку снимков по тикам"; "отключи пока все звуковые эфекты".
+- Destruction: DynamicMotionState::destroyedCause (0 intact, 1 surface impact beyond survival = the old non-survivable
+  CRASH, 2 dense atmosphere above 30 g deceleration); wire 30 / snapshot 42. GameSimulation::destroyShipOnImpact:
+  cancels a jump charge-up, J off, thrust 0, controls zeroed, ShipCore::destroyWholeShip (every module + support link
+  destroyed, hit volumes rebuilt), NPC -> markShipDerelict; a player's session keeps the wreck. The wreck flies on
+  ballistically (drag, gravity), never auto-stabilizes; GameServer zeroes its control stream and drops its commands.
+  Client: HUD "КОРАБЛЬ РАЗРУШЕН: удар о поверхность / перегрузка в плотных слоях атмосферы"; a client route stops.
+  Note: a steep entry at orbital speed (> 30 g) is now fatal; a shallow decaying orbit is not.
+- Live DEV (EliteGame, ELITE_DEV_J_DROP=40,3 at Earth): "DESTROYED - dense atmosphere at 23655 m/s, 364 g", HUD
+  message shown, wreck decelerates 6.9 -> 4.6 km/s at 42-43 km over 16 s.
+- Staggered publication (ServerRunner): the snapshot is still built every 3rd tick; session k publishes it
+  ((id-1) mod 3) ticks later (never more than one interval since its last publication); the session's system
+  for the object / hub filter is taken from the published snapshot. DEV A/B ELITE_DEV_SNAPSHOT_STAGGER=0.
+  A/B, 153 bots static 120 s, same machine state, alternating: off p95 32.7 / 33.7 ms, p99 35.4 / 38.7;
+  on p95 26.3 / 27.7, p99 28.1 / 32.6; avg unchanged (18-20), p50 up (15 -> 18-19: every tick carries a third).
+  Machine was slower than in the earlier run (simulation 13.4-14.7 ms vs 11.1 for the same scenario); absolute
+  numbers between sessions are not comparable, the A/B is.
+- Move run 480 s with destruction: 60 of 153 bots destroyed (24 surface, 36 atmosphere) by their blind J runs;
+  102 of 141 jumps done; avg 21.2 / p95 28.4 ms on the slower machine state.
+- Sound: AudioEngine::playTerminalTick (the only sound effect) is off unless ELITE_SOUND_EFFECTS=1.
+- Open: respawn / what the pilot sees after the loss (author decision) - the wreck's cockpit still shows the service
+  reactor panel running (ReactorSystem's temporary descriptor is not tied to modules); the bot pilot should avoid
+  bodies (closed loop) so the load test keeps its population; the snapshot build tick still carries the build
+  (~4 ms) - p95 26-28 > 20 ms budget.
+- Gates 209: 203 pass / 6 known red / 0 new.
+
+### Author canon 2026-11-08: the cockpit is the escape capsule (input for after-destruction) - NOT IMPLEMENTED
+- For small frontier ships the pilot's cockpit IS the escape capsule: hard (not impossible) to destroy. On critical
+  damage or on demand it detaches and flies fast on its own engine to the nearest inhabited zone broadcasting SOS
+  (no range limit set yet). If the ship survives, a tug can be asked to haul it back, the capsule re-docks and the
+  ship can be repaired - and the same path lets a pilot steal someone else's abandoned ship.
+- Existing code to build on: ShipCore::ejectCockpitCapsule / ClientShipCommand::EjectCockpitCapsule (the cockpit
+  fragment = the capsule carrier) and markShipDerelict (abandoned hull, no AI). Today's impact destruction destroys
+  every module including the cockpit; with this canon a fatal impact should first try the capsule (author to decide
+  whether a capsule survives a surface impact / dense-layer breakup).
+
+### Ship reference HTML redesign 2026-11-08 (Notes/html/ship_reference) - BUILT, CHECKED IN HEADLESS CHROME
+- Author order: catalog of ship cards (picture + name) by bloc -> manufacturer -> role / class; ship view with a brief
+  side block and the functional A-frame schema of module cards with a shared "model ready" tick; module view with
+  description, characteristics, dimensions, an image-generator prompt, a sketch drop group, a sketch modal with notes
+  and re-save; the scroll position survives reloads everywhere. "The number before A is the ship's model code - each
+  ship its own."
+- One page index.html (?ship=, &part=, ?view=coverage; ship.html redirects). model_codes.js: one code per ship
+  (Cobrett-I N1 35, the rest 36-72 in catalog order). CARRIED INTO THE CANON the same day (author: "перенеси шифры в
+  канон"): ship_passports_3126.json passports have model_code and group codes <model_code>A<k> (21 passports, 235
+  groups, 0 mismatches); the 17 proposal ships take theirs from build_proposals.js PROPOSAL_MODEL_CODES (groups by
+  their A<k> part); data.js updated and reproduced byte-for-byte by the builder; model_codes.js removed, the page
+  reads model_code. Nothing else consumes the passports canon (no C++ / gate reader).
+  store.js: IndexedDB always + optional folder mirror via the File System Access API (workshop/: workshop.json,
+  sketches/<part>/, ships/<ship>) so sketches can live in git. tools/render_check.js now checks the data
+  (38 ships, 38 unique model codes matching their group codes, 104 parts, 0 problems).
+- Checked by driving headless Chrome over CDP: 2 sketches dropped, note saved and persisted after reload, model-ready
+  tick shared on the ship schema, label click inside a card toggles without navigating, scroll restored after reload
+  (ship view 700 px, catalog 1200 px). Not checked headless: the folder picker (needs a user gesture).
+
+### Escape capsule outcome at a fatal impact 2026-11-08 - BUILT, 2 LIVE DEV DROPS, NOT AUTHOR-FLOWN
+- Author: "капсула может пережить удар, но выдержит ли внутри тело удар ... штука не хрупкая, но разрушаемая;
+  несгораемая в атмосфере типа земной и более разреженной".
+- navigation/rules/CapsuleRules.h: body limit 50 g (restrained short pulse, Stapp 46 g); surface impact: body g =
+  v_vert^2 / (2 x 6 m) (hull crumple + capsule absorber), the shell crushed above 1000 m/s total; dense-atmosphere
+  breakup: body g = max(drag now, Allen-Eggers ballistic peak v^2 sin(gamma) / (2 e H) while descending); the capsule
+  burns / crushes only in an atmosphere denser than 1.5 x Earth's surface pressure. Only a ship with the detachable
+  "ship_cockpit" (Cobrett-I) carries one; others -> "no capsule".
+- Catalog surface pressure now reaches the server bodies (CelestialBodyDefinition / gravity parameters /
+  GravityBody.surfacePressurePa; Earth 101325, Venus 9.2 MPa, Mars 610). The DRAG model still uses Earth density for
+  every atmosphere (unchanged - a separate decision: it changes every descent / landing).
+- Replicated DynamicMotionState capsuleState (1 alive, 2 pilot killed, 3 capsule destroyed, 4 no capsule) +
+  capsuleBodyG; wire 31 / snapshot 43; HUD appends the outcome to the destruction line; load test counts them.
+- Live DEV (Earth): 40 km at 3 x circular -> breakup 364 g, "капсула цела, пилот погиб" (HUD shown); 300 m drop ->
+  vertical 68 m/s, ship crushed, pilot 39.7 g "капсула цела, пилот жив" (horizontal 461 m/s = Earth's rotation under
+  a body-fixed drop; the body g uses the vertical component only - a simplification).
+- NOT DONE (next slice, needs author input): the capsule separating and flying on its own engine to the nearest
+  inhabited zone with SOS, rescue / tug back / re-dock / repair, stealing an abandoned hull; what the player does
+  after "pilot killed". Gates 209: 203 / 6 known / 0 new.
+
+### Ship naming by manufacturer + per-maker model codes + bloc completeness + manufacturers page 2026-11-08 - BUILT, CHECKED HEADLESS, NOT AUTHOR-ACCEPTED (names PROPOSAL)
+- Author orders: per-manufacturer naming traditions (not translation; slang-born names allowed; own-script cultures
+  carry the local name + a toneless export latin like "Mazda"; Chinese names loud like their space programme);
+  the code before "A" is each maker's own marking; every bloc must field every ship type it needs (generate the
+  missing); a manufacturers page with locations, hubs and hub modules (module unification per civilization).
+- Lore research (4 read-only agents) grounded the doctrines: Cobretty = KOBRA dock slang of Kobersberg-Braunauer
+  (history.md), Homestead en; Kern en, prospectus culture; Hyperion en + 中文, Greek titan line; OFU / Luna-Mars Yards
+  Sol, en with Cyrillic drawing-code heritage (part codes КЦ-1000, АК-1); Harmony 新和 中文; Tianhe party state;
+  Bharat hi; Bastion nb (BS hull numbers, Old Norse only for myths); Stone Docks no system (Seal Register).
+- Canon: tools/colonization_lab/canon/ship_naming.json (11 doctrines, 53 models) + ship_naming.py --write/--check
+  (mirrors: passports name / naming fields / model_code <prefix><n> / group codes / replacement names;
+  ship_designs.json name + designation = ASCII export_index, the runtime installation-code root). IDs unchanged.
+  Rebuilt: runtime ship_catalog_3126.json (ship_designer: 21 ships, 0 FAIL), Notes/Lore (lore_md, 45 files: names
+  only), Notes/html lore; lore_economy.py class labels; naming.json VERIFY item on Russian ship names removed.
+  C++ display strings of OCS-4 drop "Lastochka" (the Ural shop nickname) - labels only, not keys.
+- Bloc completeness: rule = own model, or a partner hull at availability >= 3/5; raider = free belts only. 15 gap
+  fillers generated as variants of existing hulls (build_proposals.js derive()): Pact courier 416型, lifter 421型,
+  ice tug 和-T8 移山; Southern C-30 Doot, H-20 Majdoor, frigate F-120 Prahari; Citadel TS-6F, B-12L, B-20G "Hulken";
+  Cognium F-900 Atlas; Sol frigate FF-3000 Gagarin; Free Belts T-5000R hive, OCS-4R bucket, Cobrett-I R stinger;
+  Lalande corvette PC-30AK Akritas. Balance: 0 FAIL (warnings inherited: oversize reactors, fins). Reference now
+  53 models (21 canon + 32 proposals), 53 unique codes, builder idempotent, render_check 0 problems.
+- Manufacturers page (agent): manufacturers.html / .js / .css + tools/build_manufacturers.py -> manufacturers_data.js
+  (19 manufacturers, 14 polities, 399 hubs, 22 module types). Open in data: Hyperion's plant type "orbital" has no
+  orbital_hub site in Cognium; 52 Sol surface ports have no hub_modules entry; plants are matched by site type +
+  polity only (several makers share a polity's hubs).
+- Checked: headless Chrome (catalog search by old name «Пилигрим» finds L-900 «Эос»; ship view shows official /
+  native / export / crew names and codes 和51A1...; manufacturers list and Harmony detail render, no JS errors).
+- EliteGame builds; gates 209: 203 pass / 6 known red / 0 new.
+
+### Manufacturer plants + data gaps + rescue zones (SOS) + difficulty layer "capsule survival" 2026-11-08 - BUILT, 1 LIVE HUD CHECK, NOT AUTHOR-ACCEPTED
+- Author: "площадки должны принадлежать производителям - подумай, что оставить на орбите, что спустить на планеты
+  или заныкать в поясе"; "в жилых зонах есть спасательные службы; предупреждение в терминале HUD, при расчёте маршрута
+  или старте автопилота: вдали от обитаемых зон SOS могут не услышать; в обитаемой зоне подберут через 10-20 мин";
+  "заложи слой - уровень сложности (как в Tin Can), включается / выключается в настройках". Names: not approved yet.
+- Plants: 24 named sites in canon/world_sites.json (field manufacturer, placement_reason) + Деймос-Верфь
+  (sol_network operator now Лунно-Марсианские верфи; founder stays Марсианские верфи, 2702); industry.json
+  manufacturers[].plants. Rule: orbit = big hulls / clean rooms / sections bigger than any lifter (Harmony, Hyperion,
+  Cobretty yard, Bharat rings, Mjølner, Agora, Xinzhi, Terra Habitat, OFU yard, Tianhe mass yard, Kāpehu core fab);
+  surface = heavy casting, engine / reactor test stands, biology, lifters (OFU Ural works + Kourou, LMY lunar foundry,
+  Sol Reactor Works Tranquillitatis, Cobretty K3 works, Tianhe danwei No. 1, Firmament armour, Eurohab, Uhuru);
+  belt = mining kit and hollowed asteroids, the hidden state core fab (Kern Deep Dock, Stone Docks, Нулевая точка).
+  Every manufacturer resolves (Hyperion's gap closed).
+- Gaps filled: the 52 Earth megacity spaceports (spaceport flag) are now hubs (one standard port per 100 M people,
+  level A > 50 M) -> 614 hubs (was 538); mfr.mizan (retired Arabic Lalande branch) -> mfr.kapehu_systems in
+  industry.json and ship_designs.json (parts already used it). world_sites / economy_live / ship_designer / lore
+  rebuilt; world_sites check OK, naming 29/29, lore check OK. Manufacturers page uses the canon plants + reasons.
+- Rescue zones: navigation/rules/RescueRules.h - a zone = 30 light-seconds around an inhabited hub (canon
+  comms.coverage_ls station); inside: pickup 10-20 min; outside: SOS may not be heard; a system with no inhabited
+  hub: no service. SpaceStateRescue.cpp; HUD terminal line (stable text per zone); route plan summary counts the
+  points outside the zones; route start / body autopilot start / jump calculation warn through the pilot notice.
+  Live: Earth orbit -> "SOS: зона спасения «Высокий» - подберут через 10-20 мин". Outside / no-service: not flown.
+- Difficulty layer: ClientModeState::capsuleSurvivalEnabled, persisted (difficulty_capsule_survival), webui command
+  set_capsule_survival|on/off, main menu settings dialog (5 locales); the destruction HUD line notes the mode when the
+  pilot is alive. The Tin Can-style gameplay itself is NOT built (later slice).
+- EliteGame builds; gates 209: 203 pass / 6 known red / 0 new.
+
+### Design 2026-11-08: damage + maintenance + Tin Can capsule layer - PROPOSAL, NO CODE
+- Author: start on a ship graveyard, buy a Cobra there, it breaks often; the player lives in the cockpit capsule;
+  a nanobot bay restores parts (slow, not free) and a repair drone crawls the hull; reliability grows with repairs
+  until pirates shred the ship; an Army-style technical manual (fault isolation: typical faults, fault codes,
+  corrective actions) per unit and per ship; an isolated, switchable layer. Then: "слой повреждений ещё толком не
+  прорабатывался - может, получится совместить Tin Can и интересный слой повреждений".
+- docs/MAINTENANCE_LAYER_DESIGN.md: one failure-mode catalog for wear AND battle damage (cause -> modes, energy ->
+  stage, hit volume -> unit / part), effects through the existing EquipmentSample fields, BITE fault codes
+  (CAT-NN-stage), repair levels operator / drone / nanobay / yard (Army -10/-20/-30/-40, LRU/SRU), TM generated
+  from data (troubleshooting Malfunction -> Test -> Corrective Action, MAC, parts, PMCS) into the ship reference;
+  draft failure modes for all 34 unit categories. Two layers: the damage model (base, always on) and
+  reliability / junkyard / capsule survival (difficulty, switchable). Open author questions in section 10.
+
+### Sol industry re-based on corporations + ship graveyards + damage/Tin Can design pass 2 - 2026-11-08 - DATA BUILT, NAMES NOT ACCEPTED
+- Author: names not accepted; "ты всю корабельную промышленность Сола отдал России ... Сол - упор на корпорации, в
+  том числе интернациональные; разработки - США (или во что оно превратится), промышленность - Китай, Россия -
+  поставщик сырья и проблем; проверь по текущим данным". Canon check (SOL_NETWORK.md): Sol's operators are the
+  Pacific Orbital Transport Co. (Tokyo), the Atlantic Port Co. (Canaveral), Wenchang Heavy (Chinese industrial,
+  "огромные краны, круглосуточно"), the Equatorial Fuel Co. (Kourou), metallurgy / gas trusts; Russia appears only
+  as the Baikonur orbit-plane heritage. The Russian layer was mine (Ural engine works, Cyrillic prefixes, shop slang).
+- Changed: OFU = international freight union (Kourou fuel co. + Pacific + Atlantic; "Ural" = the founding titanium
+  supplier); its engine works moved to Wenchang. Luna-Mars Yards = international corporation, controlling stake
+  Wenchang Heavy, Atlantic design bureaus; new plant "тяжёлые цеха Вэньчана". Sol Reactor Works = Atlantic (US
+  heir) R&D: new Canaveral research centre + the lunar series plant. Code prefixes OF / LM (were У / ЛМ); Sol crew
+  nicknames Chinese / English shop slang (燕子, 雨燕, the Dozen, 大油桶, the Fixer, the Broom, the Flatiron).
+- Graveyards: site type ship_graveyard (canon world_sites site_types + hub_modules type rule, dock split,
+  salvage_yard module), 16 graveyards in 7 blocs, kinds recycling / wild / drifting (graveyard_kind), level C:
+  Sol - Hermes breakers (Mercury smelters), Vesta trust scrap, the graveyard orbit above GEO, the wild yard by
+  Тихая Гавань; Cognium - Tau Ceti breakers, Kuiper drift; Pact - Harmony recycling shop, Tianhe belt drift;
+  Southern - Bharat breakers, Maland wild; Citadel - Ulven military disposal; Free Belts - the Great Strife wild
+  yard, the GJ 581 rust belt; Lalande - Agora breakers market, Lalande drift; Kern - insurance breakers.
+  632 hubs. world_sites / economy_live checks OK, lore OK, reference + manufacturers rebuilt.
+- Design (docs/MAINTENANCE_LAYER_DESIGN.md 9a-9c): Tin Can = a mini-game (main game keeps percentages); the
+  failure catalog is a cause graph (upstream / downstream / observable / masks): BITE shows the first failed
+  signal, a deeper cause burns the replaced unit again; masking, intermittent faults, false sensor alarms,
+  cascades. Nanites self-replicate from a feedstock (powder / scrap / regolith) to be replenished; the layer
+  switches at any time; the start offers several wrecks with different control laws.
+- Gates 209: 203 pass / 6 known red / 0 new.
+
+### Fault catalog by equipment (slice 1: Cobrett-I) + sketch review workflow - 2026-11-09 - BUILT (DATA + REFERENCE), NO GAME CODE
+- Author: "каталог по оборудованию, поскольку оно установлено во многих местах, а потом по совокупности
+  оборудования - для корабля"; "проэкспектируй эскиз и покажи, как будем работать дальше".
+- tools/maintenance/build_fault_catalog.py -> src/assets/data/maintenance/fault_catalog.json + reference
+  fault_data.js: 19 equipment classes (all Cobrett-I N1 / A3 units), 50 failure modes (SRU, causes, BITE signals,
+  per-stage percent effects for the main game, symptoms, upstream / downstream / masks through 8 ship buses,
+  isolation steps with branches, repair by operator / drone / nanobay / yard, PMCS); ship graphs resolved from the
+  BOM (N1 64 edges, A3 61). Reference: "Техническое руководство" on module pages, "Цепочки неисправностей" on ship
+  pages. Gate tests/maintenance/check_fault_catalog.py (deterministic outputs, every isolation path concludes).
+- Sketch workflow: the author's first sketch (CR-1 Vector, stored in Edge IndexedDB, part kb.drive.cr1-vector)
+  reviewed: the sketch follows the passport envelope 5 x 5 x 6.5 m, but the in-game nacelle mesh
+  (assets/models/ships/cobretty-mk1-int/LOD0/ship_engine_L.obj, model in metres) is 8.7 x 2.35 x 2.35 m - the
+  passport geometry is wrong (OPEN: correct the passport to the mesh, author to confirm); no +-75 deg vectoring;
+  chemical bell instead of a magnetic nozzle; camera cluster; floor stand. Review + prompt v2 written to
+  Notes/html/ship_reference/workshop/workshop.json (reviews map, versioned prompts) + the sketch file; the page
+  shows reviews read-only in the sketch window; merge fixed so a note-less record never erases the author's note.
+- Gates 210 (new: tests/maintenance/check_fault_catalog.py): 204 pass / 6 known red / 0 new.
+
+### Ship reference local server - 2026-11-09 - BUILT, CHECKED (headless Chrome over HTTP)
+- Author: "что это за папка воркшоп? возможно стоит сделать сервер для подключения этого справочника и полноценной
+  работы с ним?" - tools/ship_reference_server.py (stdlib, 127.0.0.1, default port 8790 - 8765 is taken by
+  another local service - next free port if busy) serves Notes/html/ship_reference and keeps the workshop in the
+  repository (workshop.json merged on every save; images via /api/file); Notes/html/ship_reference/start_server.cmd.
+  store.js detects the server (GET /api/ping) and stores nothing in the browser; refreshes from disk on focus.
+- Checked: page in server mode, a new sketch + note written to disk, an on-disk edit (review) survived a page save
+  and became visible, the test sketch removed; workshop.json restored to the pre-test state.
+
+### Equipment-first + reference designations (proposal) - 2026-11-09
+- Author: in-game models are NOT canon for now; reverse order: design the equipment first, then assemble ships.
+  The CR-1 sketch review corrected (no longer asks to match the old Cobra nacelle; the equipment passport 5 x 5 x
+  6.5 m is the basis), prompt v3 in workshop.json. The earlier OPEN item "correct the CR-1 passport to the mesh"
+  is withdrawn.
+- Author: designations by LAYOUT, not function (46A1A2PT1 style); the functional schema groups chains
+  (pad - engine - reactor - engine - pad, x2). docs/REFERENCE_DESIGNATIONS.md: this is the ASME Y14.44 / IEEE 200 /
+  IEEE 315 reference-designation system (unit number, A separable assembly, U inseparable, class letters + number);
+  proposed class letters for our equipment, the two schemas (layout tree / functional chains), a Cobrett-I A3
+  example. Open: author to confirm the letters and whether the pad belongs to the reactor or the engine.
+
+### Layout designations + per-maker standards + engine pads - 2026-11-09 - BUILT (DATA + REFERENCE)
+- Author: class letters accepted; the unit number is the passport model code; each engine has its own cooling pad
+  (heat goes to the common loop only when the pad is damaged); "американский стандарт не для всех - у китайцев
+  точно будет другим".
+- tools/maintenance/build_ship_layout.py -> src/assets/data/ships/ship_layouts_3126.json + reference
+  layout_data.js: all 53 ships laid out from their equipment (propulsion bays = reactor + drive groups, then cockpit
+  capsule, systems, cooling, jump, fuel, RCS, payload, weapons, docking, hull); designations in the maker's
+  standard (ship_naming.json designation_standard): ASME Y14.44 9 ships, IEC 81346 25, GB/T 5094 12, NORSOK 7,
+  Stone Docks = donor; functional chains (pad - engine - reactor - engine - pad xN; the 7 bus chains).
+  Cobrett-I A3: KB44A1 / KB44A2 bays (A1 ER-5, A2 / A3 CR-1 with PT1 each), chain x2.
+- Fault catalog: DRV-09 engine pad damage; the engine heat exchanger is the backup path; 51 modes; SRU class
+  letters (sru_class) per equipment class. Passport functional groups renamed <model_code>F<k> (A = layout unit).
+- Reference: ship page = "Компоновка" (compartments, unit cards with designations and part designators) +
+  "Функциональные цепочки". Gate tests/maintenance/check_ship_layout.py. Gates 211: 205 / 6 known / 0 new.
+
+### Fault catalog: all equipment (slice 2) - 2026-11-09 - BUILT (DATA + REFERENCE)
+- Author: "каталог для оборудования остальных производителей - так и делаем". Classes generalised by technology
+  (drive.plasma, reactor.fusion, apu.fusion, radiator.panel, coolant.loop, jump_core, rcs.thruster, computer,
+  radar, comm, life_support, escape_capsule, weapon.pd) with per-model notes; 19 new classes (coilgun, VLS, mass
+  driver, armour, cabins, anabiosis, lifeboats, bays, train modules, bulk hold, cryo tank, workshop, medbay, tow
+  rig, mining rig, landing gear, heat shield, ECM, sensor mast). 38 classes, 97 modes, buses extended; fault graphs
+  for all 53 reference ships; layouts: all 1 578 units classed, 5 141 part designations. The gate now requires
+  every ship's equipment to be covered.
+- Gates 211: 205 pass / 6 known red / 0 new.
+
+### Jump presentation rework (author 2026-11-09) - IMPLEMENTED, live DEV checked, NOT yet accepted by the author
+- Removed the cartoon ripple (flash + dotted rings) and the charge-up panel. Now (SpaceStateJump.cpp
+  updateJumpPresentation, render/JumpScreenEffect): the HUD terminal prints the procedure (target, ly, charge-up,
+  cost, cancel hint) and a live font progress bar `ЗАРЯД ЯДРА [####----] 45% m:ss / m:ss` (DockingTerminalSnapshot
+  `jumpLines` printed once each + `live` line rewritten in place); the cockpit view shakes along screen x/y (no
+  rotation), amplitude growing with the charge; from 60 % a fish-eye swell (corners fixed, centre magnified); at the
+  jump (jumpSerial) a sharp 0.14 s fling - corners stay, centre drawn away like rubber; the old sky goes dark, 220
+  brightest stars send rays from their old direction to the new one that collapse into the new points (0.2..1.8 s);
+  the new sky fades up; the lens springs back with ~2.5 damped swings (1.9..2.8 s). Author corrections applied the
+  same day: no whole-view shrink, half the lens strength, sharper fling / return, no colour fringes ("the cockpit must
+  feel whole"). Whole-frame capture (glCopyTexSubImage2D of FB 0 after the cockpit + instruments) + distort shader;
+  neutral params = no pass. Rays drawn under the cockpit frame.
+- Hum: AudioEngine::setJumpHum(level) - semantic level only (sounds are off), rises with the charge.
+- Terminal: font ~21 px at 1080 (was ~15), column 30 % wide, word wrap instead of cutting, top below the flight
+  banner, brighter colours.
+- Exit error (server, PROPOSAL model of beacons_3126 jump_error_model): sigma = d * 1e-9 / lock (lock proxy: system
+  has world sites; both x200, destination x6, origin x12, none x1), deterministic 3D gaussian draw per ship + jump;
+  circular orbit at the radius reached (clamped above floor, <= 0.3 Hill). Replicated jumpExitSerial / body /
+  deviation / sigma / altitude. Exit report in the terminal: system, orbit + altitude, coordinates (AU from the
+  star), deviation vs the 3 sigma box; outside it a warning "корабль снесло".
+- DEV: ELITE_DEV_JUMP_FX_CAPTURE=<dir> - frames at fixed times after the jump. Live runs D:/tmp/elite_jfx1..4
+  (Высокий -> Fomalhaut, 20 s charge): 220 rays, exit 25 752 km off the point (sigma 19 809 km, box 59 427 km);
+  a false "ПРЫЖОК ПРЕРВАН" (2 -> 0 between snapshots) found and fixed.
+- Gates 211: 205 pass / 6 known red / 0 new.
+- Author review 2 (same day): "still bends to the centre too much - a picture, not a cockpit; the stars make it look like
+  a jump BACKWARD". Lens cut ~2.5x again (swell 0.06, fling -0.06, swings 0.05); rays now follow a curve that first
+  leaves the screen centre (forward rush) and then bends into the new point. Live D:/tmp/elite_jfx5: outward start
+  confirmed; when the target lies behind the nose the curves' second half still comes back toward the centre.
+- Author review 3: "now hardly seen; drop the 2-3 damped swings; the stars move the wrong way - as if the ship flies
+  AWAY from them; flying forward they must spread to the edges". Lens set between the two tries (swell 0.11, fling
+  -0.10); the return is one 0.22 s snap, no swings; the old->new star link dropped (with the target behind the nose
+  it can only converge): two radial outward phases - the old sky's stars accelerate to the edges and leave (0..0.5),
+  the new sky's stars burst out of the centre and brake into place (0.4..1). Live D:/tmp/elite_jfx6: both phases
+  outward.
+- Next: author's look review in a live flight; real audio backend for the hum; beacon runtime to replace the lock proxy.
+
+### Ship reference: identical compartments as one stacked card (author 2026-11-09) - DONE
+- app.js renderShipLayout groups compartments with the same content (key + parts / qty / class letters): one card
+  with all designators (`=OF38+1, =OF38+2, =OF38+3 · двигательный отсек ×3`), frames drawn behind it (one for x2, two
+  for x3+). 37 of 53 ships have such stacks. render_check: 53 ships, 0 problems; headless Chrome checked (SL-12).
+- Functional chains (author: "in the functional chains do the same"): the propulsion group with N identical
+  instances is drawn as the same stacked card (frames behind, xN, the shown group's drive and the others listed);
+  .stacked / .stacked3 are now generic classes. render_check 53 / 0; headless Chrome checked (SL-12, x3).
+
+### Ship reference: pads in the propulsion chain; reviews of the author's CR-1 / ER-5 sketches (author 2026-11-09) - DONE (reviews = PROPOSAL)
+- Author: "в функциональных схемах вижу реактор и двигатели, пятаков не вижу". The propulsion chain card now spans the full
+  width; each drive pad is its own item (round icon, designation, Ø from the drive passport), the reactor pad is drawn over
+  the reactor (square icon, designation, side from cooling_pad_side_m). render_check 53 / 0; headless Chrome (Cobrett-I A3).
+- 4 new author sketches reviewed into workshop.json reviews (Russian); prompts: CR-1 v4, ER-5 v1.
+- Root cause found: my earlier CR-1 prompt v3 / review (plasma drive, magnetic nozzle, injectors, trunnion) contradicted the
+  code - every drive preset is PropulsionPrinciple::FieldCoupling with field steering (no servo) and a solid 5 m pad
+  (aperture 0). Corrected in the reviews and prompt v4.
+- (resolved below) fault catalog class drive.plasma (build_fault_catalog.py: injector / magnetic-nozzle coil / plasma
+  chamber / gimbal SRUs, DRV-01 propellant clogging) contradicts FieldCoupling; proposal: rename to drive.field with SRUs
+  pad sectors, field coil ring, busbar coupling, backup HX, sensors; drop propellant modes.
+
+### Field concept applied to equipment descriptions and faults (author 2026-11-09) - DONE (source-audited, gates)
+- Author: "мы приняли полевую концепцию. поэтому давай подгоним все описание и проблемы в работе под это."
+- Fault catalog (build_fault_catalog.py): drive.plasma -> drive.field (SRUs: field control unit, field coil ring, pad
+  sectors, backup HX, busbar in the flange, sensors). DRV-01 field phasing drift, DRV-02 coil segment degradation,
+  DRV-03 inter-turn breakdown in the coil ring, DRV-05 vector channel failure (field steering, matches gimbalFailure
+  0.90), DRV-09 pad damage or wear-out (replace only: code ServicePolicy::ReplaceOnly, 8 000 / 12 000 h).
+  Injector / chamber / mechanical gimbal modes removed. RCS: power switch (RCS-01), field coil (RCS-02), new RCS-03
+  nozzle emitter damage (ManoeuvreEnginePreset derating). Signals: chamber_press / valve_pos removed, field_stab added.
+- Argon RCS tank (kb.rcs.argon-tank) removed from canon: ship_designs.json, ship_parts_unified.json (101 parts; the
+  std tanks' foreign analog -> null), ship_passports_3126.json (Cobrett-I N1 dry estimate 266 -> 264.5 t), data.js;
+  class tank.argon and bus rcs_propellant removed (7 buses). Rebuilt: ship_designer (21 ships, 0 FAIL, 39 WARN, --check
+  OK), runtime ship_catalog_3126.json, out/ships_3126, lore_md --write (check OK), lore_html, build_proposals (Stinger
+  re-derived without the tank), layouts (0 problems), fault catalog (37 classes / 96 modes, 0 problems).
+- Texts: docs/MAINTENANCE_LAYER_DESIGN.md (examples, drive / RCS rows, game-cycle example, new section 13);
+  reference category descriptions and prompt hints (drive / rcs / tank, "field vector deflection" label); the old
+  CR-1 sketch review marked outdated.
+- Checks: check_fault_catalog 0 problems, check_ship_layout 0, render_check 53 ships / 103 parts / 0;
+  gates 211: 205 pass / 6 known red / 0 new. No C++ change (no runtime code referenced the removed codes or argon).
+
+
+### Equipment 3D models from passports: Cobretty CR-1 Vector v1 (author 2026-11-09) - PROPOSAL (awaiting author review)
+- Author: no textures; a very detailed model seen from 20-30 m, simplified LODs further. 6 GB GPU rules out local
+  image-to-3D with textures; chosen path: procedural geometry from the passport (no GPU), Blender 5.0 only for previews.
+- Tool: tools/models/build_equipment_models.py (+ --check, idempotent) -> src/assets/models/equipment/cobretty_cr1_vector/
+  LOD0..2/<part>.obj + .mtl (SOURCE_LAYOUT.md: one OBJ per part, shared material ids eq_*). Parts: cr1_flange,
+  cr1_housing, cr1_coil_ring, engine_hot_emitter_annulus (the passport meshPartId), cr1_service_module, cr1_mounts.
+  Frame: unit axis OBJ +Z, Y up, flange at z = 0, pad at z = 6.5; envelope 5 x 5 x 6.5 m, pad 5.0 m the widest.
+  Triangles: LOD0 47 020, LOD1 4 872, LOD2 1 096.
+- Preview: tools/models/render_preview.py (blender -b ... -- <asset dir> <LOD> <png> [pad|flange|side], 1.8 m figure);
+  renders added to the CR-1 workshop sketches with a review card.
+- Not done yet: import into the model asset editor (semantic parts, sockets, LOD distances), runtime package; ER-5.
+- Author 2026-11-09: CR-1 v1 accepted visually ("сделано шикарно"); parts stay separate (game binds hot pad heat,
+  hit regions, module hiding and damage variants by part name; the editor compiles them into one .elmodel).
+
+### Equipment models: Cobretty ER-5 propulsion reactor v1 + editor "Equipment" catalog group (2026-11-09) - PROPOSAL
+- Sources moved to the editor SOURCE root: assets/models/equipment/<unit>/ (src/assets/models holds docs only; the editor
+  settings point sourceAssetsRoot at assets/models). .gitignore unignores assets/models/equipment/; README there.
+- ER-5 v1 (generator er5_parts): flat torus dia 3.9 m x 2 m (axis OBJ +Y), flanges at z = -/+2.5 (flange to flange 5 m)
+  mating the CR-1 flange exactly (dia 4.5 m, 24 bolts, spigot groove, 3 busbar sockets, data socket); pad PT1 11 x 11 x
+  0.25 m, 8 triangular sections, at y = 2.3 on a heat-pipe column. Parts = reactor.fusion SRUs: reactor_cooling_pad,
+  er5_confinement, er5_fuel_feed, er5_inverter, er5_plasma_ctl, er5_plasma_sensors + er5_vessel, er5_heat_pipe_column,
+  er5_emergency_coolant (the only copper), er5_flange_fore/aft, er5_mounts. Triangles LOD0 61 708, LOD1 10 112, LOD2 1 648
+  (empty parts are not written). Open deviation for the author: flange rims 4.5 m exceed the 4 x 4 m passport envelope by
+  0.25 m per side (needed to mate CR-1).
+- Generator: lathe(soft=deg) shared profile normals (CR-1 output unchanged, triangle counts identical); helpers ylathe,
+  rrect, inset, prism, placed. render_preview.py: views top/under, optional hidden parts.
+- Editor: ModelAssetEditorSession lists assets/models/equipment/* as group "equipment" (ObjectType::None, Folder SOURCE,
+  id equipment_<folder>); UI group + localization key model_editor.catalog.group.equipment. EliteAssetEditor build PASS.
+  Not verified in the running editor (GUI wizard SOURCE -> BUILD is the author's step: semantic parts, sockets for the
+  flanges/lugs/pad, LOD distances, BUILD to src/assets/compiled/models/equipment_<folder>/).
+- Renders + review card in the ER-5 workshop sketches.
+- Author 2026-11-09 (same day): pad size questioned (sketch showed pad ~ reactor size) -> pad stays 11 m (passport
+  padSideM drives the cooling area; the sketch was wrong). Then: reactor gets the drive's diameter so the bay is one
+  cylinder. Done as ER-5 v2: canon kb.reactor.er5 geometry envelope 4x4x5 -> 5x5x5 m, service clearance 5.75 m (+ basis
+  note), data.js same; ship_designer 21 ships 0 FAIL (runtime catalog unchanged), lore unchanged, proposals rebuilt.
+  Model: torus now COAXIAL with the bay (axis OBJ Z, r 0.95-2.2, length 3.5 m + flanges on the end faces, mating faces
+  z = -/+2.5), 8 poloidal confinement hoops, inverter +X, feed -X, plasma control -Y, column + pad on top (pad y 3.0).
+  The flange rims are now inside the envelope (deviation closed). Triangles LOD0 69 916, LOD1 11 908, LOD2 1 980.
+  Bay assembly render (CR-1 + ER-5 + CR-1) + ER-5 prompt v2 in the workshop.
+- Author 2026-11-09: too many triangles -> lightened (commit d0caa342): visibility floor MIN_BOLT 6 cm / MIN_FEATURE 2.5 cm
+  (1 px at 20-30 m ~ 3 cm), 32/16/12 segments, cheap hex heads. CR-1 LOD0 9 882 / LOD1 2 168 / LOD2 840; ER-5 11 596 /
+  3 124 / 684 triangles. An open bay (CR-1 + ER-5 + CR-1) at LOD0 ~31k triangles.
+- Author 2026-11-09 idea: hit volumes drawn with the model; gameplay stores hit volumes, not the full mesh; the hull in
+  compartments, the interior rendered only for a breached compartment. Step 1 done: the generator writes
+  <unit>/hit_volumes.json (CR-1 11, ER-5 31 volumes; boxes + cylinders per part, CollisionVolume fields; T*Rx*Ry*Rz),
+  render_preview.py mode `hits`, renders in the workshop. Open: engine CollisionShape has no Cylinder (Box / Sphere /
+  Capsule / ConvexHull) - additive enum value + binary/editor support proposed; editor import of hit_volumes.json into
+  COLL; ship hull compartments + interior-on-breach presentation (station interiors/portals exist in
+  ModelAssetPresentation; ships still use the legacy assembly path).
+- Author 2026-11-09 "да, делай" (steps 1 + 2) - DONE, compiled + unit-tested, NOT yet exercised in the running editor:
+  1. CollisionShape::Cylinder = 4 (src/model_asset/ModelAsset.h; flat ends, radius + halfHeight along local +Y). The
+     binary stores the shape as a byte without range checks, so no format bump. Editor: name "cylinder", mass/inertia
+     (solid cylinder), PHYSICS validation, viewport primitive, inspector option, localization model_editor.collision.cylinder.
+     tests/model_asset: manifest roundtrip of a cylinder volume (model_asset_tests PASS). The runtime does not read
+     .elmodel collision volumes yet (hits still use the legacy assembly), so nothing changes in flight.
+  2. PHYSICS command import_source_hit_volumes (button "SOURCE HITS" / "ХИТЫ ИЗ SOURCE"): reads <SOURCE asset>/hit_volumes.json,
+     binds each volume to the semantic part with the same id/moduleId, replaces earlier hit.src.* volumes; parts that
+     are missing or whose node chain is no longer at the zero SOURCE transform are skipped and named in the status.
+     SOURCE stays scaffold-only (its contract: collision authoring belongs to PHYSICS).
+  Stale test fixed: tests/model_asset/CMakeLists.txt lacked chunks/PresentationChunks.cpp (link error readPresentationV4).
+  Gates 205 PASS / 6 known red / 0 new. Next (author): open an Equipment asset, SOURCE -> PHYSICS -> SOURCE HITS, check
+  the volumes; step 3 (ship hull compartments, interior only for a breached compartment) is a separate large stage.
+
+### Reactor families per maker + passport geometry audit (author 2026-11-09) - PROPOSAL (models), CR-1 / ER-5 APPROVED
+- Author: CR-1 and ER-5 models approved; reactors must differ per maker within one base concept; check that every
+  passport has geometric dimensions; consider real-world device shapes.
+- Audit: all 101 canon parts and all 103 reference parts have geometry.envelope_m and service_clearance_m (no gaps).
+- Author choices (2026-11-09): Sol Reactor Works = linear FRC collider (ref. Helion Polaris); Tianhe Heavy = heavy
+  tokamak with exposed D-coils on a flat-plate polygonal cryostat (ref. EAST/CFETR); Cobretty = the approved coaxial drum.
+- Generator: srw_parts (formation sections, compression waist under dense coils, 4 capacitor banks), th_parts (12-gon
+  cryostat, 12 D-coils, 12-gon flanges), shared heat_column / cooling_pad builders (ER-5 output unchanged), family
+  scaling (ER-1, SR-2.6, TR-2.6V = big unit scaled to the passport, own pad), per-maker materials, hit volumes for all.
+  LOD0 triangles: SR-4.8 / SR-2.6 13.4k, TR-10 / TR-2.6V 7.6k, ER-1 11.6k.
+- Canon: SR-4.8 envelope 3.83x3.83x4.79 -> 3.4x3.4x6.1 m (clearance 3.91x3.91x7.02); SR-2.6 (build_proposals.js)
+  3.215x3.215x4.02 -> 2.85x2.85x5.11 m; same volume and mass. Rebuilt ship_designer (21 ships, 0 FAIL), lore, proposals.
+- Open: reactors pair with other makers' drives (OFU with Sol, Kern with ER-1, TZ-11 and TZ-28 with TR-10): flanges are
+  each maker's standard, mating by a bay adapter ring - not modelled yet. Service reactors (APU) not modelled yet.
+- Renders + review cards in the workshop for kb.reactor.er1, srw.reactor.sr48/sr26, th.reactor.tr10/tr26v.
+- Author 2026-11-09: flanges = each maker's standard, mating to other makers' drives through a bay adapter ring
+  (ACCEPTED); a reactor may stick out from under the hull where it does not fit its seat (accepted as a look).
+  Models accepted -> linked in the ship catalog: model_asset = "equipment/<folder>" (SOURCE folder relative to
+  assets/models) on canon ship_designs.json products and ship_parts_unified.json parts (CR-1, ER-5, ER-1, SR-4.8,
+  TR-10, TR-2.6V), SR-2.6 in build_proposals.js; runtime ship_catalog_3126.json products carry it (params);
+  reference: modelReady for the 7 parts + a "3D-модель" row on the part card. render_check 53 ships / 103 parts, 0 problems.
+
+### Equipment models for every ship unit, LOD shift, design schools (author 2026-11-10) - IN PROGRESS
+- Author: finish all equipment blocks before compartments; design per maker spirit and colony history; similar modules
+  must differ (even in envelope) to make foreign replacement harder; LOD0 becomes a close-inspection level (harnesses,
+  pipes, fine detail) and the 20-30 m model becomes LOD1 (shift by one), applied to existing units too; add missile
+  racks, a recon drone (camera + antenna + power + thrusters) and a repair drone (spider / mantis, flexible body for
+  animations, plasma cutter, fine manipulation). Cobra model review requested (non-canon, opinion only).
+- Done (commit c94bc697): generator split into tools/models/eqlib.py (kernel, LOD policy close() / seg_for / small_for /
+  min_bolt, register_materials, tube / harness / pipe_run / bezier / sag / cyl_path) + tools/models/units/<maker>.py +
+  thin driver (4 LODs, orphan cleanup, --only). Former LOD0..2 = LOD1..3 byte-identical (459 files verified); close
+  LOD0 extras for the 7 existing units (17-28k triangles).
+- Done (commit e71f86ae): tools/models/DESIGN_SCHOOLS.md (18 makers: form language, palette, interface standard,
+  close-up flavour, from colony lore), tools/models/UNIT_AUTHORING.md (unit contract, frames, budgets, checks),
+  tools/models/briefs/<maker>.json (96 remaining parts with passports and fault-class SRUs).
+- Running: 8 parallel builders (maker groups + new equipment: missile rack / recon drone / repair drone with a rig
+  proposal in tools/models/briefs/new_parts_proposal.json - canon not edited until the author accepts).
+- Result (2026-11-10): 106 equipment models in 18 maker modules (tools/models/units/*.py), every one with 4 LODs,
+  serviceable units as parts, hit_volumes.json; all 103 reference parts covered + 3 new items (Sol PB-8 missile rack
+  sol.wpn.pb8, Hyperion RD-1 recon drone hyp.drone.rd1, Agora RM-2 «Мантида» repair drone agora.drone.rm2 with a
+  37-joint rig) proposed in tools/models/briefs/new_parts_proposal.json (NOT in canon). build --check passes; budgets
+  met except SR-4.8 / SR-2.6 LOD2 4.5k (target ~4k). Each maker uses its own interface standard (DESIGN_SCHOOLS.md).
+- Catalog: model_asset on all 101 unified parts, 103 reference parts and all 120 runtime products (22 legacy products
+  inherit the model of their legacy_resolution canonical part: model_part + model_units, e.g. TR-30V = 3 x TR-10).
+  ship_designer 21 ships 0 FAIL; reference render_check 0 problems; gates 205 PASS / 6 known red / 0 new.
+- Open for the author: (1) hull-skin flat units whose passport puts thickness on Z (std.dock.collar, bastion.armour.heavy,
+  std.armour.ceramic) were built +Y-outward with axes swapped - passports should read [W, thickness, L];
+  (2) service reactors have no cooling_pad_side_m - builders used the envelope top face as the pad;
+  (3) std.bay.boat cannot hold its boat (craft 9 x 4 x 3 m vs bay 4.87 x 2.43 x 6.08 m); (4) ofu.lift.gear is a set of
+  4 with one envelope, stowed leg exceeds it; (5) sol.rad.panel50 radiating area ~46 m2 vs 50; (6) harmony
+  cargo4800: 240 C20 do not fit the envelope (model carries 85); (7) accept the 3 new items into canon.
+
+### Ship architecture doctrine + Cobrett-I layout sketch v1 (author 2026-11-10) - PROPOSAL
+- Author: passports are NOT canon until the ship models are approved and disputes settled. Decisions recorded in
+  docs/SHIP_ARCHITECTURE_DOCTRINE.md: Cobretty escape = the cockpit itself with a motor (big window, part of the hull
+  design; other makers may use capsules); no machine guns (friendly debris) - lasers, missiles (burn internals, do not
+  rip the hull), railgun on very large ships; Cobra = 2 forward lasers + 4 missiles in 2 wing racks, military = 4 heavier
+  lasers; drone bays (repair + recon) on ships, docks for auxiliaries / fighters on carriers; fleet doctrine from
+  military need (TODO); compartments under removable radiator cover plates (zero-thickness polygons, main + seam hit
+  volumes, seams free the plate), equipment mount points (hit volumes; destroyed mounts free the module), inspection
+  shafts / passages with handrails and ladders, folding landing skids (animated), container unloading hatches.
+- Author's Cobra sources: D:/__elite/_data/objects/ships (Cobretti-mk1-PROTOTYPE-LEGACY-V2.blend = the author's layout
+  topology: nose cockpit module, central power unit, 6 containers in two L groups, engines outboard, missile racks in the
+  wings, lasers beside the cockpit; earlier service-volume studies in _codex_work_*).
+- Tool tools/ships/layout_sketch.py: rough hull + REAL equipment models (LOD2) placed; output
+  assets/models/layout_sketches/<ship> (untracked); renders in the reference as workshop sketches "hull:<ship id>",
+  shown on the ship card (hullPic / hullGallery in app.js). Cobrett-I A3 v1: two side bays (fore CR-1 - ER-5 - aft CR-1)
+  at x = +-10.75 (dia 5 m -> hull 5 m thick), 6 C20 in two L groups on the cargo deck with ventral hatches, spine with
+  jump core / tanks / APU / coolant under an inspection shaft with cross passages and ladders, escape-cockpit proxy in
+  the nose, 2 forward lasers (proxy), 2 wing missile racks of 2 (proxy), stern drone bay (RM-2 + RD-1), 5 skids,
+  20 dorsal radiator plates, ER-5 pads as dorsal skin. Overall ~35 x 29 x 5 m vs passport 26 x 22.2 x 5.
+- Next: author review of the sketch; then escape-cockpit model, forward laser and wing missile rack items, skid rig,
+  plate seams / mount-point hit volumes; fleet doctrine; sketches of the other ships per maker principle.
+
+### Cobra drive bay 3.5 m (conical pads), jump concept, kamikaze drones, maker-language names (author 2026-11-10)
+- Author: silhouette over size -> the Cobretty bay shrinks to dia 3.5 m with a recalculation of overheating / failures;
+  author's idea: conical engine pads. Runtime (PROPOSAL, compiled, NOT flight-verified): EngineThermalEmitterDescriptor
+  .coneHeightM + physics::thermal::conicalEmitterAreaM2 (lateral cone / frustum area, flat when height <= 0) used at the
+  4 emitter-area sites of EngineUnit.h; CR-1 preset (and N1, which inherits it): pad 3.5 m base + 1.3 m cone
+  (11.99 m2 x 6 MW/m2 = 71.9 MW), efficiency 0.9855 -> 0.991 (waste 43.65 MW): margin x1.65 (was x1.68), full thrust
+  down to ~61 % pad integrity (was 60 %), half pad -> 82 % sustained thrust. ER-5 unchanged (own 11 m pad, x1.31).
+  New test tests/architecture_contracts/CobraCompactDriveThermalTests.cpp (cobra_compact_drive_thermal) PASS; EliteGame
+  build PASS. Pre-existing stale reds (same failure on the baseline, not in run_gates): universe_thermal_radiation_tests
+  (multiplier 2.5 vs 10), engine_unit_damage_model_tests, universe_material_engine_thermal_tests,
+  installed_engine_actuator_tests ("CR-1 type identity missing"), equipment_damage_failure_pipeline_tests - queued.
+  Needed for acceptance: a live flight with the Cobra (heat at full thrust, pad damage derating).
+- Models: CR-1 / ER-5 / N1 scaled by 0.7 (scaled_unit / scaled_family in units/cobretty.py), CR-1 pad = conical 8-sector
+  pad; N1 pad still flat in the model (physics conical) - to redo. Draft passports (not canon): CR-1 / N1 envelope
+  3.5 x 3.5 x 5.85 m, emitter 3.5 m + cone 1.3 m, eff 0.991; ER-5 3.5 x 3.5 x 3.5 m; geometry_rule anchors updated.
+- Cobrett-I layout sketch v2: hull ~25 x 23 x 3.5 m (passport 26 x 22.2 x 5), bays at x = +-8.4, walkway in the spine,
+  wingtip jump-field emitters (proposal), skids flush with the belly when folded (author's choice).
+- Jump: per JUMP_MECHANICS.md one field / three modes; the field is the jump core's (a separate unit), CR-1 is the
+  marching mode only; PROPOSAL awaiting the author: wingtip field emitters of the core shape the field around the hull.
+- Kamikaze drones (author: big military ships, like FPV): Bastion MJ-K3 Klegg drone + MJ-BK24 Bikube 24-cell cassette
+  (units/bastion_drones.py), first carrier B-90; all 5 new items (LM-MP8 missile pod, RD-1, RM-2 Mantis, MJ-K3,
+  MJ-BK24) are reference parts via build_proposals.js from tools/models/briefs/new_parts_proposal.json (108 parts),
+  new reference category "drone". Names by maker language (ship_naming.json); ids / folders without Russian
+  transliteration (sol.wpn.mp8 / smy_mp8_pod, bastion.drone.klegg3, bastion.bay.bk24). Open: a naming pass over all
+  equipment names / legacy Cyrillic indices (КО-300, КЦ-1000, ...) per the naming canon.
+
+### Author's list after the Cobra bay decision (2026-11-10, "continue down the list") - PROPOSALS, all committed
+1. EC-2 escape cockpit (Cobretty): the escape system is the ship's nose module with canopy, seats, separation frame with
+   latches / pyro bolts and an escape motor (2 field rings); passport kb.surv.capsule2 -> 6.5 t, 7.6 x 2.8 x 7.0 m.
+2. Cobra weapons: FL-2 forward laser, FL-3H heavy (military, 1.25 x), WR-2 wing rack with 2 Aspid-10 missiles
+   (missiles / doors separate parts); proposal parts kb.wpn.fl2 / fl3h / wr2.
+3. LS-1 folding landing skid: flush belly panel when folded, parallelogram struts + damper, deploy rig (kb.lift.ls1).
+   Cobrett-I sketch v3 uses the real cockpit / lasers / racks / skids.
+4. Ship hit volumes (tools/ships/layout_sketch.py ship_hits): cover plates = main + 4 seam volumes (all seams destroyed ->
+   plate free), equipment hit volumes moved to their installs, 4 mount points per module (all destroyed -> module free),
+   ship_structure.json release rules. Cobrett-I: 544 volumes, 15 plates, 33 modules.
+5. docs/FLEET_DOCTRINE.md: defence-model principles -> design consequences, weapons doctrine, J keep-out (close combat in
+   marching mode), classes with equipment / armament / examples / world counts, carriers = fleet tenders, gaps.
+6. tools/ships/auto_sketch.py: rough content-driven sketches for the other 50 ships (functional groups -> compartments
+   stern->bow, real models in 3D shelves up to the passport height, hull by maker principle monolithic / modular /
+   truss, cover plates, hit volumes); renders in the reference (hull:<ship id>); small craft skipped (own models).
+7. Passports: docs/SHIP_PASSPORT_REVISION.md (tools/ships/passport_revision.py) - 19 ships must grow (small hulls
+   cannot hold their equipment: B-4 / type 415, PC-30 family, TS-6 family...), 25 have far more volume than equipment
+   (cargo / habitable volume or a reserve to declare). Names: tools/colonization_lab/equipment_naming.py ->
+   canon/equipment_naming.json (PROPOSAL): maker-language index / official name / native script, display_name_ru =
+   index + Russian description, legacy_index kept; applied to the canon parts, the reference (build_proposals.js applies
+   it after rebuilding) and the proposals; no Cyrillic index left (--check). Part card shows official / native names.
+Open (author): approve or correct the sketches and the proposed frames; jump-field emitters; accept the new parts
+(LM-MP8, RD-1, RM-2, MJ-K3, MJ-BK24, EC-2 concept, FL-2 / FL-3H, WR-2, LS-1); Kapehu Maori wording to check.
+
+### Author decisions 2026-11-10: jump-field emitters ACCEPTED, new parts ACCEPTED
+- Parts: the 9 proposal items moved from tools/models/briefs/new_parts_proposal.json (now empty, accepted_ids kept) to the
+  canon tools/colonization_lab/canon/ship_parts_unified.json with status "ACCEPTED (author 2026-11-10)"; EC-2 escape
+  cockpit (kb.surv.capsule2) ACCEPTED. Geometry stays PROPOSAL/model. build_proposals.js overlays ACCEPTED canon parts
+  onto data.js (no PROPOSAL label); equipment_naming.py reads the canon first, keeps authored native names, no longer
+  double-prefixes the index (earlier "LM-MP8 · (…" / "CR-1 · Cobretty CR-1 …" forms repaired, idempotent).
+- Jump-field emitters (concept ACCEPTED): one per core maker, keyed to its cores - ZP-FE1 (Zero Point), He-FE8 (Harmony),
+  MJ-FE2 (Bastion), K-FE1 (Kapehu); models tools/models/units/field_emitters.py (4 LODs + hit volumes, LOD0 0.5-4.5k
+  tris), passports cat jump_field_emitter with compatible_cores. Count rule: 2 up to ~40 m hull, 4 up to ~150 m, 8 above.
+  Cobrett-I sketch: ZP-FE1 pair on the flat wingtips (x +-12.6, pods outboard; span ~26.9 m). auto_sketch places the
+  core maker's emitters on every jump-capable ship. Damage rule (proposal, default): one emitter lost -> J ceiling
+  halved, no jump until repaired (player role: interdiction by shooting the emitter). Docs: SHIP_ARCHITECTURE_DOCTRINE,
+  JUMP_MECHANICS section 1, FLEET_DOCTRINE principles.
+- Ship BOMs do NOT yet carry the accepted parts (passports are not canon); the list to add on passport approval is in
+  docs/SHIP_PASSPORT_REVISION.md. tools/ships/ws_hull.py (workshop registration of sketch renders) moved into the repo.
+- Runtime: nothing changed (no emitter in the jump code yet; the damage rule is a doc proposal).
+Open (author): sketches and proposed frames; Kapehu Maori wording; emitter damage rule.
+
+### Queue after the decisions (2026-11-10, "continue down the list")
+- N1 model pad now conical like its physics (two tile courses on the 1.3 m cone, units/cobretty.py n1 pad + hits).
+- Five stale engine tests re-baselined to the CURRENT production laws (production not touched). Root causes:
+  universe_thermal_radiation (multiplier 2.5 -> 10, e41566c6: expectations now computed from the law);
+  engine_unit_damage_model + universe_material_engine_thermal (pads became a dedicated 6 MW/m2 sink ramping from
+  nominal to safe temperature, coolant decoupled, 975d2a5f: fixtures moved to the pad law / current CR-1 geometry,
+  energy conservation and overheat-on-destroyed-pad kept; engine heat capacity is floored at 1 MJ/K, so the life
+  fixture runs at 1000 x power); installed_engine_actuator (display name "Cobretty Cobra CR-1 Vector Main Drive",
+  efficiency 0.991); equipment_damage_failure_pipeline (95 % damage switches the engine off per MainEngineCutoff.h
+  51a5fc68 - the module stays Attached, the slot is not operational). All 5 + cobra_compact_drive_thermal are now
+  C++ gates (tools/run_gates.py CPP_SUITES): --cpp-only 8 gates, 8 PASS. Python gates 205 PASS / 6 known red.
+
+### Step 3 slices S1 + S2 (ship compartments asset) - OFFLINE PASS (compiled check), runtime S3-S5 not started
+- S1 data: tools/ships/ship_asset_source.py derives the compartments from the Cobrett-I layout sketch (instead of the
+  catalog blocks planned in the survey): one compartment per cover plate (footprint x hull thickness) + one per
+  propulsion bay (ER-5 + its 2 CR-1, opened by the ER-5 pad). Equipment instances -> interior of the compartment
+  containing them; hull-skin units (weapons, emitters, skids, radar, dock, turret, EC-2 cockpit) exterior.
+  Output (untracked, regenerable): assets/models/ship_assets/<ship>/source (ship_asset.json + geo/*.obj, 13 MB).
+- S2 assembler: tools/ship_asset_assemble/main.cpp -> EliteShipAssetAssemble (CMake target): semantic nodes, state
+  "breached" on 15 plates + 2 ER-5 pads (plate render node intact-only, Opening + exterior CompartmentPortal), 17
+  compartments, 558 collision volumes from the ship hit volumes (plate main volume intact-only, seams / mounts
+  always), render LODs 0-2 Component (units' LOD1/2/3, one geometry per model instanced) + 3 Shell; hull shell with
+  the plate / bay cut-outs (rasterised top). Explicit 1:1 calibration, then the engine's makeProductionCopy + validate.
+  compiled/cobrett-i.elmodel 12 MB, assembled in ~4 s.
+- Check: tests/ship_asset/ShipAssetCheck.cpp -> EliteShipAssetCheck (through ModelAssetPresentation::select, FULL at
+  24 m): intact -> 0 compartments / 0 interior draws; plate over the core torn off -> only c_cover_6, interior = eq_core;
+  ER-5 pad shot away -> only c_bay_l (ER-5 + 2 CR-1); two plates -> exactly two; breach facing away -> none; atomic
+  switch (plate main collision leaves, one opening). Cost: intact 33 draws / 16.9k tris; +254 tris (core
+  compartment), +9.3k (core + service compartments), bay +29.5k (the author's ~30k concern: only when a bay is open).
+  Result: 9/9 PASS. Not yet a gate (needs the main build tree).
+- Next: S3 runtime render (ships on ModelAssetGpuLibrary, nodeState from replicated state), S4 server breach state per
+  compartment + replication, S5 hits/collision from the asset. Acceptance of the stage = live flight (see below).
+
+### Step 3 S3 runtime render, opt-in (author 2026-11-10: option "a" - behind a flag, the game keeps the legacy Cobra)
+- ModelAssetGpuLibrary: ObjectType::CobraMk1 -> assets/compiled/models/cobrett-i/cobrett-i.elmodel ONLY with
+  ELITE_SHIP_MODEL_ASSETS=1 (or =<path>). The ship asset is in the game basis and true metres: identity
+  assetToLogical, scale 1 (root cause of the first in-game frame - ship turned 90 deg and scaled 0.8: the legacy
+  Cobra mesh basis / 22.2 m logical size were applied). The compiled package goes to src/assets/compiled/models/
+  cobrett-i (git-ignored like every compiled package; regenerate: ship_asset_source.py + EliteShipAssetAssemble).
+- SceneRenderer: real ships with a package go to prepared.modelAssetObjects (isShip, role -> shouldDrawRealShip),
+  legacy meshes skipped for that ship; ObjectState.nodeState from the item. No replicated breach state yet (S4):
+  DEV ELITE_DEV_SHIP_BREACH=plate_cover_6,pad_eq_er5_l,... ; DEV ELITE_DEV_SHIP_ASSET_PLACE_M=<m>[:<tilt>] puts the
+  PLAYER ship in front of the main camera tilted to show the dorsal plates.
+- Hull top rebuilt as exact trapezoid rows (no staircase on the swept wing edges); check still 9/9 PASS.
+- LIVE (target machine, build/EliteGame.exe --dev-direct-flight --diagnostic-scenario nav-stress:simple, modern
+  style, captures by the game's back buffer D:/tmp/elite_ship_s3_f.png intact / _h.png breached): FULL 976 px, 4
+  breaches -> 4 compartments, 12 interior draws (walkway + tanks in the spine, ER-5 + CR-1 in the left bay), closed
+  compartments not drawn, 57k triangles. Python gates 205 PASS / 6 known red.
+- Not done: S4 (server breach state per plate / pad + replication -> nodeState), S5 (hits / collision from the
+  asset). The legacy collision / hit volumes of the Cobra stay authoritative (22.2 m) while the asset is 27.8 x 23.3 m.
+
+### Step 3 S4: breach state from the server, no wire change - LIVE PASS (opt-in path)
+- Survey (subagent): no generic replicated per-ship flags exist; module states (Attached / Destroyed / Detached /
+  Hanging) are replicated in ObjectModuleSnapshot; static node ids on the wire are forbidden
+  (check_replication_static_definitions). Decision: derive like hiddenPartIds on the client.
+- src/game/client/ShipBreachNodes.h: legacy Cobra module -> asset nodes (ship_panel_top_{L,C,R}{F,B} -> the cover
+  plates of that column / row group; propulsion reactors *left* / *right* -> pad_eq_er5_l / _r).
+  ClientWorldState::rebuildHiddenPartIds also fills ClientShipState::breachedNodeIds (a module not locally visible,
+  itself or by its parent chain). SceneRenderer sets nodeState "breached" from it (+ the DEV env list).
+- DEV ELITE_DEV_DESTROY_MODULES_AT=<s>:<id>,... (DevScriptRunner) destroys player modules through the debug session
+  (the dev panel's server path).
+- LIVE (nav-stress:simple, ELITE_SHIP_MODEL_ASSETS=1, destroy ship_panel_top_CF + ship_drive_left_reactor at 15 s):
+  LOD log before 0 compartments / 0 interior draws, after 3 compartments (plates 6, 7 + left bay) / 9 interior
+  draws. Captures D:/tmp/elite_ship_s4_{before,after}.png (dark lighting, evidence = the presentation log).
+  Python gates 205 PASS / 6 known red.
+- Limits: the breach follows destroyed / detached LEGACY modules (panel health), not the per-plate seams of the
+  asset (that is S5 together with hits from the asset); penetration holes (BurnState) stay server-only.
+
+### Author 2026-11-10: emitter damage rule ACCEPTED; placement per mesh; ship assets in the editor; Maori check
+- Jump-field emitter damage rule ACCEPTED (one emitter lost: J ceiling halved, no jump until repaired) - docs + the 4
+  passports updated; RUNTIME NOT IMPLEMENTED (the jump code has no emitter modules yet) - queued.
+- Placement belongs to the mesh (author): ModelAssetGpuLibrary reads a socket of kind "object_frame" from the asset
+  (origin, rotation T*Rx*Ry*Rz, extent.x = uniform scale); assets without it keep the legacy descriptor fit (station).
+  The per-type CobraMk1 special case is removed. LIVE: "placement from its object_frame socket", logical size
+  27.8 x 5.8 x 23.2 m, breached plate 7 + right pad drawn.
+- Ship asset semantics filled by the generator: 52 structural links (15 plates WeldSeam to the hull with their 4
+  seam damage proxies, 35 modules EquipmentMount with their 4 mount proxies, 2 ER-5 pads FixedMount to their
+  reactor), 15 plate hit regions (intact), the object_frame socket.
+- tools/ships/build_ship_assets.py: sketch -> SOURCE -> EliteShipAssetAssemble -> production
+  src/assets/compiled/models/ship_cobrett_i/ship_cobrett_i.elmodel + WORKING copy in the editor workspace
+  (build/tools/model_asset_editor/workspaces/ship_cobrett_i/working). Model Asset Editor catalog: new group
+  "ship_assets" (compiled/models/ship_*), opens the WORKING head with every field filled. Not opened in the editor UI
+  by me (no headless mode) - author's look.
+- Kapehu Maori words checked against Te Aka (subagent): wrong ones replaced (rata -> hihiani radar, rererangi ->
+  matatopa drone, tanga -> kura tank, kopae rererangi -> riu matatopa drone bay, rauangi wera -> papa hahana,
+  kapuhera -> kowae mawhiti, poti oranga -> poti whakaora, comm -> punaha whakawhitiwhiti korero); coinages from
+  attested parts marked in equipment_naming.py (reactor putauhohe karihi, emitter putuku whaitua, coolant loop ara
+  whakamatao, life support punaha tautoko ora) - a fluent speaker should confirm; pukupuku (armour) kept with caveat.
+
+### Jump-field emitter damage rule in the runtime (author-accepted 2026-11-10) - LIVE PASS
+- JDrive.h: JFieldIntegrity + jFieldFactor (all intact 1; one emitter lost 0.5 and no jump; core or every emitter
+  lost 0) + jumpFieldComplete; src/game/simulation/JFieldIntegrity.h counts "*jump_field_emitter*" modules and
+  ship_jump_core (intact = Attached with health). Cobra descriptor: passive modules ship_jump_field_emitter_L / _R
+  (like the jump core; no mesh / hit volume yet - shooting them needs S5).
+- Server: J acceleration cap (route / global command, pilot +/- ramp, HOME / END command) x factor, J speed cap
+  x max(0.5, factor), J refused without a field; requestJump refuses FieldIncomplete (new jump::Refusal 10 with
+  Russian text) and a charge-up is cancelled when an emitter is lost mid-way.
+- Test j_field_emitter_tests (C++ gate): PASS. Gates --cpp: 220, 214 PASS / 6 known red (one new red on the way
+  - check_test_suite_source_integrity read "JDrive.h" in a CMake comment as a source - fixed).
+- LIVE (nav-stress:simple, flown out of the hub keep-out on the main engines, then J HOME): emitter L destroyed ->
+  J command 50 000 g, jump to Alpha Centauri REFUSED "поле прыжка неполное"; intact -> command 100 000 g.
+
+### Cobra drive heat / pad derating - LIVE ACCEPTANCE EVIDENCE (2026-11-10, target machine)
+- DEV tools: ELITE_DEV_DRIVE_THERMAL_TRACE=1 ([DriveThermal] per main engine per second: T, pad intact, burn,
+  safe thrust, thermal damage), ELITE_DEV_DRIVE_PAD_DAMAGE=<s>:<intact01> (ObjectModuleRuntime::
+  debugSetEngineEmitterIntact). Root-cause fix found on the way: the main-engine heat clock ran only for hub-tactical
+  allocator samples; free-flight burns now feed it too (aft bank, requested share x the engine's safe thrust).
+- Healthy pads, full thrust (CR-1 passport: nominal 450 K, safe 1250 K, 70 MJ/K, waste 43.65 MW, pad 71.9 MW):
+  0.62 K/s at start, T(183 s) = 551.7 K live vs 551.6 K model; equilibrium 936 K < safe -> full thrust indefinitely.
+- Pads at 50 %, full thrust 2650 s: T(2090 s) 1167.3 K live vs 1167.2 K model; the governor band (safe - 50 K) is
+  entered at 2322 s (model 2306 s); safe thrust 0.99 -> 0.89 at 1231 K and falling to the 0.824 model value at the
+  safe temperature; thermal damage 0 (the governor protects the drive). Matches cobra_compact_drive_thermal.
+- Not covered live: the reactor (ER-5) pad damage and the RCS banks.
+
+### Combat trials for balance data (author 2026-11-10: "a firefight with rams, how survivable are the ships")
+- tools/combat/combat_trials.py: 9 live trials (pulse / beam / military laser, two missile salvos, duel, rams 90 / 30
+  m/s, ram under fire) -> docs/COMBAT_TRIALS.md; conclusions + proposals docs/COMBAT_BALANCE_NOTES.md. Balance NOT
+  changed (author's call).
+- REAL BUGS FIXED (GameSimulationCombat.cpp): missile contact compared the step one tick early (tvel x dt ~500 m at
+  orbital speed: every missile "passed" at 350-480 m) -> now 4/4 and 3/3 hits; a missile with a target integrates in
+  the target's frame (world-frame drift at ~30 km/s defeated the guidance); the rack point summed every volume of the
+  carrying module (first volume now).
+- MISSING FEATURES found: no ship-ship collisions at all; NPCs never fire; a ship is never killed by combat (modules
+  only). DEV prototypes behind flags (game unchanged by default): ELITE_DEV_SHIP_COLLISIONS=1, ELITE_DEV_TARGET_FIGHTS=
+  duel|ram (+ ELITE_DEV_RAM_SPEED), ELITE_DEV_PLAYER_TRACK=1 (trial pilot sweeping the aim), ELITE_DEV_COMBAT_LOG=<csv>.
+- Key numbers: default pulse laser 1.5 MW ~1.6 hp/s (5 panels in 150 s); military 10 MW: first module 2.5 s, ER-5
+  48 s, mains 70 s; Needle missiles 52 hp for 4 hits (the jet leaves the hull); ram 90 m/s ~490 MJ per hit kills
+  lasers and cockpit of BOTH ships. Python gates 205 PASS / 6 known red.
+- Open (author): the 5 proposals in COMBAT_BALANCE_NOTES.md (jet into the compartment, default laser, ram crumple zone
+  + RCS avoidance, disabled-ship condition + EC-2 escape, NPC duel AI).
+
+### Combat round 2 (author 2026-11-10: items 1, 4, 5 + laser line-up with a controller + reactor explosions) - LIVE
+- Lasers (weapons.json + WeaponCatalog): Pulsar (default), Discharger (capacitor 60 MJ), Squall 8 MW, Stiletto 1.2 MW,
+  Cutter 15 MW; former ids aliased. Laser controller (GameSimulation::laserControllerStep): electrical = beam /
+  efficiency from ShipCore::serviceReactorHeadroomMW (Cobra ~9 MW), (1 - eff) heats the laser body, which conducts into
+  the service coolant (ShipCore::addServiceHeatMJ); throttled over the last 60 K of the body limit and near the
+  coolant's critical temperature. First run found the body limits (900 K) below the coolant's working ~1000 K -> fixed.
+- Item 1: a shaped jet that holed the skin spends its rest on the equipment within 3 m of its line (Needle x4: 52 ->
+  271 hp). Item 4: disableShipIfCombatLost (cockpit or all propulsion reactors) -> destroyedCause 3, no control, NPC
+  derelict, modules kept; HUD text. Item 5: noteCombatAggression -> m_combatHostility; the duel AI is standard (NPC
+  fights its attacker; excluded from the traffic AI); ELITE_DEV_TARGET_PASSIVE=1 for pure weapon trials.
+- Reactor explosions: catastrophic containment (ShipCore queues) / reactor destroyed while running (35 %, service 20 %)
+  / reactor-bay frame destroyed (35 % per installed ER-5); one blast per reactor (marked before the blast - a chain
+  re-queued the same one); 25 % flash within 4 m, 40 fragments: own hull by penetration rays, other ships by solid
+  angle, random modules. Found: the legacy Cobra ER-5 modules have no placed hit geometry (only unplaced link
+  volumes) - they sit in ship_frame_reactor, used as their location; isReactorModule excludes the frame (it was
+  counted as a reactor in the disabled check and the breach mapping - fixed).
+- Trials (13): docs/COMBAT_TRIALS.md, round-2 table in COMBAT_BALANCE_NOTES.md: Discharger 781 hp / 150 s, Squall 666
+  (throttled by the Cobra reactor and heat), natural ER-5 explosion after the bay frame fell, duel decided in 30 s by a
+  missile into the cockpit (90 hp). Python gates 205 PASS / 6 known red.
+
+### Step 3: ship hull in compartments, interiors drawn only for a breached compartment (author 2026-11-09) - PLANNED
+Survey (source-audited 2026-11-09):
+- Ships render only through the legacy ObjectAssembly path (SceneRenderer ship loops ~1296-1340 / 1618-1760,
+  hiddenPartIds from ClientWorldState::rebuildHiddenPartIds). ModelAssetGpuLibrary::packageFor is station-only.
+- ModelAssetPresentation already implements Compartment / CompartmentPortal / Opening / StateVariant + activeStates:
+  interiors are drawn only behind open, visible portals (BFS depth 2, Full representation >= 700 px); reference test
+  tests/model_asset_presentation/PresentationCheck.cpp (synthetic 22 m ship, "breach -> engineering only").
+  ObjectState.nodeState is never filled by the renderer (only nodeMotion).
+- No breach / opened-compartment state exists in game or world code; the client receives only module state/health.
+  Penetration BurnState holes are server-only.
+- ship_layouts_3126.json compartments are a designation tree without positions; 3D placement exists only as catalog
+  installed-item blocks (center, size) in ship_catalog_3126.json. Catalog hulls draw only primitive blocks.
+Slices (each its own acceptance; commit != acceptance):
+  S1 data: compartment extents per ship (union of its units' catalog blocks) + part -> equipment model folder map.
+  S2 ship asset assembler (tool, ModelAssetBinary): hull shell per compartment (intact + breached variants), equipment
+     instances sharing one geometry per model, Compartment / exterior Portal / Opening / StateVariant "breached",
+     collision from hit_volumes.json; output a compiled .elmodel per ship. First ship: Cobrett-I.
+  S3 runtime render: ships on ModelAssetGpuLibrary (packageFor + SceneRenderer ship loop), nodeState from replicated
+     state, ship-specific presentation thresholds (an open breach must show interiors closer than the 700 px rule).
+  S4 server: per-compartment breach state (hull section health / penetration holes) + replication to the client.
+  S5 (high risk, later): hits and collision from the asset instead of descriptor AABBs.
+Acceptance for the stage: live flight on the target machine - an intact Cobrett-I shows no interior; breaching one
+compartment shows only that compartment's equipment.
+
+### Author 2026-11-10/11: containment drama, compact ER-5 pad, ordinary collisions incl. stations, impact tiers
+- Containment emergency (commit 541702ef): hidden 20-60 s fuse, core heats, replicated Containment alert -> red
+  flashing beacon (no sound - author), blast or quiet death by chance; reactors off x0.4; repair drone (Ctrl+R)
+  stabilises in ~8 + 25 s; LIVE: none -> blast after 37 s + chain emergency on the other ER-5; reactors off -> quiet
+  collapse; drone -> stabilised at 36 s of a 37.9 s fuse. Cockpit 260 hp / armour 40.
+- ER-5 compact pad (23409a7f): eff 0.985, waste 76 MW, 16.4 m2 as two 2.35 x 3.5 m plates top + bottom, thermal
+  capacity 80 MJ/K; er5 failure matrix + emergency bridge PASS; model, canon, ship asset, sketch renders.
+- Collisions are standard now (ELITE_DEV_SHIP_COLLISIONS=0 turns off): broad spheres + SAT over the hit boxes, impulse
+  with lever arm (push + spin through pitch/yaw/rollRate), static objects (stations) with infinite mass and their spin,
+  dock modules excluded for now, dock-controlled ships excluded; tiers: < 0.5 MJ per module no damage, damage to the
+  touching modules, ShipCore::applyPartImpulse tears links (parts knocked off), > 3 GJ crushed (cause 4, HUD).
+  LIVE: Cobra into the station at ~490 m/s -> 30 GJ, 22 links torn, crushed; 30 m/s ship-ship -> 50 MJ, 3 links torn,
+  spin 0.1-0.8 rad/s. Reactor blasts push and spin the hull (~2 % of the energy).
+- Station "teleporting" (author report): not reproduced. DEV ELITE_DEV_STATION_TRACE=<csv> (per frame camera-space
+  origin + spinning ring angle): the station at 10 km steps 0.16-0.4 m / frame (sub-pixel); the ring turns every frame
+  but its rate jitters 1.2-6.3 deg/s around 2.9 (interpolated module angle) - not visible at 10 km. Need the author's
+  situation (distance, mode, docked / J / map) to chase it.
+- Open: S5 (hit geometry from the assets for every module in the game - the legacy Cobra ER-5s still have none),
+  dock-module collisions, munition norm tables (author: the fleet plans by expenditure norms) + NPC missile economy.
+
+### Author 2026-11-11: model storage, reference model statuses, celestial textures queued
+- Storage audit (commit baeb058b, docs/MODEL_ASSET_STORAGE.md): where equipment meshes, ship hulls, sketches, the
+  compartment asset, the station and the editor workspaces live; the in-game Cobra mesh (cobrettymk1) existed only in
+  build/ - rescued into assets/models/ships (now versioned). Open steps there (each one alone, checked in the game):
+  author picks the canonical Cobra (cobrettymk1 = game vs cobretty-mk1-int = editor), station compiled package under
+  git + old copies removed, ships into .elmodel (= S5), sketches out of assets/models, dead MeshLibrary paths, equipment
+  OBJ in git or generator only.
+- Ship reference model status (author: "all Cobrett-I A3 internals shown ready and the hull done, but it is a sketch"):
+  root cause - my workshop scripts set modelReady.ready = true whenever generated model renders were attached (108
+  parts, two identical timestamps); the hull flag lived only in the author's browser (IndexedDB). Fix: the checkbox
+  "модель готова" is replaced by a status none / набросок / в игре (не утв.) / утверждена (store.js status(),
+  setStatus(); a legacy ready record without a status reads as draft; only "approved" counts as ready). workshop.json:
+  all 108 parts = draft with a note (generated by tools/models), all 51 hulls = draft with a note naming the sketch
+  (A3: layout sketch v3; the game draws the old cobrettymk1 assembly, not this hull); the newer records override the
+  browser's old flags on merge. Checked in headless Chrome: A3 page 19 statuses, all draft; header "утверждено 0 из
+  995 мест, набросков 992". Approvals are the author's clicks only.
+- assets/generated/celestial (analysis): a cache baked from assets/source/celestial (--bake-celestial-textures
+  --import-real); read by BodySurfaceFieldLoader (fallback), MapCelestialRenderResources (system map) and
+  DetailMapPlanetPass. Author: most of the textures are ugly (Earth best, the Moon maybe; Jupiter, Phobos, Deimos
+  awful) - QUEUED: procedural replacement through the existing generators (PlanetSurfaceField, GasGiantField,
+  SmallBodyField) with an "appearance passport" per famous body so it stays recognisable; order Jupiter, Phobos,
+  Deimos -> Moon, Mars -> the rest; Earth stays mostly as is. The old texture path is switched OFF behind a flag, NOT
+  deleted; deletion only after the author checks the result. Also: assets/source/celestial (21 MB) under git; Tau Ceti
+  data (778 MB) looks orphaned - check before touching.
+
+### Author 2026-11-11 (cont.): procedural bodies on the map, appearance passports, Jupiter root cause
+Source-audited + compiled + live DEV captures (back buffer, --dev-direct-flight, Sol); NOT committed, NOT accepted.
+- Map procedural source (src/game/system_map/ProceduralBodyTextureCache.*): equirect albedo baked on a background
+  worker (below normal priority) from the body's generated descriptor through makeSurfaceField - the same field flight
+  draws; GL row order / longitude as the cached TGA (TextureLoader flip). Wired into all three map paths:
+  System (globalAlbedoTextureForBody), Detail (globalAlbedoTextureForIdentity, shape-model OBJ albedo override),
+  Hub (albedo + cached normal suppressed when procedural). Policy ELITE_MAP_PROCEDURAL_BODIES: unset = procedural only
+  for bodies without a cached texture (every system except Sol / Tau Ceti), "all" = procedural everywhere (compare),
+  "0" = old behaviour; ELITE_MAP_PROCEDURAL_SIZE (default 1024). Old cache path untouched (not deleted).
+  LIVE: Mars Detail map in "all" mode drawn from the bake (2.3-2.6 s per 1024x512 body); Phobos Detail = real OBJ shape
+  with the procedural albedo. Other systems: same code path, descriptor lookup by system folder NNN_ + body JSON id;
+  not yet seen live (the player starts in Sol; needs a jump) - author to check.
+- Appearance passports (src/world/celestial/surface/AppearancePassport.*, data src/assets/data/celestial/
+  appearance_passports.json): per famous body, procedural=true (generator instead of curated / cached maps, in flight
+  via loadBodySurface and on the map) + mean_albedo_linear (the field's sphere-mean colour scaled per channel to the
+  observed one; relief / pattern untouched). Applied inside makeSurfaceField, so map, flight, server terrain probe,
+  baker and preview agree. Author decision 2026-11-11: Io, Europa, Phobos, Deimos look better procedural, colour to be
+  matched -> passports for these four (Io 0.76/0.56/0.17, Europa 0.66/0.60/0.50, Phobos 0.080/0.068/0.058, Deimos
+  0.082/0.069/0.057, NASA fact-sheet albedos). Colour acceptance = author.
+- Jupiter "awful" root cause: the Detail map never showed the Cassini texture - environment/sol/jupiter.json had
+  surface_visibility hidden + load_surface_textures false, so a procedural banded cloud deck was drawn instead.
+  Changed (TEST, author to judge): surface visible, cloud deck off, atmosphere haze kept. Same flags remain on Saturn,
+  Uranus, Neptune, Venus (untouched). GasGiantField itself is far worse than Cassini (cartoon bands) - procedural
+  replacement for gas giants needs a new band / turbulence model first.
+- Generator bug fixed: PlanetSurfaceField::lakeInCell kept a thread_local std::unordered_map; its destructor
+  corrupted the heap at thread exit under MinGW (tls_atexit) -> crash of any short-lived sampling thread on
+  terrestrial bodies (Earth). Replaced by a trivially destructible direct-mapped memo of the same pure function.
+  Planet Lab --verify against checksums recorded with the old code: 86/86 identical. Pre-existing FAIL (before and
+  after): "rocky coastline ... landmark id changes 3443".
+- Tools: build/EliteCelestialPreview.exe <body.json> <out_prefix> [width] (equirect map + lit globe PNG, headless);
+  DEV aliases body:phobos|deimos|io|europa in ELITE_DEV_SOL_MAP_SCRIPT. Preview page (private artifact):
+  https://claude.ai/artifact/EKaGhQD1PzTzBG2KfQyDCD
+- Next: author checks the map live (another system after a jump; Jupiter Detail close up; passport colours);
+  then gas giant band model, Phobos Stickney / grooves, Moon / Mars review; Tau Ceti 778 MB data still to check.
+- Celestial resource audit (source audit, no measurement yet): docs/CELESTIAL_RESOURCE_AUDIT.md - CPU surface fields
+  never released (flight renderer + terrain probe, up to 3 copies per body on one machine), curated maps held as
+  float (4x), map GPU caches unbounded, Sol look from two sources (flight = curated sources, map = restyled baker
+  cache + hidden surfaces), lod/tiles (~70 % of the 4.9 GB Sol cache) never read. Target: one BodySurfaceRegistry per
+  process + one budgeted map texture cache + map bakes the flight field. Not started - author decides.
+- Repository cleanup (author order 2026-11-11, group 1 only): removed root headless_server/ (stale 2026-09-28 build,
+  6.1 GB; canonical build/headless_server untouched), the stray "$' " file, root last_* / navigation_* traces and logs,
+  tools/navigation_runtime/last_* traces and logs, third_party/asio-1-24-0.tar.gz. None were tracked.
+- DEV memory ledger (step 0 of docs/CELESTIAL_RESOURCE_AUDIT.md): src/core/DevMemoryLedger.{h,cpp} (lib
+  EliteCelestialSurface: client + server). ELITE_DEV_CELESTIAL_MEMORY=<s> prints every s seconds "[CelestialMemory]"
+  process working set / private + one line per cache (cpu flight.surface_fields, flight.bodies_known, gpu flight.globes
+  / clouds / terrain / asteroids, cpu terrain_probe.fields, gpu map.generated_albedo / preview / normal,
+  map.procedural_albedo, map.cloud_layers, cpu map.procedural_pending). SurfaceField::memoryBytes() (curated maps,
+  settlement discs, passports forward). Inert without the env var.
+  First live numbers (Sol start near Earth, D:/tmp/elite_mem/err.txt): process working set ~1.1 GB, private ~1.0 GB;
+  flight fields 66 MB CPU for 2 bodies (Earth + Moon curated maps as float, matches the 17 B/texel estimate);
+  flight globes 96 MB GPU for 2 bodies; Jupiter Detail map +10.7 MB GPU (cached albedo). Not yet measured:
+  accumulation over a long flight / a jump, the server process, the terrain probe (needs a landing).
+  DEV note: a game window started in the background is minimized and draws nothing; ELITE_DEV_FRAME_CAPTURE restores
+  it. ELITE_DEV_SOL_MAP_SCRIPT "system;body:X;detail" after a first Detail map does not switch to another body.
+- Memory scenarios (DEV, ELITE_DEV_OFFSCREEN_WINDOW=1 + ELITE_DEV_CELESTIAL_MEMORY=15, logs D:/tmp/elite_mem/A..D):
+  A Earth hub -> Moon autopilot (10 min): fields 66 MB / 2 bodies all along; the terrain probe loaded a SECOND Moon
+  field (32 MB) at the approach - client + server share one probe cache in --dev-direct-flight (one process);
+  globes 96 MB -> 0 -> 96 MB during the J transfer (budget works); terrain rings 3 -> 8 MB near the ground;
+  transient peak 1.50 GB at ~150 s with the celestial caches DOWN (~400 MB outside the ledger - to find).
+  Landing not reached in 600 s (580 s: 269 m from the pad at 179 m/s); November runs landed in ~4 min - to check.
+  C hub start @50 km -> jump to Tau Ceti: exit on Tau_Ceti_m 418 km; Sol's Earth + Moon fields (66 MB CPU) and their
+  globes (96 MB GPU) are NOT released in Tau Ceti (globes 192 MB / 3, known bodies 36 -> 45); transient 1.63 GB for
+  ~30 s after the jump, steady 1.22 GB vs 1.10 GB before.
+  B/B2 "jump failed" root cause: not a jump bug - the DEV thrust:30 flew the ship nose-first into the Earth Orbital
+  Hub (1.1 km/s, CRUSHED), the charge-up was then interrupted; with no thrust the ship co-orbits the hub at 10 km and
+  never reaches the 20 km J clearance. Minor UX: a destroyed ship's charge reports "вышел из нормального полёта".
+- DEV start point ELITE_DEV_START (author 2026-11-11), applied once ~3 s after the start (GameServer::applyDevStartPoint):
+  hub:<id>[@<km>] normal flight km above the hub at its velocity (GameSimulation::devPlaceShipNearHub);
+  body:<stem>[@<system>] orbit of any body of any system at J floor + 100 km (descriptor file stem: moon, phobos,
+  jupiter, eps_eri_b; reuses devPlaceShipInSystem = a jump exit); system:<id>. LIVE: hub@50 -> jump PASS; body:phobos
+  -> 150 km orbit of Phobos, frame D:/tmp/elite_mem/D/f080.png.
+- Fixed: a zero-distance jump exit (DEV placement, also the server load test) asserted in std::normal_distribution
+  (sigma 0, debug libstdc++) - the scatter is drawn only for sigma > 0.
+- DEV window: ELITE_DEV_OFFSCREEN_WINDOW=1 opens the game window off the desktop without focus (a minimized window has
+  a 0x0 surface and renders nothing); frame captures work.
+- Transient memory peaks FOUND + FIXED: GlobeBake::bakeGlobeFace held a whole face of SurfaceSample + dvec3 directions
+  ((n+2)^2 x ~110 B = ~115 MB per 1024 face), several faces in parallel on the flight workers -> +400-500 MB for tens of
+  seconds on every large globe tier (J transfer, after a jump). Now baked in strips of 32 output rows (+1 halo row):
+  ~4 MB per face. Bit-identical output: 6-face bake hashes of Earth / Jupiter / Phobos / Alpha_Centauri_A_j at face
+  200 (incl. a partial last strip) equal before / after (scratch checker built against libEliteCelestialSurface).
+  LIVE (2 s ledger, D:/tmp/elite_mem/P1, P2): Moon transfer peak 1.60 -> 1.16 GB at the 72 MB globe bake; after the
+  jump to Tau Ceti 1.63 -> 1.25 GB. Ledger got cpu flight.globe_bakes_pending / gpu flight.globe_staging /
+  cpu flight.cloud_bakes_pending / cpu flight.terrain_builds_pending.
+- Startup crash FOUND + FIXED (pre-existing, intermittent; 3/3 with ELITE_DEV_START + 2 s ledger): EconomyModel::load
+  iterated `delay.value("hubs", json::object()).items()` - the json temporary died before the range-for body (pre-C++23)
+  and the keys were read from freed memory (0xfeeefeee). Bound to a local; 3/3 runs pass. No other such pattern in
+  src/ or tools/.
+- KNOWN, not fixed (pre-existing since at least 2026-11-10, D:/tmp/elite_combat/em_*.txt): every run killed by
+  `timeout` ends with [CRASH] SEH 0xc0000005 in opengl32.dll after "Failed to unregister class Chrome_WidgetWin_0" -
+  a GL call after the window / WebView teardown on a forced shutdown. Not a gameplay crash; to look at separately.
+- Step 1 of docs/CELESTIAL_RESOURCE_AUDIT.md DONE (source + compiled + live DEV, not author-accepted):
+  (a) curated maps compact: ImportedSurfaceMaps::albedoRgb (source 8-bit, decoded through a 256-entry pow(c/255, 2.2)
+  table) instead of glm::vec3 - bit-identical globe bakes (6 faces, size 160) of Earth / Moon / Mars / Jupiter;
+  memory Earth 35.7 -> 16.8 MB, Moon 33.6 -> 14.7, Mars 8.4 -> 3.7, Jupiter 100.7 -> 25.2.
+  (b) acquireBodySurface (BodySurfaceFieldLoader): one surface per body per process, weak references, concurrent
+  requests wait for one load; flight renderer + terrain probe use it. (c) flight releaseStaleBodies(): a body not in
+  the frame for 300 frames frees textures / terrain / its surface ref; the probe drops other systems' bodies on a
+  system change. Ledger: cpu surfaces.registry_unique; holders report *_ref (not summed into the total).
+  LIVE (D:/tmp/elite_mem/P1, P2): start fields 66 -> 30 MB; Moon approach: probe holds the Moon (14 MB ref), unique
+  stays 30 MB / 2 (before: a second 32 MB copy); jump to Tau Ceti: ~5 s after the exit Sol's surfaces and globes are
+  released (unique 0 MB / 1, globes 192 -> 96 MB / 1, known bodies 45 -> 9), working set ~1.0-1.07 GB vs 1.22 GB
+  before. Planet Lab --verify 86/86 identical (pre-existing rocky coastline FAIL unchanged). Runs still end with the
+  known forced-shutdown [CRASH] in opengl32.
+- Next: step 2 (one map texture cache with a byte budget, dropped on a system change), step 3 (the map bakes the
+  flight field; Sol look unified; assets/generated no longer needed at runtime).
+- Step 2 DONE (source + compiled + live DEV): one map texture policy (MapCelestialRenderResources): the three cached
+  generated-texture maps (albedo / preview / normal) and ProceduralBodyTextureCache share a byte budget
+  ELITE_MAP_TEXTURE_BUDGET_MB (default 256, min 1 for tests): LRU eviction of textures not drawn in the last 3 frames,
+  anything idle ~5 min (18 000 frames) released regardless; an evicted texture loads / bakes again on request. Ledger
+  gpu map.texture_evictions. LIVE (budget 1 MB, policy all, Jupiter Detail): the cached 10.7 MB albedo shown while
+  the bake ran was evicted, the procedural 2.7 MB one kept and drawn (D:/tmp/elite_mem/S2/e.png).
+  DEV limit seen again: ELITE_DEV_SOL_MAP_SCRIPT system / enter:<body> / detail after a first Detail map stays on it.
+- Step 3 DONE (source + compiled + live DEV): the map bakes every body from the flight surface through the registry
+  (acquireBodySurface: curated Sol maps from assets/source/celestial, passports, procedural fields); registry key =
+  body id (flight / map spell descriptor paths differently). ELITE_MAP_PROCEDURAL_BODIES default is now "all"
+  ("missing" = step-1 behaviour, "0" = old cache only). LIVE Detail maps (D:/tmp/elite_mem/S3): Earth baked from
+  curated maps in 287 ms (registry 16 MB), Jupiter from Cassini 315 ms (24 MB), Phobos procedural by passport
+  1.6 s on its OBJ shape. assets/generated is still read for: the Hub map normal / preview, the Phobos / Deimos OBJ
+  shape models, environment / cloud lookups - not for body albedo any more. Author to judge: Sol bodies on the map
+  now look like in flight (Jupiter = Cassini via the field, paler than the restyled cache).
+- Step 4 DONE (baker only; NOTHING deleted on disk): CelestialTextureBaker no longer bakes lod/tiles (never read at
+  runtime, only validated) unless ELITE_BAKE_TILE_PYRAMID=1; meta then says tiles disabled, the library skips the
+  check. Check: --bake-celestial-textures --system sol --body moon --import-real --output D:/tmp/elite_bake -> 55 MB,
+  no tiles (the current cache has 181 MB for the Moon). Existing tiles on disk: 3.97 GB under assets/generated
+  (untracked) - deleting them is the AUTHOR's decision (asset deletion); the runtime does not need them.
+- Step 5 (flight lifetime within a system) DONE (source + compiled + live DEV): releaseStaleBodies also frees a body
+  that stayed below the load threshold (<= 1 px; lastNeededFrame) for 3600 frames (~60 s), never the local-terrain
+  body; the entry is made / loaded again when the disc shows. LIVE (ELITE_DEV_START=body:phobos, D:/tmp/elite_mem/S5):
+  Earth + Moon loaded at the Earth start, points at Mars -> released: registry 34 MB / 4 -> 4 MB / 2 (Mars + Phobos),
+  globes 102 -> 6 MB, working set 1220 -> 1054 MB.
+- Memory audit plan (docs/CELESTIAL_RESOURCE_AUDIT.md) steps 1-5 DONE. Left for the AUTHOR: delete assets/generated
+  lod/tiles (3.97 GB, never read) and decide on the rest of assets/generated (still read for Hub normal / preview,
+  Phobos / Deimos OBJ shapes, environment lookups). Small, not budgeted: DetailMapPlanetPass shape-mesh textures.
+- Gas giants v2 (GasGiantField, source + compiled + previews + live DEV; author to judge the look): per-hemisphere band
+  table of unequal widths (belts / zones with own brightness, hue, turbulence; rusty belts), shear-flow domain warp
+  strongest at band edges (waves, festoons), folded filament texture, thin zonal stripes, band-limited fine filaments,
+  vortices on band edges that swirl the deck (spiral, soft core, dark rim), a great red oval with a wake on large
+  ammonia giants, mottled polar regions; colour in LINEAR albedo from observed sRGB (the v1 palette was sRGB-like ->
+  washed out); temperature sets contrast (Saturn ~half of Jupiter), per-body zone / belt variety; ice giants: few
+  low-contrast bands, sparse methane streaks, dark spot; hot giants dark red-brown. Noise amplitudes calibrated per
+  measured RMS (fbm 0.125, ridged mean 0.68 / RMS 0.15). New layer tags gg2_*: Planet Lab --verify changes ONLY the
+  gas_giant entries (patch / landmark checksums, by design), rocky / earth / asteroid / dry identical, gas_giant order
+  check PASS; Jupiter 1024 map bake 1.3 s. Elite style: the gas giant lines follow a band signal written into the
+  (unused on a deck) coast channel - band edges + oval rims - instead of the colour luminance (the v2 texture made
+  chaotic contours). LIVE: ELITE_DEV_START=body:eps_eri_b, D:/tmp/elite_gg/epsEri_b2.png (clean band-edge lines).
+  Previews: scratchpad gg2/sheet.png (Jupiter, Saturn, Uranus, Neptune, eps Eri b, GJ 832 b, HD 102195 b, Lalande j).
+  Sol giants keep their curated maps (Jupiter Cassini) where they exist; the generator serves every other giant.
+- Map clouds in other systems: present (the generated bodies' environment_preset_id -> presets/*.json cloud layers,
+  e.g. ocean_world broken fields on Alpha_Centauri_A_j, D:/tmp/elite_clouds/detail.png). FOUND + FIXED: the presets
+  gas_giant_ammonia / ice_giant_methane (58 giants) and sol saturn / uranus / neptune hid the surface and drew the
+  crude procedural banded deck on the Detail map (the Jupiter case): surface visible, that deck off, haze kept.
+  LIVE: eps Eri b Detail map shows the v2 field (D:/tmp/elite_gg/eps_detail.png). venusian_dense still hides its
+  surface under the overcast (intended).
+- Moon landing ">10 min" (author question): NOT a regression - the author-ordered belly-down aircraft-like glide
+  (2026-11-05 z; live then LANDED 534 s) replaced the ~4 min J tail-down landing; the run A timeline matches (orbit
+  199 s, glide from 257 km, hand-over to the ground stabilization 505 s). Open author item 6 (accept / drone view /
+  shorter steeper glide) still decides it - behaviour unchanged.
+- Forced-shutdown crash: the client had no console control handler (Ctrl+C / Break / console close -> Windows'
+  ExitProcess on its own thread, DLL detach under a drawing main thread). Added SetConsoleCtrlHandler ->
+  core::requestQuit (src/core/ShutdownRequest.h), the main loop leaves normally; a console close waits up to 4.5 s for
+  main() to finish. The MSYS `timeout` kill is NOT a console event (it still ends with the opengl32 [CRASH]: harness
+  artefact). DEV ELITE_DEV_QUIT_AFTER_S=<s>: a graceful quit - 2/2 runs exit 0, no [CRASH]
+  (D:/tmp/elite_shutdown/err_q*.txt). Automated runs use it instead of `timeout`.
+- Jump charge-up text on a lost ship: new refusal codes ShipDisabled = 11 ("зарядка прервана: корабль выведен из
+  строя", combat: cockpit / all reactors lost) and ShipDestroyed = 12 ("... корабль разрушен", impact / dense
+  atmosphere) instead of Interrupted ("вышел из нормального полёта"). LIVE (DEV thrust into the Earth hub while
+  charged, D:/tmp/elite_jumptext/err.txt): "stopped: зарядка прервана: корабль выведен из строя", graceful exit 0.
+- The author's list of 2026-11-11 is worked through: gas giants v2, map clouds / giant presets, Moon landing time
+  (author decision, unchanged), forced-shutdown crash, the jump text. Open for the AUTHOR: look of gas giants v2,
+  passport colours, Jupiter / Sol bodies on the map, delete assets/generated tiles (3.97 GB), landing glide item 6.
+
+### Author decisions 2026-11-11 (after the gas giant previews)
+- ACCEPTED by the author: gas giants v2 ("очень нравится"); the appearance passport colours (Io, Europa, Phobos,
+  Deimos); Sol bodies on the map baked from the flight surface (Jupiter = Cassini via the field).
+- Authorized: delete the unused lod/tiles of assets/generated (3.97 GB).
+- Landing glide item 6: option (b) REJECTED - "пилот видит всегда из кабины; камера дрона - только при запуске самого
+  дрона". No automatic camera switch; the glide shape stays as it is unless the author asks for (c).
+- Next (author: "надо разбираться с оставшимися проблемами"): Planet Lab rocky coastline FAIL, the DEV map script
+  that cannot switch Detail bodies, the map's remaining reads of assets/generated (OBJ shapes, Hub normal / preview,
+  environment profile lookups).
+- DONE (author-authorized): lod/tiles deleted from assets/generated AND its runtime copy build/assets/generated
+  (60 dirs, 7.88 GB freed; each tree 5.6 -> 1.7 GB); 44 meta.json files now say tiles disabled (the library's check
+  skips them). Live: map + Mars Detail map fine, graceful exit 0, no "assets unavailable".
+- Planet Lab "rocky coastline" FAIL (pre-existing since the crater layer for procedural airless bodies, 3443 landmark
+  id changes across band limits) FIXED: the crater layers named a landmark from the RESOLVED bowl (fade > 0.5 -> LOD
+  dependent), against the generator contract (feature ids identical at every LOD). New CraterLayer::landmark(dir,
+  minRadius): the largest crater >= the macro cutoff containing dir, band-independent, the same candidates as
+  sample(); PlanetSurfaceField and ImportedSurfaceField name crater landmarks from it. Relief / colour unchanged
+  (curated Earth / Moon / Mars / Jupiter globe bakes bit-identical). ElitePlanetLab --check: PASS (0 failed) - all
+  bodies' coastline / landmark checks green for the first time this session.
+- DEV map script FIXED: "system" from a Detail / Hub map called only requestNavigationView(System), the renderer
+  stayed in Detail and a later body: / detail did nothing. Now it also returns through setSystemMapLoadedSystemMode
+  (the panel's СИСТЕМА path). LIVE (D:/tmp/elite_mapscript): Detail maps Jupiter -> Mars -> Phobos in one run,
+  each baked, graceful exit 0.
+- Map without assets/generated: DEV ELITE_MAP_GENERATED_ASSETS=0 skips the baked library; the Detail map's shape
+  models (Phobos / Deimos) now fall back to the curated assets/source/celestial/sol/<body>/shape_model_source.obj
+  (Sol alias table: body id / name -> folder), their albedo is the field bake. LIVE (D:/tmp/elite_mapscript): Earth,
+  Jupiter (identical to the cached run, jup_cmp.png), Phobos on its OBJ - all drawn with the cache OFF, exit 0.
+  Still read from the cache when present (all optional): Hub map preview / normal (fallback while a bake runs; the
+  normal is skipped for field bakes), the flight's albedo fallback lod/global/albedo_2048.tga for a Sol body without
+  albedo_source (none today). => Deleting the rest of assets/generated (1.7 GB + its build copy) is now possible -
+  AUTHOR's decision; recommended to keep it one release with ELITE_MAP_GENERATED_ASSETS=0 tried in normal play.
+- docs/CLEANUP_CANDIDATES.md: the list of things to delete LATER (author: record, do not delete yet).
+- AUTHOR DECISION 2026-11-11 (dense-atmosphere bodies, e.g. the 52 venusian_dense worlds, Fomalhaut_g black disc):
+  in the Elite style the cloud layer is shown as the relief (its lines), NOT solid - a ship falls through it to the
+  real surface below; the altitude above the surface does not change because of the cloud layer.
+  Next after it (author: "дальше делаем по твоему плану 1-4"): distant systems + interstellar bodies on the map,
+  one cloud source (map = flight), Hub map normals for field bakes, irregular shapes of small bodies.
+- Dense-deck look DONE (author decision above; source + compiled + live DEV): CloudWeatherField::structure (the
+  deck's value before its cover saturates; hasDeck() = a "deck" first layer, e.g. 92-126 bar worlds); the cloud cube
+  is RG8 (R cover for the colour styles - unchanged, G structure). Elite style with the camera ABOVE the deck height:
+  the globe draws the deck's lines (through the gas-giant line path, no ground contours / coasts / sea) and the local
+  terrain + settlements are not drawn; BELOW the deck height the ground as before. Flight, collisions and altitude
+  untouched. LIVE: Alpha_Centauri_A_h (126 bar) from a 454 km orbit shows cloud-shape lines instead of the black disc
+  (D:/tmp/elite_deck/deck2.png). Not yet seen live: the descent below the deck (45 km) to the ground lines.
+  Planet Lab --check PASS.
+- Plan item 1 (distant + interstellar on the map): the map cache now also indexes galaxy_details/distant_systems
+  (findSystem serves both; e.g. Kepler-62, a quest / route target). LIVE: ELITE_DEV_START=body:kepler_62_g@100062 ->
+  its Detail map baked from the distant descriptor (D:/tmp/elite_distant/detail_g.png). Interstellar objects (554
+  rogue planets, 97 rogue moons, 157 brown dwarfs, 118 comets ...) are galaxy-map points only - nothing can travel to
+  them (jumps go to systems): surfaces for them are DEFERRED until they become destinations (their cells already
+  carry mass / radius / class / composition / temperature for a future body descriptor). Note: Kepler-62 e / f / l are
+  venusian_dense - the map shows their overcast preset, flight their deck (the decision above).
+- Plan item 2 (one cloud source) DONE for the Detail map (source + compiled + live DEV): ProceduralBodyTextureCache
+  ::cloudTextureFor bakes the body's CloudWeatherField (the flight's clouds; the flight's rule: solid body,
+  > 50 Pa, cloud potential > 0) at the flight's 20-min world-time step: RGBA 512x256, alpha = combined layer cover,
+  colour white (water) / white-grey (cold deck) / yellow-white (hot deck > 500 K); the previous step shows while the
+  next bakes; evicted with the map texture budget. The Detail map draws it instead of the presets' styled layers when
+  the procedural policy is on (policy 0 = the old styled clouds). Physics now decides which bodies are cloudy on the
+  map (a preset can no longer give an airless lava world cumulus). LIVE: Alpha_Centauri_A_j (103 bar global ocean)
+  shows the same global deck flight draws (the preset's broken fields were not what flight shows),
+  D:/tmp/elite_clouds/acj_field.png. Still on the preset clouds: the Hub map. Not re-captured after the deck colour
+  change (cold deck now white-grey instead of yellow).
+- Plan item 2 completed on the Hub map + item 3 DONE (source + compiled + live DEV): the Hub map draws the parent
+  body's field clouds (the flight's CloudWeatherField, the same bake as the Detail map) instead of the presets'
+  styled layers when the procedural policy is on; field surface bakes now carry a relief normal map
+  (ProceduralBodyTextureCache::normalTextureFor - the baker's buildNormalFromHeightImage format: equirect height
+  normalised to the body's range, strength 8) used by the Hub surface shading (it was skipped: flat relief).
+  LIVE (F12 at the Earth Orbital Hub, D:/tmp/elite_hub/hub_crop.png): the field's weather (a large cloud mass) over
+  the curated Earth vs the preset's scattered clouds with policy 0.
+- Plan item 4 (irregular shapes of small bodies): in FLIGHT already irregular (the field's relief is comparable to a
+  small body's radius: Gliese_436_h_I, 7 km, lumpy silhouette, D:/tmp/elite_small/moon.png). DONE on the Detail map
+  (source + compiled + live DEV): a field bake of a body < 300 km also builds a 128x64 displaced lat-long mesh of its
+  own field (ProceduralBodyTextureCache::shapeFor, UVs in the bake layout); the Detail map draws it through the
+  shape-model path (CelestialShapeMeshLibrary::adopt) when no curated OBJ exists. LIVE: Amalthea (84 km)
+  D:/tmp/elite_small/amalthea.png. DEV aliases body:amalthea|himalia|proteus|phoebe.
+  Found: Amalthea's curated albedo is the same junk as Phobos' was (drawn ring "craters") - candidates for a
+  procedural passport like Phobos / Deimos (Amalthea, maybe other small Sol moons with curated junk) - AUTHOR to decide.
+  Note: a ship placed on a 150 km "orbit" of a 7 km moon drifts away (Pe ~15 000 km after ~1 min) - the parent's
+  pull; the DEV start is not meant for such bodies.
+- AUTHOR 2026-11-11: "переводи Амальтею и таких же с плохими картами на генератор по паспорту". Contact sheet of
+  every Sol albedo_source: only Earth, Moon, Mars, Jupiter are real maps; the other 32 are synthetic placeholders
+  (noise + ring "craters" / lines / waves). appearance_passports.json now has all 32 (procedural; mean colour from
+  the published geometric albedo + observed tint; Saturn: the v2 palette; Uranus pale cyan, Neptune deeper blue;
+  Iapetus only its mean - two-tone needs a passport v2). DEV ELITE_APPEARANCE_PASSPORTS=0 = without them (A/B).
+- PERFORMANCE check (author: "сразу проверь все это на производительность"), DEV ELITE_DEV_FRAME_STATS=<s> (frame
+  p50 / p95 / max / frames > 33 ms), A/B passports on / off, start at Ganymede then Detail maps Io / Europa /
+  Amalthea / Himalia (D:/tmp/elite_perf):
+  * bake cost: procedural 2.7x the placeholder lookup for rocky / icy (Ganymede 6x512^2 globe 23.4 s vs 8.6 s single
+    thread), gas giants 35x (Saturn 14.7 s vs 0.4 s) -> gas giant optimised: one shear warp per texel (sample() hands
+    it to appearance()), texture noises band-limited to the texel, polar noise skipped far from the poles: Saturn
+    14.7 -> 10.6 s (-28 %), output-equivalent (Planet Lab PASS).
+  * flight: steady state equal (p50 11.5-12.5 ms both); while the Ganymede 1024 globe bakes (~40 s with passports vs
+    <10 s without) frames are +4-5 ms (p50 16.7-17.5 vs 11.2-13.0 ms), no hitches.
+  * map: Detail bakes 2.2-2.7 s (procedural) vs 0.7-1.0 s, frames +~2 ms meanwhile.
+  * REGRESSION found + FIXED: the small-body field mesh (step 4) was 128x64 = 16k triangles the Detail map projects /
+    sorts on the CPU every frame (Amalthea Detail p50 17.5-30.7 ms, up to 56 frames > 33 ms per 10 s) -> 64x32:
+    p50 13.4-13.5 ms, 0 slow frames, passports on / off alike.
+  Next candidate: profile + speed up PlanetSurfaceField (15 us/texel) - it serves every procedural body.
+- DESIGN (author asked for storage in the game folder; layout chosen from the architecture 2026-11-11, PROPOSAL until
+  built): a disk cache of field bakes (deterministic: key = body id + generator version + passport + size):
+  shipped prebake (Sol, inhabited systems, map textures of every body) in <game>/assets/baked/celestial/ (read-only,
+  made by a bake command at build time); the self-filling runtime cache in <game>/cache/celestial/, falling back to
+  %LOCALAPPDATA%\Elite\cache\celestial\ only when the game folder is not writable (an install under Program Files);
+  lookup cache -> prebake -> generate + save. Not in git; a clean build only empties it. Order of work: (1) find and
+  remove the single-frame freezes (100-370 ms: map open / Detail switch / once in flight - suspected GPU upload of a
+  large globe tier), (2) runtime cache, (3) prebake command.
+- FREEZE HUNT step (1), 2026-11-11 (hitch log phases split: map_pre / map_detail_build / map_detail_scene /
+  map_decorate / map_overlay, detail_ensure / detail_bg_stars / detail_central / detail_context / detail_geometry,
+  geo_orbits / geo_rings / geo_belts):
+  * FOUND: build/ is a Debug (-O0) build - every timing above this entry is Debug and several times the optimised
+    figure. Re-measured on build-relwithdebinfo (-O2, rebuilt today).
+  * FIXED (pre-existing, not the generator): the Jupiter Detail map ran ~100 ms EVERY frame (Debug; ELITE_MAP_PROCEDURAL_BODIES=0
+    alike): drawRingAsteroids walked 2048 x 24 cells per ring with ~6 trig calls each and one GL draw per body.
+    Now the camera rotation + sector directions once, whole sectors culled by their screen box, all ring / belt
+    crosses in one draw call. Debug p50 98 -> 24 ms; RelWithDebInfo p50 7 ms, 0 frames > 33 ms. Bodies still drawn
+    (D:/tmp/elite_perf/jupiter_detail_rings.png); a close-up was NOT checked (the DEV zoom verb is System-map only).
+  * FIXED: the first map open froze 0.66 s (client-sync maps-update): every Galaxy response rebuilt the static
+    catalog object layer (interstellar-medium shells from the lattices) on the main thread. Now built once per
+    catalog on a worker as soon as the StarAtlas is loaded (prewarmGalaxyMapCatalogObjectLayer, ClientMapService;
+    released in ~ClientMapService before the catalog goes). maps-update no longer appears.
+  * LEFT (RelWithDebInfo): the first frame of flight after the session start 1.0 s (r_celestial 604 ms,
+    scene_prepare 184, hud 175) - globe preparation, the prebake / cache target; the first System map open 110 ms
+    (map_decorate 31, render_tail 35); session-start-update stalls 0.4-1.8 s before flight (loading, no loading screen).
+  * AUTHOR 2026-11-11: map objects are a fixed bounded set -> prebake ALL map bodies (textures + normals + clouds)
+    into <game>/assets/baked/celestial/ with a bake command; the map then only loads.
+- Loading gate (author asked: start flight only when everything is loaded, hidden under the menu): ALREADY so -
+  the WebView loading surface stays until SpaceState::advanceStartupInitialization finishes AND the first complete
+  flight frame is swapped (Application::updatePendingSessionStart / commitPreparedPresentationAfterSwap); the
+  session-start stalls and the 1 s first flight frame are under it. No frame >= 80 ms in flight after it (-O2 run).
+  Correction: EliteCelestialSurface is -O2 in every configuration, so the earlier BAKE timings were optimised; only
+  map / render code ran -O0 in build/.
+- MAP PREBAKE + RUNTIME CACHE (plan steps 2 + 3), 2026-11-11, source + compiled + live DEV:
+  * src/world/celestial/surface/MapBodyBake.{h,cpp} (GL-free): MapBodyCatalog (descriptor index of systems +
+    distant_systems, moved out of ProceduralBodyTextureCache), bakeMapBody (the same albedo bake; the relief normal
+    now at half size), small-body shape grid, fingerprint (bake version, width, body id, descriptor bytes,
+    passport, curated map names + sizes) and a PROBE (sRGB albedo at 16 fixed points of the live field) so a
+    generator change makes a stored file stale by itself (no manual version bump needed).
+  * TextureBlockCompression.{h,cpp}: BC1 encoder / decoder + mip chain. Files: BC1 mips (albedo 1024x512, normal
+    512x256) + shape, ~0.43 MB a body; GPU upload as is (glCompressedTexImage2D 0x83F0; RGBA8 decode fallback
+    when the GPU lists no S3TC) - also 1/8 of the old map texture video memory.
+  * Lookup (ProceduralBodyTextureCache::bake, worker): <root>/assets/baked/celestial/map (prebake, read-only) ->
+    <root>/cache/celestial/map (fallback %LOCALAPPDATA%/Elite/cache/celestial/map) -> live bake, compressed and
+    written to the cache. <root> = the folder holding assets/source/celestial (build/ in development). /cache/
+    in .gitignore (assets/ already is).
+  * Tool: build/EliteMapPrebake.exe [--width] [--threads] [--out] [--system ID] [--force] [--preview DIR]; skips
+    files whose fingerprint + probe match. Sol: 36 bodies, 48 s (23 threads), 15.3 MB; re-run 0.4 s.
+  * LIVE: Earth / Jupiter Detail maps "loaded ... in 70-174 ms" (was a 0.3-2.7 s bake); cache fill (Jupiter baked
+    306 ms, compressed + cached 34 ms, next session loaded); a corrupted probe (Saturn) -> "stale ... baking again"
+    in the game and rebaked by the tool. Earth preview of the decoded BC1 = the source map (north up).
+  * NOT checked: the Hub map's lit side with the BC1 albedo / half-size normal (the hub was over the night side);
+    a close-up of BC1 quality in game.
+  * FULL PREBAKE: 913 bodies in 61 systems (incl. distant_systems), 0 failed, 366.9 MB of files (384 MB on disk),
+    1290 s with 11 threads. Planet Lab --check PASS. LIVE non-Sol: Epsilon Eridani K2 Detail map "loaded in 52 ms"
+    (D:/tmp/elite_prebake/eps_detail.png). The prebake lives in build/assets/baked (not in git); a clean build
+    needs EliteMapPrebake again (or the maps fill the runtime cache as before).
+- AUTHOR 2026-11-11: keep the baked models as a library in the project. Home: <repo>/assets/baked/celestial/map
+  (913 bodies, 384 MB) - the external asset tree like assets/source and assets/generated: NOT in git (/assets/*
+  ignored; 384 MB of incompressible binary per regeneration would bloat history), staged into build/assets by
+  every build (elite_copy_asset_tree), so a clean build no longer loses it. EliteMapPrebake now writes there by
+  default. Reproducible from git + assets/source in ~21 min. LIVE: Jupiter Detail loaded from the staged copy.
+- AUTHOR FEEDBACK 2026-11-11 (7 items) - source + compiled + live DEV (offscreen captures D:/tmp/elite_fb*, D:/tmp/elite_clouds2):
+  1. Earth clouds "three rings", "a smooth circle around the north pole" (Hub map). ROOT CAUSE: CloudWeatherField's
+     climate tendency was three narrow strong belts (ITCZ + two 55 deg storm tracks) that the weak noise (std 0.13)
+     could not break - clouds existed only in the belts, poles and subtropics clear (equirect at t=0 already
+     three bands); plus the zonal wind was a step function (|lat| < 30 / 30-60 / > 60) advecting for the whole
+     world time (year 3126) -> seams at 30 and 60 deg. FIXED: one smooth wind profile; each pattern lives one
+     1-day advection cycle (advected from its fade-in, cross-faded into the next - bounded shear, no seams);
+     weather noise normalised to unit std and weighted over a softened tendency; a large domain warp (fronts /
+     eddies); mid-latitude lows larger and loosely wound. Earth mean cover 0.39 (both layers), no rings, no polar
+     circle (D:/tmp/elite_clouds2/earth_ortho.png). One evaluation for cover + structure (sample()).
+  7. Venus-like decks "a billiard ball": the deck keeps (almost) no holes (deckClosure 0.45), its weather is
+     shading - Detail / Hub map texture colour from the structure (ochre lanes on a hot deck), flight Cinematic
+     shell darkened by the cube's G (uDeck); the deck pattern is stretched zonally (super-rotation streaks).
+     Planet Lab cloud check now tests a deck on its structure (PASS: moves 0.107 in 6 h, equator > subtropics).
+  3. "On F12 the planet appears after 1-2 s": the surface was there in 0.1 s (prebake), but the night Pacific with
+     no clouds read as an empty globe; the clouds (512x256 field bake, single thread) came ~0.7-1.2 s later.
+     FIXED: map cloud bake on worker threads; FLIGHT PREWARM - once a second SpaceState asks the map cache for the
+     albedo + current clouds of the body the ship is near (its sphere of influence / a hub's parent), so F10/F11/F12
+     open with both (LIVE: albedo and clouds in the first map frame).
+  2. "Continents appear late after loading": Earth's first globe tier was 6 x 1024^2 (~1 s) with nothing before
+     it. FIXED: a body seen for the first time gets a 256 tier first (0.25 s), the full tier after; and the
+     LOADING GATE now waits for the flight's planets: Application::commitPreparedPresentationAfterSwap keeps the
+     loading screen until SpaceState::flightVisualsSettled() (no surface load / globe tier / cloud bake in
+     progress; pendingJobs now counts clouds and loads) - max 20 s. LIVE: "flight visuals ready after 3888 ms
+     under the loading screen" (Earth 1024 tier + clouds done before the first visible frame).
+  5. Cyrillic broken on the maps ("Навигационн?е ретранслятор?"). ROOT CAUSES: (a) wrapText / the map-object
+     label trimmer cut a word by popping one byte and then the continuation bytes before it - a lone lead byte
+     stayed at the end (UTF-8 "?") and the next line began with an orphan continuation byte; core::utf8PopBack
+     (src/core/Utf8.h) removes whole characters. (b) Font::loadGlyph uploaded lazily loaded glyphs (Cyrillic) with
+     whatever GL_UNPACK_ALIGNMENT the last upload left; my map texture uploader set it to 4 (glyphs whose width is
+     not a multiple of 4 come out skewed) - the font now sets alignment 1 / row length = pitch for its upload and
+     restores the state; the map uploader restores the previous alignment.
+  6. Names: the discoverers' names (data/naming/names_3126.json, naming.py mirror) were NEVER read by the game -
+     the maps showed catalogue designations ("Фомальгаут g"). LocalizationService now overlays them on the
+     catalogue: a named body shows its name (Ананке, Лекси, Морта ...), a named system and its stars
+     "<given name> (<the name we know>)" - "Фортуна (Фомальгаут)" (LIVE system map + panel). A locale without its
+     own spelling takes en -> transliteration -> native. GAP (AUTHOR): names exist only for Fomalhaut's 16 bodies
+     and systems 3 (Ульвен), 8 / 9 (Chinese only, no Russian: shown as the transliteration), 61 (Фортуна); Tau Ceti
+     etc. planets have no given names, they keep the catalogue designation until named in canon/naming.json.
+
+## NAMING SERIES 2026-11-11 (author: "names should have been given to the systems long ago")
+- tools/colonization_lab/naming_series_3126.py (PROPOSAL): one naming series per inhabited system, in the language
+  and myth of the people who discovered / settled it, the way Sol has Roman gods and Fortuna the circle of Fortune:
+  25 systems, 365 bodies (planets, dwarf planets, moons >= 1e-5 Earth masses; captured moonlets keep the catalogue
+  designation). Examples: Barnard = Хугин (ravens of Odin, the Citadel's listening post), Wolf 359 Ульвен - its
+  wolves (Гарм = the Citadel's world), Lalande = Геракл - 12 labours for 12 planets (Геспериды = Agora / Tauranga),
+  Tau Ceti = Тяньцан (Celestial Granary) - grains, eps Eri = Тяньюань - flowers / heavenly steeds, Gliese 832 =
+  Цюэцяо - the Cowherd and Weaver Girl (Чжинюй = Tianhe), Gliese 667 = Убунту (Zulu words), 61 Cygni = Бессель
+  (minerals of Kern), HD 114783 = Гомер (the Odyssey, Итака = Third Hellas), 83 Leonis = Фиваида (Desert Fathers,
+  Скит = New Thebaid), Proxima = Меру (Slavic gods, Китеж = Lal Kot), Cognium frontiers = birds (Owlery).
+  `python naming_series_3126.py --write` merges into canon/naming.json (CANON entries untouched), then
+  `python naming.py --write` mirrors into names_3126.json. naming.py --check 29/29 OK; no duplicate ru names.
+- naming.py: t02 now resolves body entities against every system (was Fomalhaut only); body-file designations are
+  still rewritten for Fortuna only - in inhabited systems settlements.json / world_sites.body_id_for find bodies by
+  the catalogue designation, so the name lives in names_3126.json (LocalizationService overlay) only.
+- LocalizationService: a multi-star system name no longer nests brackets ("Убунту (Gliese 667 A+B+C)",
+  "Фонарь (HD 20794, 82 G. Eridani)"); stars keep their letter ("Бессель B (61 Лебедя B)").
+- Evidence: the game's LocalizationService compiled into a probe over build/assets (ru): system 8 -> "Тяньцан (Тау
+  Кита)", 11 -> "Убунту (Gliese 667 A+B+C)", star Gliese_667_C -> "Убунту C (Gliese 667 C)", Wolf 359 e -> Гарм,
+  Proxima j -> Китеж, HD 114783 c III -> Итака, Lexie -> Лекси. NOT seen on a live map: this evening every offscreen
+  capture is black, the old build-relwithdebinfo binary too (environment, display asleep) - re-check the system map.
+- Known names without a Russian catalogue spelling stay English in brackets (Proxima Centauri, Epsilon Eridani,
+  83 Leonis) - the star_systems localization has no ru for them.
+- AUTHOR: all series are PROPOSAL - accept / replace per system.
+
+## EXPEDITIONS + NAMES IN EVERY SYSTEM AND LOCALE 2026-11-11 (author request)
+- tools/colonization_lab/expeditions_3126.py -> out/world_3126/expeditions_3126.json (PROPOSAL): who first
+  visited each of the 34 systems nobody lives in. Generation-ship fly-bys (missions.json routes, <= 4 ly; pass
+  year from launch / founding), a colony living <= 1 ly away (Proxima -> Alpha Centauri), jump-era science
+  expeditions from own systems and operated beacons (max_hop_ly by epoch, legs through catalogue stars or a
+  charge cache in empty space up to 2x the reach, +12 y per extra leg, delay by research x jump level x pop),
+  frontier canon (World's Ass 19, Monastery 20, Chest 36 -> Cognium). Balance: everybody reachable gets >= 1,
+  nobody keeps > 4 outside the frontier canon. Result: 21 participants (Cognium 7 incl. 3 frontiers, the rest
+  1-2). WITHOUT systems: Third Hellas (arrived 3122) and New Thebaid (arrived 3126) - their ships passed no free
+  star within 4 ly and they have no jump technology. AUTHOR decision pending.
+- World's Ass exists in canon: HD 102195 (system 19), official zh 月门星区 «Moon Gate». Names now per locale:
+  zh 月门, ru «Жопа мира», en World's Ass, es Culo del Mundo, ja 世界のケツ; its bodies are the Moon Palace
+  legend (Чанъэ = station «Порог», 不死药 «elixir of immortality», Нефритовый заяц, Цзинхуа = «Мандала» camp).
+- naming_series/*.txt (format in inhabited_1.txt) replaces the dict in naming_series_3126.py: 60 systems,
+  813 bodies, every name in ru / en / es / zh-Hans / ja (translation for meaning names, transliteration for
+  proper names, different names where a culture has its own: Fortuna = 命运之轮 / 運命の輪). Fortuna CANON:
+  only es / zh / ja forms added (Lexie: ru Лекси, en/es Lexie, zh 柏辛 canon, ja レクシー proposal).
+  Checks: no missing locale, no duplicate inside a system, every body >= 1e-5 Earth masses named, every atlas
+  system named; naming.py --check 29/29.
+- LocalizationService: a star with no own translation takes the translated system base + its letter
+  ("Лукоморье A (Альфа Центавра A)", "卢科莫里耶 A (南门二 A)"); "A+B" tails stripped from the base.
+- Evidence: game LocalizationService probe over build/assets in all 5 locales (D:/tmp/naming/probe/out2.txt).
+  NOT seen on a live map (offscreen captures black this evening, environment).
+
+## NO RUSSIA-LINKED NAMES; LATE ARRIVALS GET SYSTEMS 2026-11-12 (author)
+- Author: names linked to Russia are removed entirely. Series: Proxima = Улугбек (Silk Road cities, Central Asian
+  crew), Alpha Centauri = Айодхья («Рамаяна», Indian crew), Gliese 581 K1 Ладога -> Балатон. Canon rename
+  (precedent Al-Quds -> Kapehu): mission SVAROG-1 -> MERU-1 (Меру, world mountain of Indian / Buddhist cosmology;
+  missions.json id changed, former_ids SVAROG-1, author note file "02. MERU-1.md"), polity Сварог -> Меру
+  (须弥 / 須弥), colony Красный Форпост -> Лал-Кот (लाल कोट «Red Fort», the first fort of Delhi; keeps the meaning).
+  134 text files rewritten (all cases, demonym свароговцы -> меруанцы, anchors); old forms are in
+  retired_authoring_names.unique (naming.py t07 bans them). Machine ids proxima_outpost, svarog_fortress,
+  svarog_licence_revoked, svarog_serial_from_citadel_with_own_copies kept (not shown to the player). Crew
+  composition (40 % Russian) is history, unchanged.
+- Expeditions: late arrivals with nothing else keep the stars their generation ships watched first from afar
+  (<= 9 ly, earlier than the holder): Third Hellas - Gliese 514 = Арго (Argonauts; ODYSSEY-1, 2592, before
+  Cognium 2785), New Thebaid - Sirius = Вифлеем (archangels + Faith / Hope / Love; NEW-JERUSALEM-1, 2309, before
+  AMAZONIA-1 2370). Fairness cap 3. Every participant now has >= 1 system. These three ships are NOT lost
+  ships: SVAROG/MERU-1 arrived ~2150, ODYSSEY-1 3122, NEW-JERUSALEM-1 3126.
+- Checks after the rename: naming 29/29, lore_md OK, lore_html OK (144), world_sites OK, world_economy OK,
+  lab --check-dataset OK, lab --check-lore OK (after `python lab.py`: sha 80a9e3b0...). Seed drift from the new
+  mission id (the id seeds the model): MERU-1 unaccounted losses 3 230 -> 3 220, populations +-10, one filler
+  event; canon anchors unchanged. Old generated Notes/html/SHIPS/SVAROG-1.html replaced by MERU-1.html (copy
+  kept in D:/tmp/naming/old).
+
+## SYSTEM MAP PLANET CAROUSEL + DETAIL MAP WITHOUT THE 1 S WAIT 2026-11-12 (author)
+- src/game/system_map/SystemMapPlanetCarousel.{h,cpp}: a strip at the bottom of the System map - the system's
+  planets (moons excluded) as lit textured globes (map albedo + CloudWeatherField clouds, the Detail map's own
+  textures), diameters in proportion (min 6 px at 1080), names underneath, ordered by star (snapshot order,
+  circumbinary after) then orbit size. Scroll: wheel, drag, triangle buttons at the ends; when all planets fit
+  the strip has no scrolling and no buttons. A click selects the planet the way a map click does
+  (focusBodySelection): the side panel shows it and its DETAILS button becomes active (no extra button - the
+  panel already has DETAILS). The selected planet's moons are prewarmed.
+- The 1 s wait: the strip requests every planet's albedo + clouds while the System map is open, so the Detail
+  map opens with them ready. LIVE: Venus Detail map - the first frame after `detail` (t 37.29 -> 37.3 s) equals
+  the frame 2 s later (20 px differ = rotation); before: ~1 s of untextured globe.
+- LIVE captures (D:/tmp/naming/car_33.png, c_sel.png, g667.png): Sol strip (Mercury..Neptune), Earth selected
+  (gold ring + label, panel «Земля», DETAILS active), Убунту / Gliese 667 32 planets with scroll arrows.
+- Live-run note: automated runs need `--dev-direct-flight` (without it the game waits in the WebView main menu
+  and every capture is black - the "environment" black frames of 2026-11-11 evening were this).
+  Map in another system: ELITE_DEV_START=body:<stem>@<id> and ONE `system` verb after the move.
+
+## PLANET CAROUSEL DOUBLE CLICK = APPROACH 2026-11-12 (author)
+- A double click on a carousel globe runs the map's own double-click action on that planet
+  (SystemMapInteraction::descendTarget: its cube becomes the parent, the camera approaches and follows it).
+- Root cause found on the way: the carousel pick ran before the input pass built the System scene frame
+  (m_systemFramePrepared is reset by every draw), so focusBodySelection was silently skipped - a single click
+  only set selectedBodyId. New SystemMapRenderer::prepareSystemInputFrame builds the frame; the carousel pick
+  and the regular input path both use it.
+- DEV pointer: `pointer:click|dclick:carousel:<bodyId>` or `carousel:#N` (N-th globe; the DEV env is not UTF-8).
+- LIVE (D:/tmp/naming/dc/c.png): Sol, `pointer:dclick:carousel:#4` -> Jupiter selected, map S1 -> S2,
+  66.846 AU -> 3.342 AU, Jupiter centred and followed (СЛЕЖЕНИЕ), panel «Юпитер» with DETAILS.
+
+### AUTHOR ACCEPTANCE 2026-11-12 (live, the author's own play)
+- ACCEPTED: System map planet carousel; carousel double click = approach the planet.
+- ACCEPTED: new star names with the catalogue name in brackets; new non-catalogue planet names
+  (the naming series of inhabited + explored systems).
+- Author reports from an Earth -> Jupiter J flight (being worked on):
+  1. HUD "J +75583 g" while the speed sat at 269 813 km/s (= the 0.9 c cap): diagnosed - the field kept pushing and the
+     cap clamp (GameSimulationFreeFlight, after gravity) silently cut the gain; jAccelMps2 and the J charge burn
+     (rate ~ (a/a_max)^1.5) stayed at the full field. FIX (source): ActiveFreeFlight jPushDvMps / jCapCutDvMps /
+     jFieldMps2 - motion.jAccelMps2 is the EFFECTIVE acceleration (field x the share the cap did not take back last
+     tick), the pilot field keeps its own ramp level, the charge pays for the effective value; HUD adds "0.9c" at the cap.
+  2. "How to jump from the map" - the jump lives only in the Galaxy map star's context menu (right click / Ctrl+click:
+     РАССЧИТАТЬ ПРЫЖОК -> ПРЫЖОК: СТАРТ); not discoverable.
+  3. J charge 2.729 t of 3 t left at 4.11 AU: by design a J leg costs 1/3..1/2 of a mean 22.8 ly jump (JDrive.h);
+     the cap burn of item 1 inflated it.
+  4. F12 in empty space at 0.9 c: the ship marker "jumps randomly inside the cube" - under investigation.
+  LIVE (item 1 fix, EliteGameJ.exe = the same sources linked aside while the author's game held EliteGame.exe;
+  D:/tmp/jcap/out.txt, f520.png): hub@50 -> J +100000 g -> 261 621 km/s with charge 3 -> 2.913 t, then at the cap
+  field 100000 g / EFFECTIVE 1.9..3.7 g, charge FLAT at 2.91057 t for the rest of the run; HUD "J +3.40 g (+100000 g)
+  0.9c", top line "УСКОРЕНИЕ J +3 g (задано +99966 g)". EliteGame.exe itself to be relinked when the author's game closes.
+
+## J SPEED = THE MEDIUM, F12 CUBE BY SPEED, STEADY HUD NUMBERS 2026-11-12 (author)
+- Author decision: no fixed J speed cap - "space is not a perfect vacuum", the resistance grows exponentially with the
+  speed, the top speed is the physics of thrust. JDrive.h mediumResistanceMps2 / mediumTerminalSpeedMps:
+  a(v) = A0 (e^((v - 0.1c)/0.1c) - 1), A0 = 1e5 g / (e^8 - 1) ~ 33.6 g; terminal 1e3 g 0.44 c, 1e4 g 0.67 c, 1e5 g 0.9 c;
+  against the dominant body's frame; damaged field: every speed halved. Replaces the cap clamp (GameSimulationFreeFlight).
+  The charge pays for the FIELD (holding the speed costs thrust: ActiveFreeFlight jChargeAccelMps2), motion.jAccelMps2 =
+  field - medium (net). HUD top line "сопротивление среды N g", cockpit "среда". JUMP_MECHANICS.md section rewritten.
+  LIVE (D:/tmp/jcap/med.txt, m380.png): full field 1e5 g, net 99 995 g at 34 000 km/s -> 8 700 g at 267 080 km/s,
+  charge burns steadily (~0.00033 t/s at full field; Earth -> Jupiter at full thrust ~0.9 t); J off at 0.79 c: the
+  medium brakes the hull 236 820 -> 229 584 km/s in 25 s.
+  OPEN for the author: is the hull braking with J off dangerous to the crew; J leg cost vs a jump ("J must be much
+  cheaper") - the logistics calibration (JDrive.h header, ship_economics.json) unchanged pending his figure.
+- F12 at speed: SpaceState::buildLocalCubeTarget picks the finest cube the object stays in >= 60 s at its system-frame
+  speed (localCubeFocusSpeedMps); DetailTarget::valid accepts a non-terminal cube for an object's local space.
+  DEV verb `local` (= F12). LIVE (l150/l152.png): at ~0.35 c F12 opens L2 (0.261 AU), the player marker steady between
+  frames 2 s apart, "player left cube 2,0,-3 -> shown in cube 3,0,-3".
+- Steady HUD numbers (author: twitching digits shake the line): src/game/presentation/HudSteadyNumber.h (hysteresis +
+  significant digits) on the top flight line speed, the J line (accel / command / medium), the "V" line, the cockpit
+  speed and J text. LIVE (D:/tmp/jcap/hstack.png, 4 frames 0.5 s apart at 0.88 c): "264500 км/с", "+16300 g",
+  "сопротивление среды 83600 g", the line width unchanged.
+
+## MEDIUM CURVE 0.6 c + IN-SYSTEM JUMP + J 10x CHEAPER 2026-11-12 (author)
+- Author: free coasting up to 0.6 c, above it a steep curve so that near 0.9 c no thrust adds much; throttle off -> the
+  medium brakes along the curve down to 0.6 c, then inertia. JDrive.h: onset 0.6 c, scale 0.02 c, A0 ~0.03 g
+  (terminal 1 g 0.67 c, 1e3 g 0.81 c, 1e4 g 0.85 c, 1e5 g 0.9 c). HUD medium text from 0.5 g.
+  LIVE (D:/tmp/jcap/med2.txt): full 1e5 g net up to ~0.75 c, 88 000 g at 256 928 km/s, 43 g at 269 811 km/s; J off at
+  0.9 c -> ~0.84 c fast, then slowly (252 453 -> 251 452 km/s in 20 s).
+- Author: "inside a system one can and should jump, dearly - the charge and the risk without beacons". IMPLEMENTED
+  (JumpRules.h in-system section, GameSimulationJump inSystem branch, GameServer names the body, client
+  SpaceState::handleInSystemJumpRequest, System map body context menu РАССЧИТАТЬ ПРЫЖОК / ПРЫЖОК: СТАРТ / ОТМЕНИТЬ):
+  charge q(alpha+M)(0.5 + 0.05/AU) mean jumps, charge-up 2-5 min, exit = the target's orbit, error 0.1 % of d / lock,
+  refused through the star's capture sphere (0.3 AU sqrt(M/Msun)) and below 0.05 AU. DEV `jumpui:calc|start:<sys>:<body>`.
+  LIVE (D:/tmp/jcap/is.txt, is60.png; ELITE_DEV_JUMP_CHARGE_S=5): Earth hub @50 km: Moon -> "ближе 0.05 а.е.";
+  Jupiter -> "5.32 а.е., заряд 0.63 из 3.00 т, зарядка 2:24"; START -> IN-SYSTEM JUMP, charge 3 -> 2.365 t, EXIT orbit
+  of Jupiter at 5 569 km, 5 173 km off (sigma 3 979 km); terminal "ПРЫЖОК ЗАВЕРШЁН: Юпитер".
+  NOT yet seen live: the map context-menu rows themselves (same handler as the DEV verb), the star-in-the-way refusal.
+- J charge x0.1 (JChargeScale, "J must be much cheaper than a jump"): Earth -> Jupiter at full thrust ~0.1 mean jump.
+  The NPC logistics calibration (logistics.py J legs) is not changed.
+- Author decision 2026-11-12: the medium's braking above 0.6 c is harmless to the crew - the J field's inertial
+  isolator absorbs it. No damage rule needed (the open question closed).
+
+## JUMP PROCEDURE: ZONE -> AIM -> CHARGE -> JUMP 1 s AFTER (author 2026-11-12)
+- Author: "charged, the hull shakes, no jump, 'waiting for free space' - nonsense". The rule is now written in
+  JUMP_MECHANICS.md 10b: a jump is an instant move along a straight line (never through a body with its J floor, the
+  star's capture sphere, a station); possible only in a safe start zone, with the line free, the nose on the step's end,
+  the core charged; the planner takes the ship to the zone (J; main engines under a J floor), aims, charges, jumps 1 s
+  after the charge. Anything entering the zone / the line blocked / the nose off during the charge-up aborts it: the
+  core discharges, the charge drawn is LOST (also on the pilot's cancel). A blocked way = several straight steps through
+  intermediate points, each step its own zone / aim / charge / cost.
+- Server (GameSimulationJump.cpp): ActiveJump phases 0 zone / 1 aim / 2 charge, the procedure's ShipControlState
+  (J velocity target + attitude target) applied in the free-flight pass over the pilot / client autopilot; planJumpZone
+  (over the dominant body: own radial if facing the step's end, else straight up until the line passes beside the body,
+  <= 17.5 deg aside when right behind it; above keep-outs), jumpLineBlockedBy, jumpLegEnd, jumpLegCostT; zone first,
+  then the way around from it; abort / cancel -> lost charge and a circular orbit at the zone (left at rest it fell).
+  jumpState 4 to zone, 5 aiming, 1 charging (2 "waiting" retired). JumpRules.h: tolerances 0.5 / 3 deg, 1 s delay,
+  ZoneViolated / LineBlocked. Client terminal: ПЛАНИРОВЩИК lines; calc shows steps (around the star) and the way's charge.
+- Root causes met live: (1) a zone on the planet's far side flown to in a straight line -> into the Earth ("корабль
+  разрушен"); then an arc at 200 km/s around it -> replaced by the radial-climb zone. (2) Waypoints planned from the ship
+  behind the Earth went around the Earth itself (a 14 000 km step for 0.41 t) -> the zone first, waypoints from it.
+- LIVE (ELITE_DEV_JUMP_CHARGE_S=5/60; D:/tmp/jcap/p.txt, c.txt, c95/c135.png, i.txt):
+  hub @5 km -> Jupiter: gentle out of the 20 km keep-out, J climb to the zone, "in the start zone, aiming", "aimed,
+  CHARGING", IN-SYSTEM JUMP 5.32 AU 0.63 t, EXIT orbit of Jupiter 5 621 km (5 172 km off, sigma 3 978 km).
+  Cancel mid charge (60 s): "core discharged, 0.366 t of charge lost", charge 3 -> 2.63, orbit stabilization takes the ship.
+  Interstellar to Tau Ceti: zone -> aim along the star's direction -> charge -> JUMP 0 -> 8 -> EXIT Tau_Ceti_m 418 km.
+  A 2-step way ran live (the first, wrong waypoint around the Earth: STEP 1 of 2 done -> final step -> exit); the
+  star-detour itself not seen live (no planet behind the Sun now).
+- Note for the author: an in-system jump to Jupiter (0.63 t) now costs more than 11.9 ly to Tau Ceti (0.43 t) - the
+  in-system base is half a mean jump by his "дорого".
+- Sun detour LIVE (2026-11-12, D:/tmp/jcap/sun.txt): DEV start `point:3.73,-0.07,3.79` (AU from the star, new
+  ELITE_DEV_START kind; GameSimulation::devPlaceShipAtPoint) = opposite Jupiter: calc "10.74 а.е., 2 шага в обход
+  звезды, заряд 1.27 т"; procedure: zone here, aim, charge, STEP 1 of 2 (5.37 AU, 3 583 km off), aim, charge, IN-SYSTEM
+  JUMP, EXIT orbit of Jupiter (2 791 km off, sigma 4 017 km), charge 3 -> 1.727 t. Fix on the way: the preliminary zone
+  no longer demands a clear line (the star is the waypoints' job) - it refused "прямая перекрыта".
+  No natural Sun-blocked pair exists among the planets now (scan from 5 starts: the 0.3 AU capture sphere is small).
+- Interstellar hazards (author asked to check jumps around dangerous / gravity zones BETWEEN systems): NOT IMPLEMENTED.
+  The interstellar step is only aimed and charged; nothing checks its line. The data has candidates (objects_details
+  cells: 157 brown dwarfs, 554 rogue planets, 49 stellar remnants, 19 binary rogues with gameplay_gravity + mu;
+  2 237 medium regions, 50 icy debris fields; 10 cavities); JUMP_MECHANICS section 4 (sumps, author 2026-11-05:
+  unpredictable without beacons) is design only. Author 2026-11-13: the scheme fits (gravity masses avoided by
+  the planner; dense clouds / icy fields = sumps, a lottery without beacons); sizes from known data, plausible with
+  allowed exaggerations; every mechanic needs an unproven but not absurd cause (like the 0.9 c medium).
+- Interstellar way around gravity masses: IMPLEMENTED + LIVE (2026-11-13, D:/tmp/jroute/b.txt).
+  src/game/navigation/rules/InterstellarJumpRoute.{h,cpp} (client calc + server, one function): capture sphere of a
+  mass = where its pull beats the Galaxy's, R = sqrt(mu / 2.1e-10 m/s^2) (Sun 0.084 ly; masses under 10 AU skipped);
+  obstacles: other catalogue systems (sum of star masses), gameplay_gravity objects with mu (+ binary companion);
+  start / target systems excluded; up to 6 correction points at 2 R beside the mass. Per JUMP_MECHANICS section 2 the
+  corrections are instant micro-exits of ONE jump: the nose on the first step, the charge = chargeT(path length),
+  range check on the path. Live: Gliese 581 -> Proxima, calc "18.3 св. лет ... 1 коррекц. в обход: Alpha Centauri A+B",
+  server 18.2253 -> 18.301 ly, zone / aim / charge / JUMP, exit Proxima b (1 128 km off, sigma 866 km).
+  Pairs found by scan: Alpha Cen -> Sirius / Eps Eri / Gliese 229 pass near Proxima only with a solar-mass guess -
+  with Proxima's real mass (0.029 ly sphere) the line is clear (live: Alpha Cen -> Sirius, no correction).
+  OPEN: no way found -> the server still jumps straight (only logged); sumps (dense clouds, icy fields) NOT
+  IMPLEMENTED - a capture exits the ship on the sump's edge in deep space, and the game has no deep-space location
+  (every ship is in a system). Needs the author's go for a deep-space place.
+- Author 2026-11-13, the meaning of "sump" agreed (JUMP_MECHANICS section 4, new clarification):
+  - currents are the gradient of the jump's gravity field (they deflect the step);
+  - sumps are places of stronger pull, can be wide, sit at asteroid / debris concentrations;
+  - dense gas is NOT a sump;
+  - contents vary: pirates, wrecks, abandoned containers, ships without escape pods, or just rocks.
+- In-system jump sumps: IMPLEMENTED + LIVE (2026-11-13, D:/tmp/jroute/s1-s3.txt, caught100.png). JUMP_MECHANICS 10d.
+  - Code:
+    - src/game/navigation/rules/JumpSumps.{h,cpp}: reservoir geometry, column, catch draw, systemHasBeacons;
+    - GameServer::applyCelestialOrbitParentParameters -> GameSimulation::setJumpSumps;
+    - GameSimulation::jumpSumpCatch at every in-system step;
+    - Refusal 18 SumpCaught;
+    - client calc shows the risk with beacons ("лотерея" without); terminal "шаг захвачен отстойником";
+    - DEV ELITE_DEV_SUMP_DRAW forces the draw.
+  - Earth -> Jupiter: calc risk 2.4 % (Sol lock 200); forced catch 2.49 AU into the step; the ship moves with the belt
+    (18.47 km/s); the next calc runs from the belt (1.4 %).
+  - Offline model, Earth -> Jupiter / Saturn: 27-29 % without beacons, 12-13 % with a destination beacon only, 9 % with
+    an origin beacon only, 2.2-2.4 % with both.
+  - Sump contents (pirates etc.) not yet: plan point 4. Next: currents (plan point 2).
+- Jump currents: IMPLEMENTED + LIVE (2026-11-13, D:/tmp/jroute/c1-c4.txt, far140b.png). JUMP_MECHANICS 10e.
+  - Model: src/game/navigation/rules/JumpCurrents.h: drift = 0.3 s^2/m * integral g_perp ds (lensing law, softened by
+    the body radius) + sump ridge pull 0.01 AU per depth; residual after the beacons = drift / lock.
+  - Where it applies:
+    - in-system intermediate and final steps;
+    - interstellar: the departure's 1000 AU plus the arrival's 1000 AU.
+  - Exit carried beyond 0.3 Hill = open space moving with the planet; jumpExitAltitudeM < 0 marks it; client text
+    "открытый космос ... снесло течениями".
+  - systemHasSites goes through jr::systemHasBeacons; DEV ELITE_DEV_NO_BEACONS.
+  - Live:
+    - Earth -> Jupiter: drift 309 000 km -> 1 547 km with Sol beacons;
+    - Sol -> Tau Ceti: 4.84e6 km -> 24 000 km;
+    - no beacons: exit 0.032 AU off Tau Ceti m, in open space.
+  - Next: plan point 3 (a deep-space place between the systems).
+- Deep space + interstellar sumps: IMPLEMENTED + LIVE (2026-11-13, D:/tmp/jroute/d1-d4.txt, deep60.png,
+  deep_caught100.png). JUMP_MECHANICS 10f.
+  - Deep-space places (StarAtlasDatabase):
+    - DeepSpaceIdBase 1000000 + swarm index (85 places); scope DeepSpace; never listed in systems();
+    - findSystem / findSystemSummary find them;
+    - GameSimulation::placeShipInDeepSpace; DEV start deep:<n>[@AU].
+  - Interstellar sumps (InterstellarJumpRoute):
+    - interstellarSumpCrossings / interstellarSumpCatch: analytic chord integral of (1 - r^2), scale 2 ly x sqrt(lock);
+    - GameServer RequestJump decides the catch (seeded draw, DEV ELITE_DEV_SUMP_DRAW);
+    - GameSimulation::JumpDeepCatch carries the catch; at the jump moment the ship goes into the place;
+    - the client calc lists the swarms (risk with beacons, "лотерея" without).
+  - Live:
+    - flight in a deep place OK;
+    - deep 18 -> TRAPPIST-1 jump OK;
+    - forced catch in Frost stream I-ZWLH8, 1 304 AU from its centre.
+  - FINDING: swarms are >= 2 ly from the catalogue systems; no route between the 61 systems crosses one (closest miss
+    2.25 ly). Asked the author: swarms along lanes, or the systems' comet clouds as the interstellar sump.
+  - Minor: a route out of a deep place starts at the swarm centre, not at the ship's point.
+- Author 2026-11-13 decision (JUMP_MECHANICS 10g):
+  - interstellar sumps: variant 3 (no generic change);
+  - MORE sumps around hard-to-reach places (Fortuna, World's Ass, others): a dumb jump there comes out elsewhere more
+    often;
+  - the way through = safe lanes that must be found (old scouts' records or own scouting).
+  - Implementation proposal written (approach shells with drifting corridors, lane records with age, scout archives /
+    own probe). Author's go given 2026-11-13 (JUMP_MECHANICS 10h).
+- Author 2026-11-13 decision (JUMP_MECHANICS 10h):
+  - the 10g scheme accepted; the pilot's procedure for reaching a hard place is written down ("how to fly yourself":
+    calc -> lane state; get a record from scout archives or by own probes fanned from a standoff outside the shell;
+    jump along the corridor; records age with the corridor drift; re-probe old lanes);
+  - the "Flying Dutchman" = NOMAD-1 (canon alias; drifting Sol-Barnard loop 3-5 ly from Sol, findable): hard to jump to,
+    wrapped in a low-visibility cloud ("like underwater") from six centuries of leaks/dumps co-moving with the ship; the
+    cloud catches jumps by the sump column law; corridor = the engine-swept channel;
+  - such clouds elsewhere later (candidates: FAREWELL-1, frost-stream cores, Lotus field).
+  - The scout probe is a bought consumable (author 2026-11-13); more drones, incl. large ones, later.
+  - Next: implementation steps 1-4 of 10h (shells + corridors, lane records, record sources, the cloud starting at
+    NOMAD-1). Nothing implemented yet.
+- 2026-11-13 JUMP_MECHANICS 10i - step 1 of 10h: approach shells + drifting corridors (source + live, NOT accepted
+  by the author yet):
+  - data galaxy/jump_approach_shells.json (PROPOSAL): Fortuna 61 tau 3, World's Ass 19 tau 6, Gate 41 tau 3, Kern 37
+    tau 5; 3 corridors each (radial cones, script-placed >= 8 deg from every catalogue system, drift from 3126-01-01);
+  - InterstellarJumpRoute: approachShells / corridorDirAt / approachShellFactor; shells join the swarms in
+    interstellarSumpCrossings / interstellarSumpCatch (universe time); jumpStartPointLy + planInterstellarRoute(startLy):
+    a way out of an open-space place starts at the ship's point (closes the 10f minor);
+  - StarAtlasDatabase approaches places (2000000 + id): a shell catch comes out there (an in-system step of thousands of
+    AU is unaffordable; from the approaches a 0.3 ly interstellar jump costs ~0.01 t);
+  - client calc: "оболочка подступов X: без записи трассы риск захвата N%"; DEV start approach:<id>[@AU[:c<k>]].
+  - Live: Fortuna approaches off-corridor 95% -> caught at 8 470 AU into the approaches; on corridor 1: 0% -> exit at
+    Lexie; dumb calcs Sol->Fortuna 58%, 83 Leo->Gate 19%, ->Kern 30% (beacons), 95 / 99% without beacons.
+  - Noted: hopping through the shell from the approaches is cheap (time + sump contents are the price); beacons cut the
+    risk a lot (World's Ass 35%) - tau is the tuning knob.
+  - Next: step 2 - lane records with age (route via the corridor entry point, state known/estimate/outdated/unknown).
+- 2026-11-13 JUMP_MECHANICS 10j - step 2 of 10h: lane records with age (source + live, NOT accepted by the author yet):
+  - DynamicMotionState::laneRecords (text, replicated; snapshot wire schema 43 -> 44);
+  - InterstellarJumpRoute: LaneRecord parse/format, laneExpectedOffset (error + drift x age, in half-widths), laneState
+    known/estimate/outdated/unknown (0.3 / 1 / 2.5), laneExpectedRisk, applyLaneRecords (entry point 1.5 x outer radius,
+    a micro-exit of the same jump; the start's exit point too);
+  - server RequestJump uses the ship's records (log "lane ..."); client calc shows the lane state and the expected risk;
+  - DEV ELITE_DEV_LANES=<sys>:<corridor>:<age yr>[:<err deg>],...
+  - Live Sol -> Fortuna: 0.5 yr known 0% (server true 0.18%, jump through, exit at Lexie); 5 yr estimate 15%; 15 yr
+    outdated 52%; 40 yr useless -> 58% as without a record.
+  - Next: step 3 - record sources: scout archives (bought / found) and the scout probe (a bought consumable).
+- 2026-11-13 author decisions: (a) lane records must live in equipment - the onboard computer; carriers ("flash
+  drives") and pilots' messages feed it; colony data banks, partly public, the rest military / secret (JUMP_MECHANICS
+  10k); (b) no money until the market exists, but data is not free - prices shown and logged, not charged; after the
+  data storage is done, return to the mesh editor; (c) every equipment type gets a controller fault layer (power part /
+  control / power for each) with radiation degradation, the controller's bulge marked in meshes
+  (MAINTENANCE_LAYER_DESIGN.md section 14, not implemented).
+- 2026-11-13 JUMP_MECHANICS 10l - computer memory, colony banks, data carriers (source + live, NOT accepted yet):
+  - motion.navComputerState (1 working / 2 down) + motion.dataCarriers replicated (snapshot wire schema 45); a dead
+    computer reads no records (server and calc); a code-built hull without a catalog computer counts as having one;
+  - NavDataBanks (data galaxy/nav_data_banks.json, 7 banks by canon beacon operators; public / military / secret;
+    prices); ClientShipCommand::NavData (0 bank->computer, 1 bank->carrier, 2 carrier->computer), server checks hub,
+    bank, tier, computer; F8 Trade tab "НАВИГ. ДАННЫЕ" (trade tab clamp 0..3);
+  - Live at Sol "Высокий": public Fortuna-1 into the computer (2 000 Cr logged, not charged), military refused, carrier
+    written; calc Sol->Fortuna "устарела, 48%"; a carrier with a 0.5 yr record inserted -> "известна, 0%"; dead computer
+    -> "компьютер не работает", server 57.9 %. Frame D:/tmp/jroute/nav44.png.
+  - Not done: the scout probe (step 3 remainder), pilots' messages (no mail yet), clearances (no organisations / rep),
+    radiation corruption of memory (faults not live), the cloud (step 4).
+- 2026-11-13 MESH EDITOR (docs/MESH_EDITOR_SPEC.md, draft): author: the open flow is confusing (a dropdown of ship /
+  station); wants a modal Open dialog (big category buttons -> folder cards: preview, what, where used, readiness);
+  every step window to be specified before code, incl. what happens when a mesh element is changed / removed / added
+  and the damaged-state replacements. Agreed: parts (own LOD / hits / physics) + assemblies by reference (frame + skin
+  + sockets); Blender input via glTF (author OK; skeletal animation possible). Survey: the old editor (23k lines, a
+  12.8k-line session, minified 293 KB page) and its .elmodel output are barely used by the game (hits/collision/damage
+  never read; catalog ships drawn as boxes). Proposal: new UI from scratch on the old core (format, LOD simplifier,
+  mesh repair, instance fitter). Verified headless with Blender 5.0.1: linked collection instances with an
+  elite_part custom property export to glTF as nodes with extras + transform, shared meshes (no copies), node rotation
+  animation kept (D:/tmp/gltf_test). Next: go through the windows with the author, one by one.
+- 2026-11-13 MESH EDITOR slice 1 (docs/MESH_EDITOR_SPEC.md 12; author accepted the scheme): new EliteMeshEditor
+  (tools/mesh_editor, always-built CMake target, WebView on HtmlUiServer, --serve for headless checks), page from scratch
+  (src/assets/webui/mesh_editor), settings file, catalog by the author's categories with cards (title / description
+  from the ship catalog, where used, readiness status), Blender preview thumbnails in batches, the Open dialog and the
+  opened-model header + step row + source table. Verified with headless Edge screenshots (D:/tmp/me_*.png). Not
+  accepted by the author yet. Next: go through window 6.1 "Проверка элементов" with the author.
+- 2026-11-13 ASSET SOURCES MOVED + MESH EDITOR slice 2 (docs/MESH_EDITOR_SPEC.md 4, 13): author: "`work/assets` - это
+  таргет", raw models -> `D:/__elite/assets_source`; source folder chosen in the editor; an object list over the cards.
+  Done: `assets/models` -> `D:/__elite/assets_source/models` (16 214 files, 882 MB, incl. 243 that lived only in
+  `build/assets/models`); `assets/models` keeps what the game loads (ships/cobrettymk1, hub/*, stations/LOD0, LOD1 -
+  LOD1 rescued from build/, it was referenced by ObjectAssemblyRegistry but existed only there); git: 6519 deletions.
+  Generators (tools/models/eqlib.py, tools/ships/layout_sketch|ship_asset_source|passport_revision.py,
+  EliteShipMeshExport --source) write to `ELITE_ASSETS_SOURCE` or `<repo>/../assets_source`; old editor settings file
+  repointed. EliteMeshEditor: Settings window (source / result / Blender, Windows folder chooser, save -> rescan),
+  object filter (ship / station / module -> only its models, plus "used nowhere"), UTF-8 paths. Evidence: catalog
+  118/26/0/2/0/4/5 from the new source; "Cobrett-I A3" -> 17 of 118 (D:/tmp/me_obj.png); settings window
+  (D:/tmp/me_settings.png); saveSettings over the socket rescans; the game from a clean build/assets/models (59 files; stations keeps only the 6+6 meshes the code names)
+  starts at the hub, 61 parts drawn, all 49 mesh paths of the code present and byte-identical to the old copy.
+  NOT verified: the Windows folder chooser itself (needs a screen). Old copy set aside as
+  build/assets_models_before_move (CLEANUP_CANDIDATES #9). Note: assets_source is not under version control.
+  Next: the author tries Settings / object list; then window 6.1 "Проверка элементов".
+- 2026-11-13 UNUSED COBRAS OUT: author: move every Cobra the game does not use to `D:/__elite/model_source`. Moved
+  assets_source/models/ships/{cobretty-mk1-int, cobretty-mk1-traf, cobra-mk1, cobra-mk1-elite, cobra-mk3-elite,
+  cobramk1T} -> D:/__elite/model_source/ships (README there). Kept: cobrettymk1 (the game's Cobra). ship_models.json and
+  EliteShipMeshExport's authored default now map Cobrett-I N1 / A3 to cobrettymk1 (the two-Cobras question resolved by
+  the move). ship_assets/cobrett-i explained to the author (compartment mock-up source + compiled copy; the game reads
+  it only with ELITE_SHIP_MODEL_ASSETS=1).
+- 2026-11-13 COBRETT-I MOCK-UP INTO SHIPS: author wants to look at the compartment Cobra -> moved
+  assets_source/models/ship_assets/cobrett-i -> assets_source/models/ships/cobrett-i, `ship_assets` removed (empty);
+  ship_asset_source.py writes there. EliteMeshEditor reads the mock-up layout (source/ship_asset.json +
+  source/geo/<part>.lod<N>.obj) and ship shells/<name>/: catalog 150 models, the mock-up card with its preview
+  (D:/tmp/me_ships3.png), open -> LOD0..3 = 45/45/45/38 meshes. Shell storage proposal (shells/ inside the ship folder,
+  asset.json "use": traffic / lod / physics) in MESH_EDITOR_SPEC 14 - awaits the author; cobretty-mk1-traf stays in
+  D:/__elite/model_source until then.
+
+- 2026-11-13 SHELL traf: author approved MESH_EDITOR_SPEC 14 - cobretty-mk1-traf (ship_body 203 v + ship_cockpit 38 v) moved from D:/__elite/model_source to assets_source/models/ships/cobrettymk1/shells/traf; cobrettymk1/asset.json "shells": {"traf": {"use": ["traffic"]}}. Editor open of cobrettymk1 lists LOD0, LOD1 and "скорлупа traf" (checked over the socket). The game does not draw it yet (traffic still uses the full Cobra assembly).
+- 2026-11-13 MESH EDITOR step 1 "Загрузка и проверка" (MESH_EDITOR_SPEC 15, author agreed): 3D view 2/3 (three.js) +
+  table 1/3; MeshEditorInspect: auto recipe (weld 0.1 mm, degenerate / repeated triangles, inside-out closed part),
+  errors for the author (holes in a volume, 3+ face edges, partly flipped), notes (no material, LOD gaps, LOD not
+  lighter); volume/sheet guess + override; check.json keeps the last check -> changed / new / gone. Evidence: the game
+  Cobra 35 parts, 6 errors, 6 auto-fixed (D:/tmp/me_step1b.png, me_step1c.png); temp copy: radar moved 12 cm ->
+  "сдвинута на 12 см", extra part -> new, removed part -> gone (temp copy deleted). Not yet seen by the author.
+- 2026-11-14 MESH EDITOR + GENERATOR (author away, "делай все три пункта", decisions mine): (1) editor auto repair:
+  touching pieces parted / faces at 3+ face edges paired by angle, back-to-back membranes between touching volumes
+  removed, every piece wound by its neighbours, closed pieces outward, open ones away from the model centre;
+  "Закрыть дыры" per part / for all volumes (fan caps, kept in check.json caps); render sides per part (closed volume
+  one-sided, sheet / open volume two-sided, viewer draws the same); assembly parts named like a library model are links
+  (violet, errors counted in the module), "Открыть модуль" + trail "← назад к ..." any depth; "Открыть в Blender"
+  (tools/mesh_editor/blender_open.py, checked in Blender 5.0.1 background). Commits 9b5853a2, d5efc776.
+  (2) eqlib: full-revolution open lathe ends closed (eq_hole dark disc, or an annulus when both ends share a plane),
+  tube ends capped; regenerated (1843 files). Equipment parts with open edges in LOD0: 476 -> 53 of 774 (old output in
+  assets_source/_prev/equipment_2026-11-14, CLEANUP #10). Editor check over 118 equipment models: 31 still with errors
+  (68 parts: radar / comm dishes, fans, thrusters - other primitives, list in D:/tmp/eq_after.txt).
+- 2026-11-14 MESH EDITOR ASSEMBLY + BLENDER + BUILD (MESH_EDITOR_SPEC 16, docs/BLENDER_ASSEMBLY.md; author away,
+  decisions mine). assembly.json (nodes / links / hit volumes / zones / mounts / seams / buses / damage /
+  calibration) seeded from Blender glTF, the mock-up, hit_volumes.json or automatically; global material library
+  assets/materials/material_library.json (187); Blender add-on tools/blender/elite_tools.py (library of modules as
+  collection assets, links via elite_part, elite_hit / elite_zone / elite_mount / elite_seam / elite_feeds, glTF
+  export) + editor glTF import (MeshEditorGltf); steps 2..6 in the page (hierarchy + explode slider + bus lines,
+  volumes / zones, mounts / seams / buses, damage, build). Build -> assets/compiled/<cat>/<id>/ via the shared
+  assembler (now a library; PBR library materials, sockets link / nav_zone, calibration, line edges).
+  ROOT CAUSE found live: a package without MeshLod.edges is invisible in the game's line styles (first station build
+  loaded but drew nothing; the raw-mesh variant too) -> the assembler builds boundary / crease / material-seam edges.
+  LIVE (nav-stress:simple, offscreen, ELITE_DEV_MODEL_ASSET_PLACE_M): editor-built station visible
+  (D:/tmp/final_stations.png, scale 0.905077 vs shipped 0.905076, size 5548 m), Cobra cobrettymk1 / blender_demo /
+  Cobrett-I packages load and draw. New DEV env ELITE_STATION_MODEL_ASSET=<path>; tool EliteModelAssetInfo.
+  Commits 42f99220, 554b2c76. Not done: LOD generation, animation, the game reading hits / zones / seams / buses from
+  the package, instancing of repeated station meshes, mouse dragging of volumes.
+- 2026-11-14 MODULE = SHELL (author, MESH_EDITOR_SPEC 17; design only, not implemented). A module in the game is never
+  opened: it is stored as a shell (outside-visible faces, thin two-sided), elements merged per rigid link; animated
+  modules keep one shell per moving link with a hinge; visibility over all animation poses. The ship is a skeleton;
+  modules fall off only whole. Element hit volumes stay. Ship traffic shell computed over the whole assembly.
+  Measured: CR-1 LOD0 >= 72% of 15362 faces visible from outside. Open: link / hinge description source, damaged looks.
+- 2026-11-14 author: everything a ship is built from (equipment, frame pieces, hull panels) is a module with id and
+  passport; the minimal assembly object is the shell; the mesh editor converts elementary models to shells into a
+  Blender library used for ship assembly by id; a damaged module is another model with its own LODs. Rig (links /
+  hinges / poses) in rig.json beside hit_volumes.json (my call). MESH_EDITOR_SPEC 17. Not implemented yet.
+- 2026-11-14 SHELL + BLENDER MODULE LIBRARY (MESH_EDITOR_SPEC 17.1; step 1 of the agreed plan). Mesh editor builds
+  each module's shell (depth-buffer visibility, 256 directions, 768 px; per rig link; library "transparent" materials
+  do not occlude) for every LOD -> assets/compiled/<cat>/<id>/shell/LOD<N>/<link>.obj and <id>.blend (asset
+  collection = LOD0 shell + mount point; LOD1..3, hit volumes, library materials). Blender add-on: library folder +
+  Asset Browser drag gets elite_part at export. LIVE: whole equipment_ship (118) in ~6 min, 0 failures, LOD0 77% of
+  triangles kept; render compare on 12 modules: 0 lost silhouette pixels, shade differences <= 2.2% (normals), cockpit
+  23% (normals). Fixes on the way: hit empties via matrix_basis + view_layer.update (were all at the origin);
+  -O2 for the geometry sources; material lookup cached (41 s -> 3.6 s per module). Open: cockpit seats hidden by the
+  generator's closed hull under the canopy; glass is opaque in the library (author's call). Next: plan step 2/3
+  (ship assembly from shells by id; rig.json for skid / container / robot).
+- 2026-11-14 MODULE PACKAGE .elmodel + glTF EXCHANGE (MESH_EDITOR_SPEC 17.2; author: OBJ was the wrong format, modules
+  stay separate, .elmodel holds everything of a module in binary). The shell step now writes per module
+  assets/compiled/<cat>/<id>/<id>.elmodel + .lodN.elmesh (tools/mesh_editor/MeshEditorModule.*: node per rig link with
+  joint, shell per LOD two-sided, library materials, hit volumes as collision, socket "mount" equipment_mount) and a
+  glTF in the work folder that make_module_blend.py imports for <id>.blend. Shell OBJ and shell/ folders removed.
+  LIVE: equipment_ship 118 in ~5 min, 0 failures, same shells (LOD0 926 051 / 1 203 248); all 118 packages load
+  (EliteModelAssetInfo, 1 793 hit volumes); CR-1 blend hit empties oriented as the source. Game does not load module
+  packages yet. Glass stays opaque (author's call). Next: plan step 3 (rig.json) / step 2 (ship from shells by id).
+- 2026-11-14 MODULE PREVIEWS FROM THE PACKAGE (MESH_EDITOR_SPEC 17.3). Card preview = Blender render of the module's
+  package glTF (LOD0 only) once the shell exists, else the source; re-rendered when any mesh file it shows is newer;
+  shell builds queue the category; preview URL carries the render time. Fixed: package glTF previews drew all LODs on
+  top of each other (wrong look, e.g. reactor radiator). LIVE: 118 equipment_ship previews re-rendered in ~40 s;
+  4 checked against the source: match except smoothing. Package colours = source Kd for all 136 materials.
+- 2026-11-15 SOURCE LAYOUT + PASSPORTS (MESH_EDITOR_SPEC 18; author: variants as groups, shell and LOD inside each,
+  editor picks up what has a passport). assets_source/models moved (backup CLEANUP #11): <cat>/<id>/model.json +
+  intact/assembly/{LOD<N>, hit_volumes.json, ...}; damaged/<variant>/{assembly,shell} reserved; stations/ and drones/
+  became <cat>/<cat>/. Editor catalog: model = folder with model.json (root, kind, variants). Generators / tools on
+  the new layout via tools/models/source_layout.py. LIVE: equipment generator --check up to date; cobrett-i mock-up
+  byte-identical to the old script on the old layout; editor lists 151 (118/22/2/4/5), CR-1 shell unchanged.
+  NOT VERIFIED: EliteShipMeshExport does not link (41 undefined refs, pre-existing). Game unaffected (reads
+  work/assets/models). Next: 18.6 step 2 - screen 1 tabs by variant, Сборка / Скорлупа sections, shell into
+  <variant>/shell/.
+- 2026-11-15 SCREEN 1 BY VARIANT (MESH_EDITOR_SPEC 18.8). Variant tabs (Целая / damaged / + вариант), assembly and
+  shell LOD rows, "в игру" per variant (passport), shell written to the source <variant>/shell/LOD<N>/<id>.gltf +
+  shell.json (built / stale / manual). "+ вариант" = copy of the intact assembly. Package/.blend for intact only.
+  LIVE: CR-1 over the socket + headless page shot (tabs, rows, stale after touching the assembly); test variant
+  removed; equipment_ship shells rebuilt into the source: 118 из 118 за ~5 мин, LOD0 926 051 из 1 203 248, 118 файлов Blender. Fixed: MinGW file-clock stamp was written as 0.
+  Next: 18.6 step 3 (damaged variants in the generator and the package; repeats).
+- 2026-11-15 MESH EDITOR "Обновить" (MESH_EDITOR_SPEC 18.9). "+ вариант" removed per the author; "⟳ Обновить" (cmd
+  refresh) rescans the source, damaged/<v>/ folders become variant tabs and passport entries, the open variant is
+  re-read; a folder without assembly/ gets a hint. LIVE: CR-1 with dropped-in probe/bad folders over the socket +
+  headless shot D:/tmp/me_refresh.png; test folders removed, passport restored.
+- 2026-11-15 DAMAGED VARIANTS (MESH_EDITOR_SPEC 18.10). tools/models/build_damage_variants.py: 3 variants per
+  equipment module (hole / torn / broken: peeled-out petals, tears, broken-off end, generic innards behind the
+  wounds), source damaged/<v>/assembly + passport entries. 118 x 3 = 354 variants, LOD0 6.40 M tris (1.8x intact);
+  shells of all 354 built through the editor socket. Fans removed from the passenger modules (Agora PS-100, Bharat
+  SP-500, SMY KZ-6, OFU P20; radiator fins instead), their intact shells/packages rebuilt; life-support fans kept
+  (internal ventilation). Editor: damaged tab hides "close holes"; card readiness fixed (was always "stale").
+  LIVE: Blender wound shots of 8 modules, editor page shot D:/tmp/me_damage.png, 118/118 "ready".
+  Next: variants as states in the .elmodel package; repeats.
+- 2026-11-15 PADS SPLIT OFF (MESH_EDITOR_SPEC 18.11; author: pads are the consumable part of drive and reactor, the
+  unit sits under the hull, the pad sticks out). build_equipment_models + tools/models/pads.py split the 21 units
+  with a pad (10 drives engine_hot_emitter_annulus, 11 reactors reactor_cooling_pad) into <unit> (+ mounts.json),
+  <unit>_pad (own frame: mating face y = 0, outward +Y; ER-5: one pad module, two mounts) and <unit>_set (kind
+  assembly, assembly.json nodes ref'ing unit + pad). Damaged variants redone for the 21 units, new for the 21 pads
+  (sets get none). layout_sketch.load_obj / unit_volumes re-attach pads by mounts; editor libraryRef resolves refs
+  within the same category (except self).
+  LIVE: pads placed by mounts match the old geometry to 10 um, triangle counts equal at all LODs; Cobrett-I mock-up
+  meshes identical triangle by triangle, 562 hit volumes the same; Blender shots D:/tmp/pad_sheet.png,
+  D:/tmp/dmg_*_pad.png. Open: variable-length insert (heat pipes / spacer) between a unit under the hull and its pad;
+  generic innards look too big inside a thin pad.
+  Editor: shells of all 189 variants (units, pads, sets) built (883 s, 0 timeouts); packages of the 63 models built
+  (sets: nodes by ref, ER-5 set preview from its package shows both plates); equipment cards 160/160 "ready".
+- 2026-11-15 Mesh editor object filter: pads and sets inherit the ships of their unit / linked modules
+  (Catalog::inheritUsage; author noticed the Cobra filter did not list the pads). LIVE: socket list - filter
+  "Cobrett-I N1" shows er5 / n1ax / sr150 with their _pad and _set.
+- 2026-11-15 DRIVE NOZZLE DAMAGE (MESH_EDITOR_SPEC 18.12; author: wounds sat mostly at the reactor end, wants the
+  nozzle torn up). build_damage_variants: drives (pad mount +Y -> +Z) get nozzle_torn (big wound in the aft third)
+  and nozzle_off (break across Z at 80-88 % length) on top of hole / torn / broken. 10 drives x 2 = 20 variants,
+  shells built, cards 160/160 "ready". LIVE: Blender shots D:/tmp/noz_{cobretty_cr1_vector,ofu_u70_drive,
+  tianhe_tz28v_drive}.png show the aft end torn / torn off.
+- 2026-11-15 PADS WITHOUT INNARDS (MESH_EDITOR_SPEC 18.13; author: torn ceramic and frame only). build_damage_variants:
+  *_pad wounds / breaks get only frame members (eq_metal_band) clipped to the plate box. 63 pad variants regenerated,
+  shells rebuilt 63/63. LIVE: D:/tmp/pad_dmg_bare.png; check: innards = frame only, overshoot <= 4.6 cm.
+- 2026-11-15 Mesh editor preview race fixed (author: the previous module stayed in the preview, sometimes no way back).
+  A stale async mesh load is dropped instead of being added to the scene. LIVE: headless Edge fast switching -
+  old code 2 roots in scene + TypeError in groupBox, new code 1 root, no exceptions.
+- 2026-11-15 MESH EDITOR STEPS + FRUSTUM HIT VOLUMES (MESH_EDITOR_SPEC 18.14). Steps 2..6 show only their own overlay
+  layers. Assembly view no longer applies node transforms to the model's own meshes (set pads were rotated twice).
+  CollisionVolume::radiusTop (cylinder -> frustum, COLL trailing block, backward compatible); CR-1 / N-1AX conical
+  pads: rim drum + frustum. LIVE: headless editor steps 2-6 layer flags, step 3 shows the cone hugging the pad
+  (D:/tmp/hit_cones.png); packages carry radius_top 0.16; model_asset tests PASS; Cobrett-I SHIP ASSET CHECK PASS.
+
+- 2026-11-15 ALL MODULES STEP 1 + SHELLS (author: run the automatic check and shell generation on every non-ship module). Editor socket: equipment_ship 160, hub_modules 4, other 5 - 606 variants checked (inspect commit), 33 missing/stale shells built (8 drives' hole/torn/broken after the pad split, hub_modules, other), 0 failures. 33 intact models still have open holes (smy_pb8_rack 19 parts, N-1AX housing end 3.26 m where the pad was, the rest 2-56 cm) - capping and saving the step-2 seeds await the author.
+- 2026-11-15 RIG + ANIMATION PLAYER (MESH_EDITOR_SPEC 18.15). rig.json (elite.rig.v1) from unit RIGS; editor step 1 has a
+  player (clip, play/pause, time slider, loop, rest pose). RM-2 remodelled (arms with hands folding like a mantis,
+  binocular head with brow plates, one-section abdomen), 42 joints, 4 clips; Hold-100 door leaves split + hinge rig +
+  open/close clip; drones' damage innards without the back plate. LIVE: headless editor frames D:/tmp/rm2_arms.png,
+  rm2_walk.png, rm2_head.png, hold_doors.png; drone wounds D:/tmp/drone_wounds.png; shells + packages rebuilt for
+  RM-2, Hold-100, RD-1, Klegg-3. Open: Hold-100 has no interior behind the doors; conteiner20ft is one solid mesh;
+  OD-4 / AP-4 doors unrigged; 33 intact modules with open holes (capping awaits the author).
+
+- 2026-11-15 SLIDER + DOORS + HOLES + DRONES (MESH_EDITOR_SPEC 18.16). Rig slider joints (type slide, metres). OD-4 roof leaf B slides, AP-4 cell leaves hinged, Hold-100 hollow shell (5 walls), objects/conteiner20ft cut open (liner + 2 door leaves, 270 deg; original in assets_source/_backup, CLEANUP #12). Intact holes: 70 parts / 33 models were generator ends, no breaches; editor caps on 79 parts (incl. new drone pods), annulus-aware capping (two coplanar nested loops -> band). RM-2: tail removed, power pack + main thruster, gimballed knee thrusters, clips fly / capture; canon updated. New PROPOSAL Agora RC-3 Granchio crab drone (units/agora_crab.py, new_parts_proposal.json), 39 joints, 5 clips. LIVE: headless editor frames D:/tmp/doors_all.png, caps.png, drones2.png; 601 module variants checked, 0 errors except bastion_bv1_computer/bv1_vault (a 3+ face edge, not a hole); shells + packages rebuilt for 40 models (crab variants after a catalog rescan).
+
+- 2026-11-16 CRAB RESHAPE + FLIGHT RAYS (MESH_EDITOR_SPEC 18.17). Author: crab body taller, arms bigger and longer (to
+  work inside), overall crab shape; in flight the legs straighten into rays at 45 deg like a quadcopter, the mantis too.
+  RC-3: hull 0.29..0.51 m under a lofted wide-fronted hexagonal carapace (edge band + dome to 0.73 m), longer legs, arms
+  reach ~1.1 m with a massive forearm and bigger hands; envelope [2.48, 0.871, 2.093] (proposal updated). new_equipment
+  ray_pose(): coxa yaw onto the 45 deg diagonal, femur + tibia into one horizontal ray, pads / knee emitters levelled;
+  used by the fly clips of RM-2 (4 legs) and RC-3 (4 pod legs at 45 deg + the middle pair as side rays: tucked they sank into the hull, author 2026-11-16; D:/tmp/crab_hexa.png); knee / gimbal ranges widened.
+  Viewer: MeshViewer.viewFrom(x, y, z) for scripted views. LIVE: headless editor frames D:/tmp/flyrays.png (crab rest /
+  repair / flight iso + top + side, RM-2 flight transition + top); step 1 on all variants of both drones (intact 0
+  errors, damaged = open wounds by design); shells + packages rebuilt (2 packages, 0 failures).
+
+- 2026-11-16 REPAIR-DRONE TOOLBOX + TOOL CLIPS (MESH_EDITOR_SPEC 18.18). Author: a separate toolbox the drone may or may
+  not carry on its back, for every repair drone; it opens; the drone pulls a sledgehammer or other tools out, depending
+  on the animation. PROPOSAL std.drone.toolbox (units/drone_toolbox.py, model std_drone_toolbox): hollow box, hinged
+  lid, fold-down handle, foam insert, tools as parts (tb_tool_hammer / wrench / bar, slide joints, grip attach points).
+  Saddle standard: four twist-lock castings at 0.28 x 0.22 m (tb_saddle) on RC-3 (dome) and RM-2 (thorax roof, box
+  along Z); rig.json gains "attach" (saddle, grips) and "props" (the toolbox placed on the saddle); clips gain "props"
+  and "events" (take / stow a tool into a hand). Arm poses by IK (drone_toolbox.ik: grip error <= 11 mm, forearm kept
+  out of the box). Clips: RC-3 «Кувалда» and «Лом» (left hand), RM-2 «Ключ». Carry sets agora_rc3/rm2_drone_toolbox_set
+  (generic SETS hook in build_equipment_models, pads.ref_set_doc). Mesh editor: server sends the props' LOD1 meshes +
+  rig (propParts), the player shows the box (checkbox) and the held tool (offset kept from the take). LIVE: headless
+  editor frames D:/tmp/toolbox.png (sets), D:/tmp/tools_clips.png (take / lift / strike / bar / wrench),
+  D:/tmp/toolbox_tools.png; step 1 clean on the 5 models; shells + packages 5 / 0 failures. Open: the arm-vs-carapace
+  collision is not checked (only forearm vs box); the toolbox has no damaged variants yet.
+
+- 2026-11-16 CRAB TAKES THE BOX OFF FIRST (MESH_EDITOR_SPEC 18.18). Author: «рука дрона проходит сквозь ящик. я думаю
+  ему следует снимать его прежде чем что-то доставать» + «а вот богомол - берет хорошо». RC-3 clips (hammer, bar):
+  the hand takes the box by its handle off the saddle, sets it on the hull ahead, the lid opens, the tool comes out,
+  works, goes back, the lid closes, the box goes back onto the saddle (drone_toolbox.take_clip with `ground`; IK grip
+  error <= 7 mm). RM-2 keeps the take straight from the box on its back (take_from_saddle). Clip events gain take of a
+  whole prop (by its handle) / put / dock; the player carries the box with the hand (orientation eased between the
+  poses). LIVE: headless editor frames D:/tmp/crab_boxdown.png; step 1 clean; shells + packages rebuilt.
+
+- 2026-11-16 RC-3 TOOL COMPARTMENT + ARM REACH WITHOUT CLIPPING (MESH_EDITOR_SPEC 18.19). Author: «у краба очень
+  неуклюжие руки, они проходят через корпус. если он поставит ящик перед собой - он не сможет ремонтировать. попробуй
+  вмонтировать ящик ему в спину, и проконтролируй длину рук и сочленений, что бы он мог делать все без погружения рук в
+  меши». RC-3: a compartment built into the dome (terracotta housing, brass corner castings = OD-4 cradle locks, foam,
+  hinged lid rc3_tool_lid), the tools are the crab's own parts (rc3_tool_hammer / wrench / bar, slide joints, grip attach
+  points); no saddle / no carried std.drone.toolbox any more (the set agora_rc3_drone_toolbox_set -> CLEANUP #13). Arms:
+  shoulders on the carapace front corners (y 0.70), upper arm 0.52 m, forearm 0.52 m (max radius 0.12). Collision
+  model (drone_toolbox.collide_*): the body as solids (hull box, the carapace as its exact lofted shell, the compartment,
+  the eye stalks), the arms as capsules; the tool clips' IK keeps the arm out (take_builtin), audit_clip samples every
+  clip every 0.05 s. Result: all 8 RC-3 clips, both arms: 0.0 cm penetration; grip IK error <= 2 mm. Clips «Кувалда»,
+  «Лом», «Ключ». The player moves a model's own part into the hand by take / stow events. Not checked: arm vs legs,
+  arm vs arm, the held tool vs the body. LIVE: headless editor frames D:/tmp/crab_bay.png; step 1 clean (intact);
+  damaged variants, shells, package rebuilt.
+
+- 2026-11-16 RC-3 TELESCOPIC SLEDGEHAMMER (MESH_EDITOR_SPEC 18.20). Author: «пусть теперь достанет из ящика здоровенную
+  кувалду - которая больше чем сам ящик». The compartment's hammer is telescopic (plausible-physics: folded 0.4 m in the
+  foam; the handle runs out in two sections to 1.0 m, the head cheeks slide apart on guide bars, head 0.16 -> 0.33 m):
+  parts rc3_tool_hammer (+ _t1, _t2 sliders, _head, _head_a/_b sliders). Clip «Кувалда»: take, lift straight out, run
+  out, two strikes on the hull ahead (IK places the head: work targets (dt, point, "tip"); the held hammer is a capsule
+  of the hand in the collision model), fold, back into the slot. The tool lifts / lowers straight (a second point along
+  the tool in the IK); the left wrist range -140..100. Player: parts hanging from a held part follow it with their own
+  joints. Checks: arms 0.7 cm max (upper arm at the compartment wall margin), the hammer head never enters the body,
+  strikes reach the hull (head 6 cm above it). LIVE: headless editor frames D:/tmp/crab_bighammer.png; step 1 clean;
+  variants, shells, package rebuilt. Wrench lift is not perfectly straight (IK miss up to 7 cm on the lift pose).
+
+- 2026-11-16 EXPLODE FROM THE CENTRE (MESH_EDITOR_SPEC 18.21). Author: parts on the main axis slide along it, side parts
+  fly off perpendicular to it, everything apart from the centre. viewer.js applyExplode: main axis = longest extent
+  through the model box centre; a part the axis passes through moves along it, others straight away from it; offset =
+  slider x (distance + 15 % of the size). Was: radial from the box centre of node centres, scaled by hierarchy depth.
+  LIVE: headless editor step 2 frames D:/tmp/explode.png (CR-1 at 0 and 0.7, RC-3, RM-2, AP-4).
+
+- 2026-11-16 HEXAGONAL PRISM HIT VOLUMES (MESH_EDITOR_SPEC 18.22). Author: «у тебя есть модули шестиугольной формы, а
+  хитвалумы у них - параллелепипеды. может сделать - шестигранной призмой?». CollisionVolume.hexTop (Box only; < 0 = a
+  plain box): the section in local XY has vertices (+-halfSize.x, 0), (+-hexTop, +-halfSize.y), the prism runs along
+  local Z; stretched hexagons too (the Agora survival craft), a regular one: hexTop = hx / 2, hy = hx sin 60. Code
+  that ignores it sees the enclosing box (conservative). COLL: second trailing block (older packages read as before).
+  Carried through ModelAsset / Build scale / CollisionChunks / mesh editor package + glTF extras (elite_hex_top) +
+  assembly doc / ShipAssetAssemble / eqlib.hhex + hits_text + scaled_hits / pads / the editor (hexMesh edges, table
+  «шестигранник», form field «полуширина грани»). Applied: Agora SK-4 pod (hull, nose, pyro ring), SSh-20 lifeboat
+  (hull, nose), Bastion MJ-FE2 emitter (2, turned 90 deg), RM-2 thorax. Gates: model_asset_tests PASS (hex round trip,
+  cylinders keep hexTop < 0); EliteModelAssetInfo now lists the volumes - the rebuilt packages carry the prisms
+  (sk4: 3 hexprism, mjfe2: 2). LIVE: headless editor step 3 frames D:/tmp/hex_hits.png. The game still does not read
+  collision volumes from packages (open item).
+
+- 2026-11-16 NO ROOF VENTILATION (PS-100, L-20, L-4). Author: «PS-100 ... вентиляция на крыше - она не нужна. мы в
+  космосе. L-20 ... вентиляторы на крыше. L-4 ... то же самое». PS-100: the two roof climate units (radiator fins,
+  louvre bands) removed with their hit volumes - the cabin air is the ship life support's job. L-4 / L-20: the open fan
+  discs replaced by closed air-loop ports (eurohab.duct_port: base flange, duct stub with a bellows band, blind end
+  flange with a bolt circle where the cabin duct couples; the fan sits inside the duct - in free fall there is no
+  convection, the air must still be moved); parts l4_fan / l20_fan -> l4_duct / l20_duct. L-200 still has its twin fans
+  at the ventilation-spine ends (not asked). LIVE: headless editor frames D:/tmp/no_fans.png; step 1 clean (intact);
+  damaged variants, shells, packages rebuilt (3 / 0 failures).
+
+- 2026-11-16 HUB DISTRICT PROTOTYPE, STEP 1 (author: «начинай прототип района хаба» + «сразу добавляй макеты в модули хаба
+  для эдитора» + «и где-то должна быть собственно - сборка хаба»). Kit tools/models/units/hub_district.py -> the editor's
+  hub modules (<assets_source>/models/hub/hubk_*: truss 100 m, habitat blocks a/b/c with window grids, lattice tower
+  160 m, mushroom platform, factory with vent stacks, tank farm, anchor asteroid 700 m) + the assembly
+  hub_proto_district (kind assembly, 404 nodes by reference, ~2.9 x 1.0 x 1.15 km, the industrial quarter at the far end,
+  80 vent haze sources -> src/assets/data/hub_district_haze.json). Generator: units may declare ROOTS (source sub-root,
+  "hub") and PASSPORTS; SETS gain "view_lods" and reference hub modules (pads.ref_set_doc category_of). Emissive
+  materials (eq_hub_window_warm / cool, beacon, flood) seeded into the material library (seed EMISSIVE). Game: ObjectType
+  HubKit* (9) + HubDistrictProto, HubKitModuleDescriptor (logical scaling off), packageFor -> assets/compiled/hub_modules,
+  legacy proxies assets/models/hub/hubk_*/LOD0 (coarse OBJ), GameSceneSetup maps dock module types; hub proto_district
+  co-orbits the Ceres hub (tools/models/hub_district_world.py writes it into initial_world_state.json; not in the canon -
+  rerun after a colonization_lab regeneration). Emissive faces: ModelAssetGpuLibrary passes glow + 2 as the face colour,
+  large_object_fill.frag draws them unlit in all three styles. DEV: ELITE_DEV_START_FACE=1 noses the ship to the hub.
+  LIVE (offscreen, ELITE_DEV_START=hub:proto_district@1.6..4): 404 modules as separate world objects: p50 23-27 ms vs
+  13.0 ms without the district - the CPU per-object cost (replication / navigation / radar / scene prep ~11 ms), while
+  drawing them took 4.2 ms GPU (instancing 404 -> 9 draws); the district as ONE object (its package: 404 nodes on 9
+  shared module meshes, instanced, 2 LODs): p50 13.0 Classic / 14.2 Modern / 14.3-14.6 Anime, GPU ~5.9 ms. Frames
+  D:/tmp/hub/styles.png, D:/tmp/hub_district_styles.png. Next: local volumetric haze at the vent sources; near
+  detail (module LOD0 by node distance inside the one object); the asteroid has no Classic edges.
+
+- 2026-11-17 HUB MEGASTRUCTURE PROTOTYPE, STEP 1 (author: «начинай с мегаструктуры. самое плохое в этом - нет ощущения
+  расстояния ... на десятки км? ... более тесной, что бы чувствовался размер?» + «светящихся окон надо сделать меньше.
+  полностью засвеченные только некоторые здания»). tools/models/units/hub_mega.py: modules hubm_* (shaft 160x160x1000
+  segment, cap with mast, annex, canyon bridge 140 m, deck 600x600, pipe bundle, asteroid r 4 km) + the small kit as the
+  ruler; assembly hub_proto_mega: 8884 nodes, 12 x 12 km deck, shafts 300 m apart (140 m canyons), up to 8 km tall,
+  industrial quarter with 231 factories (462 vent haze sources -> src/assets/data/proto_mega_haze.json; the district's
+  file renamed proto_district_haze.json). Editor view of big assemblies: node boxes (SETS view_mode "boxes"); the
+  package instances the modules' own LODs (assembly LOD k <- module LOD k+1). Facade windows: material eq_hub_facade*
+  travels as colour + 4, large_object_fill.frag draws a procedural window grid in the module frame (floors 4 m, pitch
+  3 m; most buildings 5-15 % lit, one in ten 60-80 %; far: averaged glow), vertex shaders pass the object normal and a
+  per-instance seed; the district's habitat blocks switched to the facade (no window quads). Hub proto_mega (one
+  object, ObjectType::HubMegaProto) 2900 km ahead of the Ceres hub; ELITE_DEV_START_FACE=along noses the ship along the
+  hub's local +X; build/run_mega.bat. LIVE: canyon start p50 26.5 Classic / 27.2 Modern / 25.4 Anime ms (1925 instances
+  drawn, GPU 13 ms), from 14 km above p50 50 ms (scene_main_render 37 ms): the whole object picks one LOD and draws
+  every node - next: per-node LOD + culling inside the object. Frames D:/tmp/hub/mega_modern.png, mega3.png.
+
+- 2026-11-17 MEGASTRUCTURE HLOD (author: «надо сделать упрощённые меши, сэкономим кучу точек»). Correction of my earlier
+  claim: per-node LOD + culling already worked (canyon: 6959 of 8884 culled, LOD draws 31/399/1495). Added city-block
+  proxies: hub_mega.py cuts the city into 1.2 km blocks (nodes get "module" = block), a simplified mesh per block
+  (a shaft column = one facade prism deck-to-cap, annex / factory / deck boxes; bridges, masts, tank farms, pipes, caps
+  left out) -> assembly proxies/<block>.obj + doc module_proxies + hlod.proxy_error_m 40; the mesh editor package gets a
+  module_proxy render LOD (ShipAssetAssemble role "module_proxy" -> RenderLodRole::ModuleProxy) and an "hlod" socket
+  (extent.x = error m); ModelAssetPresentation collapses a group when the proxy error projects under the SSE target
+  (moduleProxyErrorM, also in the Full representation). 100 proxies, 53.6k triangles in all. LIVE: from 14 km 65 of
+  100 blocks collapse, 1.10 M -> 0.67 M triangles, GPU 27.8 -> 20.3 ms; canyon unchanged (far blocks were culled).
+  A/B ELITE_DEV_NO_EDGES=1 (new DEV switch, instanced edge pass off): GPU top 20.3 -> 13.5 ms, canyon -> 11.8 ms; frame
+  p50 still 27 ms in the canyon: the remaining cost is pixel fill of the huge overlapping walls (fill shader +
+  overdraw), not triangles. Next: cheaper far shading / draw order (front-to-back, depth prepass), edges only near.
+
+- 2026-11-17 FACADE FLICKER + PERFORMANCE ROOT CAUSES (author: «торцы зданий блымают»; «надо разобраться с
+  производительностью»; «прогони по всем трем видам рендера»).
+  FLICKER: the facade window seed came from the instance's world-frame translation, whose origin is the player, so the
+  lit-window pattern reshuffled every frame of flight. Now from the node's asset-frame position (SceneRenderer
+  QueuedMeshDraw::seed), carried to large_object_fill(.vert/_instanced.vert) in the model matrix's unused [0][3] slot
+  (fillModel; edge passes get the clean matrix). LIVE: two starts 30 m apart show the same lit buildings (commit b46d53f84).
+  PERF ROOT CAUSES (the "pixel fill" conclusion of the HLOD entry above was WRONG - it was measured on the iGPU in Debug):
+  1) the game ran on the integrated Intel UHD 630, not the Quadro RTX 3000 (no Optimus export) -> src/main.cpp exports
+     NvOptimusEnablement / AmdPowerXpressRequestHighPerformance; nvidia-smi now lists EliteGame.exe;
+  2) build/ is Debug -O0: the remaining ~14 ms canyon CPU cost was mp::select over 8884 nodes in Debug;
+  3) frame stats were quantised by vsync (16.7 / 33.3 ms) -> DEV ELITE_DEV_NO_VSYNC=1 (Window.cpp, glfwSwapInterval 0).
+  select also got cheaper: only the active openings are resolved (not every collision volume / hit region / socket:
+  3.2 ms Debug), and a node group (city block) wholly off screen culls its components in one test.
+  LIVE (offscreen 1280x720, Quadro, no vsync, p50 frame / megastructure GPU):
+    build-relwithdebinfo: canyon Elite 4.5 / Modern 4.6 / Anime 4.8 ms (GPU 1.3-1.4 ms, select 0.5 ms);
+    top from 14 km 6.0 / 6.0 / 6.1 ms (GPU 1.5 ms); far from the hub 3.7 ms in all styles.
+    build (Debug) before the select fixes: canyon 28 / 27.8 / 28.5 ms, far 13.9 / 14.5 / 14.8 ms.
+  build/run_mega.bat and run_district.bat now start the build-relwithdebinfo exe when it exists.
+  Next (author's order): traffic inside the megastructure, haze at the vents, canyon lighting, 3D cockpit sample.
+
+- 2026-11-17 WINDOW FLICKER, real cause (author after a live flight: «окна почему-то беспорядочно блымают»). The
+  per-building seed reached the fragment shader as an interpolated varying: an interpolated constant drifts in its
+  last bits across a triangle and the hashes amplify it, so the lit / unlit choice (even the building's lit-up regime)
+  changed from pixel to pixel - windows broke into slivers that flickered with any camera move. Now `flat` in
+  large_object_fill.vert / _instanced.vert / .frag. Also: the window pane is box-filtered over the pixel footprint
+  (filteredPulse) and the far average starts at 0.12..0.40 cells per pixel. Diagnosed with a grid-coordinate debug
+  render (the grid was smooth, so the noise came from the seed). LIVE (release build, offscreen): two frames 1 s apart
+  from one start: 4.5 % changed pixels before -> 0.00 % after; windows whole (D:/tmp/flab_pair.png).
+  Author's verdict on the megastructure: "a piece of a megapolis, not an orbital megastructure like in the video; it has
+  a base with skyscrapers on it" -> concept rework pending.
+
+- 2026-11-17 BELT SETTLEMENT KIT + GENERATOR (author: gas/fuel tank farms; «можем начать пробовать делать поселение в
+  астероидном поясе» - central rotating ring, warehouses, fuel stores, industrial zones, rotating and static habitat
+  clusters, docks as railway platforms sized for the haulers, repair / refuel / hotel (rotating hex barrels) docks,
+  parking, everything linked by truss-braced tube tunnels with roads and monorails; «каждый хаб уникален, повторяемость -
+  один и тот же хаб имеет одинаковый вид»). PROPOSAL, not accepted.
+  Kit tools/models/units/hub_belt.py (hubb_*, <assets_source>/models/hub): gas_battery (6 bullets 36x156 m, galleries,
+  manifolds), fuel_spheres (4 x 64 m), pier_l (300 m, berths 260x64 both sides - T-5000 220x50 fits), pier_m (160 m,
+  140x44), fuel_dock, repair_dock (cage 260x90x80, gantries), parking (8 pads 90x60), warehouse (240x120x50 + container
+  yard), works (300x140, furnaces = haze sources, radiator wings), hab_tower, hab_slab, hab_drum (300x500, spins),
+  hotel_hex (spins), ring_core (1.8 km, spins), girder (30x30 spine, 100 m), tube, junction, monorail, road. Ship sizes
+  from ship_catalog_3126.json (no dedicated ore hauler class exists; HT-20K tug 60 m).
+  Generator belt_layout(hub_id): seed = sha1(hub id) -> 14..19 districts of 11 kinds on girder spines in a 2.6..8.2 km
+  shell (docks outside), MST + short cross links of tubes + girders, roads where a wheeled district is at an end,
+  monorail where a passenger one is; node groups (district / 1.2 km of a link) with OBB proxies (HLOD). The static city is
+  ONE assembly hub_<id> (BELT_HUBS); spinning bodies are separate hub dock modules with angular_velocity_deg_s about
+  their own Z. Engine: ObjectType HubBeltCity (package hub_modules/hub_<hubId> chosen per object by
+  hubAttachment.hubId - ModelAssetGpuLibrary::get(type, hubId)), HubBeltRing / Drum / Hotel. World:
+  tools/models/hub_belt_world.py --hub belt_demo (co-orbits Ceres, phase +0.0006). render_preview.py camera clip 1e6.
+  LIVE (release, offscreen): belt_demo 15 districts, 2692 city nodes + 34 spinning bodies spawned, frame p50 4.6 ms at
+  4 km (D:/tmp/belt_g_modern.png). Same id -> identical layout (checked twice), another id -> another settlement.
+  Next: the author asked to watch the WHOLE 8 h video (structures at 4:39:40 and later) and reproduce them.
+
+- 2026-11-17 VIDEO REVIEW + LANDMARK KIT (author: «просмотри еще раз видео ... на 4:39:40 видны очень интересные
+  конструкции и дальше тоже. их надо повторить»; «судя по всему тебе таки надо просмотреть его все»). The whole 8 h video
+  (yt-dlp 360p, D:/tmp/yt/full360.mp4) reviewed at one frame per minute (24 sheets D:/tmp/yt/s60): a pool of ~60 shots
+  repeated in shuffle; catalogue of 16 structure types D:/tmp/yt/catalog.jpg. 4:39:40 = crowned spires (skirt platform
+  with hanging pipework, lattice shaft, crown of arcs) and at 4:39:57 a curved cantilever truss boom.
+  New kit tools/models/units/hub_vista.py (hubv_*): crown_spire, saucer_tower, rig (offshore pyramid), cage_gantry
+  (lattice sphere in a portal), ring_wheel, water_tower (hyperboloid), gallery_tower, mast, cantilever (500 m),
+  refinery (flare = new emissive eq_hub_flare, haze source), pad_star. Generator: new district kinds landmark (mandatory),
+  refinery, rig; habitat / hotel / parking / storage / industry districts also take the landmark modules. Material library
+  reseeded (216 materials) - the hubb_* materials were missing from it; all 31 packages rebuilt after an editor restart.
+  LIVE: belt_demo 15 districts, 2121 city nodes + 28 spinning bodies, captures D:/tmp/belt2_*.png. Verdict (mine): from
+  8-14 km the settlement reads as sparse clusters on thin threads - it needs density (closer, bigger districts, braided
+  link bundles). Next: densify the layout, then show the author.
+
+- 2026-11-17 DENSE SETTLEMENT + EDGE DISTANCE CULL. Layout: 26..34 districts, each a main spine (4..8 slots) + 1..3
+  branch spines (2..4 slots), placed by bounding sphere (no overlaps), 2..6 km out (ship districts 5..8 km); MST + up
+  to 2 short cross links per district; trunks (core links / > 2.5 km) are braided bundles of 3 tubes + 2 girders;
+  spinning bodies capped at 36 per hub (SPIN_CAP - each is a world object). belt_demo: 29 districts, 8852 city nodes,
+  36 spinning bodies, 117 haze sources. HLOD proxy error 12 m (OBB proxies are close).
+  ROOT CAUSE of a 173 ms GPU frame at 9 km: the instanced edge pass drew every edge of all ~7600 lattice instances
+  (girders / tubes: thousands of edges each) although station edges fade out by edgeFadeEnd (1600 m). FIX
+  (SceneRenderer drawQueuedMeshPassesInstanced): only instances whose nearest possible edge is within edgeFadeEnd
+  (MeshGPU::getEdgeRadius) get the edge pass - 84 of ~8000 kept at 9 km. LIVE (release, Quadro, no vsync, Modern):
+  frame p50 16 km 7.3 ms / 9 km 7.4 ms / 3 km 10.0 ms (city GPU 1.9 / 3.2 / 5.0 ms; 155 of 300+ groups collapsed).
+  Known: Elite Classic draws stations by edges only, so beyond 1.6 km the city is invisible there (pre-existing
+  station edge fade) - Classic needs a far presentation for hub cities. build/run_belt.bat added.
+
+- 2026-11-17 DISC CANOPY + SPIRE REWORK (author: «да, начинай с диска-потолка и шпиля»). hub_vista.py:
+  hubv_canopy (video 0:03 / 4:02): a twisted lattice trumpet 600 m over a solid core flaring into a 1.4 km disc;
+  underside coffered (48 radial ribs, 5 rings, ~35 % of the coffers lit), 20 windowed towers hanging under it, a quarter
+  of towers on top, rim lights. Generator: district kind "canopy" (one per hub, mount "top", no branches).
+  hubv_crown_spire reworked denser (two dishes, plant + tanks heaped on the skirt, 40 hanging pipe roots, thicker lattice
+  shaft with a lift core and two ring clusters of blocks, a crown cage of 8 vertically stretched arcs, 5 rings, a
+  vertical wheel, needles) + height variants _b (515 m) / _c (355 m) in the landmark districts.
+  DEV ELITE_DEV_START_AT="x,y,z[;tx,ty,tz]" (GameSimulationJump devPlaceShipNearHub): start at a point of the hub's city
+  assembly, nose to a target point (the city object's current transform).
+  LIVE (release, Modern): canopy and two spire districts, D:/tmp/sc.png, frame p50 4.6-4.8 ms; previews vs video
+  D:/tmp/spire_canopy.png. Mesh editor --serve takes SECONDS (an hour ran out mid-build once - use 14400).
+
+- 2026-11-17 GALLERY TOWER + SPHERE REWORK (author: «давай, продолжай с башней и сферой»). hub_vista.py:
+  hubv_gallery_tower is now the video's pod tower (0:23 / 1:01 / 5:01): a barrel of 6 windowed tiers (r 60..74 m) with
+  overhanging deck slabs, lit bands under them, posts and machinery between tiers, a rounded bottom, a lip deck with
+  roof plant and antennas, a smaller 3-tier pod lower, a heavy lattice mast through both continuing above as a 4-post
+  frame (650 m in all). hubv_cage_gantry (0:34 / 3:05): a faceted core shingled with 110 modules (some lit), scaffold
+  of 10 meridians + 11 parallels + straight poles, sphere r 132 filling a portal of lattice legs and a 580 m box-truss
+  beam running past one leg as a crane jib with a king post, ties and a trolley. LIVE (release, Modern, dev start
+  at the districts): D:/tmp/ts.png, frame p50 4.4 / 5.1 ms; previews vs video D:/tmp/tower_sphere.png.
+
+- 2026-11-17 SPIRE CROWN = ANTENNAS (author on 3:38:02: «на самом деле это что-то вроде антенн, там нет шара
+  внутри»). My crown (a cage of 8 arcs round a core) read as a ball - wrong. Reworked from zoomed frames
+  (D:/tmp/yt/crowns.png): a cluttered core stack with thin masts, a horizontal lattice halo (two rings + bars + lights),
+  4 flat vertical ladder antennas of different heights standing tangentially on the halo, one open hook-arc of two
+  rails with rungs (~250 deg) with a short ladder hanging off its open end; asymmetric, each variant turned its own way.
+  The sphere in the portal (0:34) is a different structure (it does have a ball). LIVE (release, Modern + Classic):
+  close and district views D:/tmp/sp.png.
+- 2026-11-17 PLANAR FLOATING CITY (author: «нужно ощущение города ... ряды контейнеров, вокзал для грузовиков ... сделаем
+  все в одной плоскости. пусть будет парящая мегаструктура но в одной плоскости ... без центральной плоскости»).
+  New unit tools/models/units/hub_plane.py: kit hubp_container_yard (7 container blocks 7x12 stacks 0..5 high, RTG
+  cranes, mast lights), hubp_truck_station (10 drive-through bays under a roof, platforms, trucks, concourse),
+  hubp_crossing; generator plane_layout(hub_id) (pure in the id): grid of 600 m blocks, 226 m gaps with road bridges on
+  girders (crossings, access bridges, avenues with 2 tunnels + monorail), every block on its own girder lattice, no base
+  plate; zoning canopy centre -> downtown -> residential (+ drums / hotel barrels lying in the plane, spinning) ->
+  industry / storage, the port on ONE waterfront (piers out of open rim sides only into free space). Hub plane_demo
+  (39 blocks, 7.4 x 5.0 km, 3714 nodes, 5 spinning): set hub_plane_demo, hub_belt_world.py now uses
+  hub_plane.hub_layout (phase +0.0012 in initial_world_state). Top-down plan D:/tmp/plane_plan.png (scratch
+  plane_plan.py). Launcher build/run_plane.bat. Packaged (mesh editor serve hung once on hubp_truck_station - restarted, then OK). LIVE (release, Modern, offscreen): loads, 6.0-6.4 ms p50 at 2.8 km and 5 km; D:/tmp/plane1.png, plane3.png.
+- 2026-11-17 PLANAR CITY: UNDERSIDE + DOCK + HIT VOLUMES (author: «надо сделать продолжение города - с другой стороны
+  от уровня "земли". надо еще добавить где-нибудь док и попробовать как автопилот будет строить маршрут через это все.
+  там же хит-валумы - учтены?»).
+  * Underside (hub_plane.py UNDER_MODULES / UNDER_OF, own rng so the top side is unchanged): every block hangs modules
+    upside down below its girders (towers under the centre, works / gas / fuel under industry, stores under the port,
+    a mirrored canopy disc), an underside road under every street girder, underside access bridges and crossings;
+    junction balls at crossings removed (collars poked through the plates). plane_demo 4693 nodes, 5322 hit volumes.
+    LIVE (release, Modern): D:/tmp/plane_under.png.
+  * Dock: the residential block nearest the centre at Chebyshev distance 2 holds an upright hex dock (plane_demo.dock,
+    slot facing +Y, back face on the street plane) + its service block under the plane (plane_demo.dock_base);
+    hub_belt_world.py writes the dock modules and copies the hub_hex_dock_a anchors / port state under the new ids into
+    navigation/hub_semantic_anchors.json + hub_docking_runtime_test.json.
+  * ROOT CAUSE (hit volumes): hub kit / settlement objects (HubKitModuleDescriptor: no module descriptors) had NO hit
+    volumes in the simulation - only the renderer read the package. Ships flew through them; the docking snapshot
+    would fail (ObstacleGeometryUnavailable). FIX: GameSceneSetup spawnHubDockModules loads the package's collision
+    volumes (asset space, cylinders/capsules -> bounding boxes) into hitComponent (GameSimulation::
+    setStaticObjectPackageHitVolumes, StaticObject::packageHitVolumes guards both descriptor rebuild sites). LIVE:
+    proto_district 844, proto_mega 17226, belt_demo 9568, plane_demo 5322 volumes loaded.
+  * Ship-vs-static collision: static bounding radius cached per object, narrow phase keeps only boxes that can reach
+    the other body's sphere (was: every settlement box per tick).
+  * ROOT CAUSE (route never finished): the docking planning snapshot took every object of the system - 33035 obstacles
+    in Sol. FIX: ClientNavigationPlanningSnapshotFactory keeps objects within ship-target distance + 50 km of the ship
+    or the target -> 5271 obstacles; the worker then FINISHES in 89-99 s (still far too slow).
+  * OPEN (not solved): after the plan is ready the automatic docking stays in planning+securing-course at 0 m/s
+    ("ЗАПРОС"), no DockPlanner report written (the result is adopted only after the motion settles). Not known
+    whether this is the city or general: NO reference dock exists - Vysokiy's dock_modules (hub_hex_dock_a,
+    hub_hex_dock_base, guidance_dock_cylinder_b) were dropped from initial_world_state.json by commit 429488bf2
+    (2026-11-08, the 614-hub regeneration); docking anywhere has been impossible since then.
+  * DEV: ELITE_DEV_START_MATCHED=1 (+ ELITE_DEV_START_AT) places the ship matched to the hub frame at a city point;
+    ELITE_DEV_DOCK_TARGET="module:anchor" for ELITE_DEV_DOCK_REQUEST_AT; ELITE_DEV_STDOUT=1 keeps stdout (route
+    diagnostics); [DockWorker] launched/finished lines with obstacle count and time.
+  * Perf not re-measured: the GPU was 100 % busy with an external process (ai-studio python) during these runs.
+  Next: planner acceleration (coarse obstacles: per-block group boxes far from the route, exact volumes near it /
+  spatial index), the stuck securing-course hand-off, restoring Vysokiy's dock as the reference.
+- 2026-11-17 DOCKING ROUTE IN THE PLANAR CITY (author: «я же тебе говорил - в гигаструктурном новом хабе поставь док. и
+  посмотрим как автопилот просчитает маршрут» - the dock is plane_demo.dock; no Vysokiy reference wanted).
+  LIVE (release, offscreen, dock_run9): the route IS computed through the city: 5271 obstacles, worker 104-106 s,
+  "route-ready": length 25.0 km for a direct 8.9 km, ETA 133 s, min turn radius 955 m, terminal approach 8.85 km
+  straight along the dock axis (the slot faces up -> the route climbs and comes straight down onto the dock), 251
+  execution gates; "plan ready: adopting (valid=1)" -> "phase=executing", DockClientTrack following it (cross-track
+  0..15 m, 41 -> 277 m/s). Earlier "stuck" runs: stdout was silenced (core::disableRuntimeStdoutNoise) - nothing was
+  logged, not a hang. FLAKY: in dock_run10/11 the pre-route safe-course turn never settled (pitch command +-1, omega
+  0.5-0.8 rad/s limit cycle); in those runs the game ran at 4 fps from t=12 s (p50 250 ms) - the GPU at 100 % with an
+  external process (ai-studio python) - the client attitude loop at 4 Hz. Not judged until a run on a free GPU.
+  DEV added: ELITE_DEV_CITY_TRACK=<file> (player position in the city frame, 2 Hz), [AssistedSafeCourse] steer trace
+  (2 s), [DockClient] plan-ready / adopting lines. Launcher build/run_plane_dock.bat (console stays open).
+  Open: planner speed (100 s for 5271 obstacles - needs coarse far obstacles / a spatial index), docking end-to-end
+  (capture by a dock without the dispatcher: only hub_hex_dock_a has dispatcher / capture / pads).
+- 2026-11-17 DOCKING ROUTE FLOWN (free GPU, dock_run12, release, 16.6 ms frames): route 95.7 s to compute (5271
+  obstacles), adopted, flown the whole 25 km over the city, cross-track mostly < 25 m, no collision; the ship stopped
+  1.2 m before the route end (target 3.25 m/s, actual 0 - the follower does not finish the last metres) at city
+  (1652.8, 701, -772): 300 m above the dock top but 359 m off the dock axis in z per the city-frame track - to verify.
+  No capture: dispatcher / capture / pads exist only for hub_hex_dock_a.
+  Author's direction (same day): hub-scale GREEN lanes through the city (pre-written routes, planner plans only the
+  legs to / between / from lanes), BLUE mandatory, RED = cargo berths and the oncoming direction of one-way lanes;
+  a hub map / editor (layers = floors, SimCity-like module cards on grid cells, any 2D outline); later the same for
+  ground settlements. Generator step done: hub_plane._plane_lanes -> 44 lanes (one-way pairs, Z lanes at +-150 m, X
+  lanes at +-290 m, r 45 m, 150 m/s) + 34 pier red zones (layout "lanes" / "red_zones"); plan D:/tmp/plane_lanes.png.
+  Engine side (per-hub graph, lane choice by cost search from the ship, red OBB obstacles, connector obstacle
+  subsets, id hard-codes removed) not started.
+- 2026-11-17 HUB ROADMAP (author, recorded; order: corridors first):
+  1. CORRIDORS in the engine (in progress): per-hub traffic graph (green lanes pre-written, blue mandatory, red =
+     cargo berths + the oncoming direction of one-way lanes for this ship), lane chain by cost search from the ship,
+     red zones as obstacles for the free legs, connector legs see only nearby obstacles; docking to capture.
+  2. HUB EDITOR as a new mode of the model (mesh) editor: layers = floors (top / under / 2nd, 3rd tier), SimCity-like
+     module cards on grid cells, any 2D outline (square, disc, free), streets / green lanes with arrows / red zones on
+     the same map; the generator builds the hub from the map; a generated start layout can be edited.
+  3. NEW MEGASTRUCTURE MODULES: reactors; orbital defence - missile racks (large missiles), railguns, military lasers,
+     each with its own reactor; every block (an administrative unit) gets its own reactor and its own landing pads.
+  4. INSTANCING: split repeating meshes into components so a base mesh is shared (as discussed earlier).
+  5. Habitat buildings ROTATING (gravity); the same for the toroids / rings.
+  6. DAMAGED BUILDINGS from the start: residential / office blocks burnt through by lasers, missiles, railguns; where
+     the facade is gone the sections, floors and single rooms / flats must show; LOD0 interiors with furniture (desks
+     with computers, beds, fridges, small things) - household items as a separate group.
+  7. LATER, NOT NOW: per colony an external architectural look of the modules and their ways of joining that fits the
+     colony's national type ("запиши это но разный дизайн хабов пока не делай").
+  8. Then the same layered / corridor principle for ground settlements.
+- 2026-11-17 HUB LANES, ENGINE STEP 1 (opt-in ELITE_HUB_LANES=1). New game::navigation::traffic::HubLaneNetwork
+  (src/game/navigation/traffic/HubLaneNetwork.{h,cpp}, EliteGame sources): loads
+  assets/data/navigation/hub_lanes/<hub>.json (written by hub_belt_world.py: lanes with stations at every crossing,
+  red zones), Dijkstra ship -> lane spans (join/leave at any station, lane metre = 0.35 free metre, transfers
+  <= 1.6 km) -> goal, emits a CompiledTrafficRoute (VolumeTransit PreferInside stages, sections, centreline, join
+  300 m / leave 200 m mandatory straights) that SegmentedRouteComposer flies unchanged; red zones -> OBB obstacles.
+  SegmentedRouteComposer: every free leg now sees only obstacles near it (withLocalObstacles: within max(1.5 km,
+  half the leg) of the leg segment). LIVE (lane_run2): the network picks green.x2.5.0.top.p 0->7 (cost 6404 vs
+  direct 8919) but the inbound free leg is INFEASIBLE every time ("continuous optimizer did not reach a feasible
+  path", ~2 min per attempt). ROOT CAUSES (analysis): (1) the lanes run inside 226 m street canyons, 50 m off centre;
+  the hub infrastructure clearance (80 m, HubNavigationClearancePolicy) + the hull leaves no feasible free leg
+  ending at a join point inside a canyon; (2) the docking request flies at route_max 500 m/s -> 1275 m turn radius at
+  150 m/s and an 8.85 km terminal straight (the dock slot faces up -> the last leg must start ~9 km above the city).
+  Default (no env): behaviour as before (direct planned route, flown in dock_run12).
+  NEXT (design): free legs only in open sky - the lane network itself must carry the turns at crossings, the ramps
+  from the canyons up to open sky / the plaza, and the dock approach (a BLUE pre-written descent onto the dock); a
+  hub speed limit (lanes 150 m/s, dock approach ~30 m/s) so the terminal straight is hundreds of metres, not 9 km;
+  lanes centred in the gap, the two directions stacked in height.
+- 2026-11-17 ROADMAP ADDITIONS (author): «надо на худ отображать зеленые, синие и красные корридоры. таким - еле
+  заметным оттенком. надо придумать что-то вроде окна навигатора, что бы отображалась карта вид сверху и указаны все
+  зеленые, синие и красные корридоры». -> (a) in-flight HUD: hub lanes / blue passages / red zones as faint tinted
+  volumes in the world view; (b) a navigator window: top-down hub map with all green / blue / red corridors (base:
+  the existing Hub map F12 and its traffic lanes overlay, system_map/SystemMapRendererNavigation.cpp). Traffic classes
+  decided (author picked the 3-class option): local streets Assisted <= ~50 m (gap 300 m), avenues Assisted <= ~100 m
+  (gap 500 m), Newtonian / larger ships never enter - «все доки должны быть на окраинах»; the plane_demo hex dock
+  moved to a rim block, its slot facing out into open space.
+- 2026-11-17 PLANAR CITY REGRID + RIM DOCK + COARSE OBSTACLES. Generator: street gaps by traffic class (local 300 m,
+  avenues 500 m: every third line + the lines round the centre), 100 m road / access pieces cover any gap (the last
+  piece overlaps, lifted 4 cm), lanes centred in the gap with both directions stacked (Z: +100 / +210 m, X: +320 /
+  +430 m, mirrored under; local r 35 m 100 m/s <= 55 m ships, avenue r 55 m 150 m/s <= 100 m ships, law assisted),
+  canopy hanging towers shortened (bottoms >= 505 m, clear of the lanes); the hex dock moved to a rim block, slot
+  facing out (plane_demo.dock at city (-2000, 0, -1960), service block inside the block). City 8.9 x 6.0 km,
+  6222 nodes, 6791 hit volumes in 102 module groups (HitVolume.subsystemId = the node's assembly module group).
+  ClientNavigationPlanningSnapshotFactory: an object with > 500 volumes keeps exact volumes within 2 km of the
+  ship-target segment, every other module group (diagonal <= 1.5 km) becomes one box. LIVE rim docking (rim_run3,
+  release): 1100 obstacles (was 6800), route 18.7 s (was 104-114 s), flown to the end (remaining 0 m) on the dock
+  axis. No capture yet: dispatcher / capture / pads are keyed to hub_hex_dock_a.
+- 2026-11-17 DOCK CAPTURE GENERAL FOR EVERY HEX DOCK (author: «давай переделаем механизм захвата дока - сделаем его
+  общим для всех доков»). GameSimulation: m_dockServiceTraffic (one dock, keyed to hub_hex_dock_a) -> m_dockSites
+  (one DockSite per HubHexDock static object of the active system, keyed by its hub module id; fixed frame = the
+  nearest HubDockServiceBlock of the same hub; own DockServiceTraffic - dispatcher, pads, capture, NPC traffic, its
+  own traffic ship id range 9000001 + index * 1e6); m_pilotDockSite (pilot ship -> site). requestDockArrival(ship,
+  engage, dockModuleId) - ClientShipCommand::RequestDockArrival now carries the dock module id in `target` (client
+  sendDockArrivalRequest(engage, module)); the client dispatcher gate runs for any HubHexDock target (was:
+  hub_hex_dock_a only). Hub map dock overlay generalized to every hex dock. LIVE (release, cap_run1/cap_run2):
+  plane_demo.dock started its own traffic (PLA namespace, 4 Cobretts + shuttles), the pilot's request accepted at
+  plane_demo.dock, route 22 s, flown, "captured by station control at plane_demo.dock -> P4", docked on P4; with
+  ELITE_DEV_DOCK_AUTO_DEPART=20: departure accepted, cleared from P4, chamber / outer lanes released, departed.
+  Vysokiy's BLUE-transit route stays keyed to hub_hex_dock_a (its own traffic graph).
+  BASELINE RED (pre-existing, not from this work): EliteServer does not link - its source list lacks
+  src/game/navigation/rules/JumpSumps.cpp and the jump lane-record sources (systemHasBeacons, sumpCatch,
+  parseLaneRecords; since c0fc51f7f); EliteGame builds.
+- 2026-11-17 CORRIDORS SHOWN. (a) Hub map (F12): the hub's GREEN lanes (centre line + direction chevrons) and RED
+  zones (outlines) always on (MapTrajectoryKind::CorridorGreen / CorridorBlue / CorridorRed, MapObjectOverlayRenderer;
+  data = HubLaneNetwork in the frame of <hub>.city). (b) Flight HUD (author: «я имел в виду видимость корридоров в
+  самой игре на HUD»): render/cockpit/HubCorridorHudRenderer - faint rings round every green lane each 250 m, four
+  rails, floor chevrons, red zone box edges; only within 4.5 km, fading with distance (peak alpha ~0.1). LIVE:
+  D:/tmp/hudlane2.png (inside a Z lane), D:/tmp/hubmap1.png (Hub map). Blue passages: drawn when a hub has them
+  (none in plane_demo yet).
+- 2026-11-17 ELITESERVER BASELINE RED FIXED. (1) Link: ELITE_SERVER_SIMULATION_SOURCES now lists
+  src/game/navigation/rules/InterstellarJumpRoute.cpp, NavDataBanks.cpp, JumpSumps.cpp (the game target had them;
+  the server list did not since c0fc51f7f) -> EliteServer links. (2) `EliteServer --self-test` then failed (exit 14,
+  "per-session snapshot navigation failed"): ROOT CAUSE - GameServer::navigationStateForSession computed the session
+  navigation from the LIVE ship pose while the ships it travels with come from m_lastSnapshot (the publication
+  tick); session B's ship rides a planet orbit at ~25.9 km/s, so the two disagreed by ~519 m (A matched only because
+  its copy happened on the publication tick). FIX: navigationStateForEntity(id, publishedTransform) - the session
+  navigation is derived from the controlled ship's pose in m_lastSnapshot (falls back to the live pose when the ship
+  is not in it). The self-test failure now prints per-session nav/ship system, error and velocities.
+  GATE: EliteServer --self-test PASS ("boot + two-session authoritative routing smoke final_tick=12", exit 0).
+  Running EliteServer with no arguments terminates by design ("local server runtime started without client identity
+  hello"; use --listen / --self-test).
+- 2026-11-18 HUB CORRIDORS: PRE-WRITTEN NETWORK (turns, plaza, blue dock approaches, hub speed limit) - LIVE DOCKED.
+  Data (tools/models/units/hub_plane.py -> hub_lanes/<hub>.json, still elite.hub_lanes.v1 + new keys):
+  - CONNECTORS (pre-written polylines lane station -> lane station): crossing TURNS (every lane -> each perpendicular
+    lane of its side at every crossing: 150 m climb run + r 100 m quarter arc inside the crossing square + 150 m run,
+    height eased; 336 in plane_demo, max slope 47 deg); the PLAZA: a one-way ring under the canopy disc (r = avenue
+    line - 150 m, y +/-265, stations 0..630 deg so every diverge is ahead of every merge) with S-curve merges from /
+    diverges to the avenue lane running its way at its four axis points (22 connectors).
+  - BLUE dock approaches (kind "blue"): from the end of every lane within 3 km of a hex dock, a Dubins CSC path (r 400
+    m) onto the dock's axis, ending with an exact 300 m axis straight at 3.3 km out (12 in plane_demo); a zero-length
+    connector lane end -> approach.
+  - hub speed limit 150 m/s for a route whose goal lies within speed_limit_zone_m (city reach + 2 km).
+  Runtime: HubLaneNetwork - Dijkstra over (lane, station) with lane / connector metres at 0.35; the ship ENTERS only at a
+  lane's first station and LEAVES only at a lane's last (both beyond the rim); every continuous piece is ONE
+  VolumeTransit stage (PreferInside) over the whole pre-written polyline; lanes / connectors filtered by the ship's
+  length; free legs costed with their geometry (the ship's 1 km start lead, a 700 m terminal approach before the join,
+  400 m / rad turn penalty, infeasible when shorter than 600 m + 1.5 km x total turn unless straight, the goal's arrival
+  direction). SegmentedRouteComposer: entry / exit direction of a stage = its inbound / outbound straight (a stage
+  with turns is not from -> to); SpaceStateDocking: lanes ON by default (ELITE_HUB_LANES=0 = off). HUD: connectors as
+  faint centre lines, blue approaches blue, any lane / connector running against the player's travel RED (author:
+  «тунели для встречного движения делать красными зонами в зависимости от направления движения игрока»). Hub map:
+  blue approaches as CorridorBlue, plaza connectors drawn.
+  Diagnostics added: the failed inbound leg's request geometry + planner summary; the search's entries_ok / exits_ok,
+  goal / arrival in the city frame; the assisted reverse-flight rejection's route time, position and hull forward.
+  LIVE (release, start 3.4 km north of plane_demo, ELITE_DEV_DOCK_TARGET=plane_demo.dock): failed runs 1-14 with
+  their causes, each fixed: (1-2) a lane start behind the ship's 1 km start lead; (3-7) the join S-curve too tight
+  for the 700 m terminal approach + turn radius (the hub limit was not the cause - the slower retries failed alike);
+  (8) the final leg needed a U-turn (the dock faces out like the lanes) -> BLUE approaches; (9-11) the approach's
+  last segment 5 deg off the axis -> exact axis straight; (12-14) a 1.1 km final axis leg squeezed its curve into a
+  loop (assisted reverse flight) -> approach ends 3.3 km out. RUN 15: chain green.z3.5 (past the canopy plaza) ->
+  blue approach, plan valid, flown, "captured by station control at plane_demo.dock -> P4". Shots D:/tmp/lanes_a..d.png
+  (in the lane under the canopy, plaza ring visible; the blue approach; oncoming lanes red).
+  Regression: Высокий automatic docking (BLUE transit, 3 traffic stages) flown and captured at hub_hex_dock_a -> P4.
+  FOUND + FIXED (pre-existing since 429488bf2): Высокий had NO dock - tools/colonization_lab/sol_network.py
+  runtime_hubs rebuilt the Earth hubs without the dock_modules LIST (the DEV docking target "authoritative planning
+  snapshot unavailable" = TargetModuleNotFound); the list is now part of runtime_hubs (EARTH_ORBITAL_HUB_DOCK_MODULES)
+  and restored in initial_world_state.json. EliteServer --self-test PASS. NOT author-accepted.
+  Next: the hub editor (a mode of the model editor) - layers, module cards on a grid, corridors editable on the map.
+- 2026-11-18 SHORT ARCHITECTURE AUDIT of the hub corridor / dock-site work (author: «сделай краткий аудит чистоты
+  архитектуры»). Findings (not yet fixed): (1) HubLaneNetwork loaded + cached in 3 places (SpaceStateDocking static
+  map, HubCorridorHudRenderer member, SystemMapRendererNavigation static) with the path string repeated -> one
+  catalog like TrafficRouteGraphCatalog; (2) the city frame is resolved 3 ways (docking: hubAttachment angles +
+  hubVisualToTactical; HUD: renderOrientation; map: scene axes) and HUD / map find it by the ".city" suffix instead of
+  the file's frame_module_id (also GameSimulationCombat / Jump); (3) the HubLanes block is inline in the 4.5k-line
+  SpaceStateDocking.cpp next to the hub_hex_dock_a-keyed BLUE transit (string literal in 5 files); (4) the search's
+  feasibility numbers (JoinApproachMeters 700, FreeTurnRadius 1.5 km) and the generator's DOCK_AXIS_OUT 3.3 km copy
+  planner policy (OrdinaryRoutePolicy terminal approach, final-leg straights) instead of deriving from it;
+  (5) hub_plane.py (947 lines) mixes the module kit, the city layout and the lane / connector / Dubins network;
+  (6) initial_world_state.json has 6 writer scripts with no section ownership - the lost Высокий dock was a symptom.
+- 2026-11-18 AUDIT FIXES + HUD (author: «давай исправим архитектуру и HUD»):
+  - Architecture: HubLaneCatalog (one load of every hub_lanes/*.json, lookup by hub id / frame module id) used by the
+    docking planner, the flight HUD and the Hub map (no more 3 caches, no ".city" suffix guessing); the docking lane
+    logic moved out of SpaceStateDocking into navigation/traffic/HubLaneRouting (hubModulePlanningFrame,
+    freeLegModelFor, applyHubLanes); the search's free-leg demands are DERIVED from OrdinaryRoutePolicy + the
+    composer's SegmentedRouteComposer::ReleaseProtectedStraightMeters (live: join_approach 700, turn r 1275, exit_min
+    2050 m - the hand constants are gone; an exit shorter than exit_min is now rejected at search time);
+    tools/models/units/hub_lanes.py split out of hub_plane.py (regenerated data byte-identical);
+    tests/architecture_contracts/check_world_state_hub_docks.py (dock_modules is a module list, Высокий keeps
+    hub_hex_dock_a, every lane file names an existing hub + frame module).
+  - Elite Classic render style: the city "disappeared" (black fill, edges gone beyond ~1.9 km) -> large_object_fill
+    turns the black fill into a dim monochrome grey with a simple light from 0.9..2.2 km (LIVE D:/tmp/elite_far.png:
+    the city's silhouette at 3+ km; close up unchanged, D:/tmp/elite_lane.png).
+  - HUD terminal: font -20 % (0.0156 x height, 11..21 px), alpha ~-40 %. HUD localization (subagent pass): ~210
+    hard-coded strings of SpaceStateHud.cpp, DockingWidgetText.h, SpaceStateJump.cpp, SpaceStateRoute.cpp, JumpRules.h
+    (refusalKey) -> 232 new keys in ui/cockpit/flight.json x 5 locales; "RECOVERED:" prefix localized; the SOS line
+    shows the hub's localized name (rescueAt returns the hub id); 12 Sol hubs got display names in
+    world/star_systems/sol.json (earth_orbital_hub's stale ru "Орбитальный хаб Земли" -> "Высокий"). LIVE es:
+    D:/tmp/es_b.png (docking widget ATRAQUE / ENTRADA AUTORIZADA), D:/tmp/es_c_zoom.png (terminal all Spanish).
+    Left: DockDispatcherTerminalText.h (English, fallback only), server-supplied alert texts, map buttons, service
+    panels / shipyard / repair / system-map texts (~500 literals) - next localization pass.
+  - Spanish accents: the HUD (Roboto via FreeType), the WebUI (Noto Sans) and the es catalog (1850 strings, 1 word
+    unaccented) all carry them - no font defect found; waiting for the author's example.
+  - Rotation: the 5 spinning bodies of plane_demo do turn (D:/tmp/spin_pair.png); every other ring / tower is part of
+    the static city assembly - rotating habitats / toroids are roadmap item (5), not built yet.
+  - LIVE: docking via lanes after the refactor captured at plane_demo.dock -> P4 (run 16, Elite style).
+  - Gates: 212: 201 pass, 6 known red, 5 new red -> 2 were mine (text checks of GameServer's session navigation after
+    25bb22b20: updated, pass), 3 PRE-EXISTING (fail at 8cd8521a2~1 too, not in the allow-list):
+    check_client_galaxy_map_catalog (source.description), check_ui_platform_fonts (mesh_editor/index.html lacks the
+    shared font layer), tests/system_map/check_architecture (System CPU frame before input/picking). Not fixed here.
+- 2026-11-18 DAMAGED HUB BUILDINGS + CITY DAMAGE ACCOUNTING (author: «давай сначала поврежденные модули, потом
+  редактор»; «можешь ли ты собрать поврежденный город из поврежденных мешей?»; «да, делай учёт повреждений, потом
+  редактор»).
+  - Modules: tools/models/units/hub_damage.py (+ hub_damage_names.py): the 5 residential / office buildings
+    (hubb_hab_tower, hubb_hab_slab, hubk_hab_a/b/c) x 3 variants <module>_dmg_missile / _dmg_laser (+ railgun holes and
+    exits) / _dmg_gutted: the facade boxes rebuilt as a 4 m x 6 m cell grid, wounds knock cells out (jagged), a burnt
+    ring without windows, behind every open cell floors / ceilings / back walls / partitions every 2 bays, broken
+    recessed slab edges, collapsed slabs lying tilted on the floor below, hanging slabs with rebar at a blast; LOD0
+    furniture in a separate part group <module>_furniture (flats: beds, wardrobes, tables, fridges, sofas, washers;
+    offices: desks with screens, chairs, cabinets; burnt / tipped near the blast). Facade pieces share their grid
+    vertices (fanned from the centre over the perimeter grid points): the edge pass drew every seam before (live).
+    15 packages built (mesh editor).
+  - Ruined city: hub plane_ruin = the plane_demo layout + a strike (hub_plane RUIN_OF / _ruin: 3..5 epicentres, 75 %
+    on residential / downtown; 124 buildings swapped for variants, 8 modules blown away), in the world at phase
+    0.0018 deg, lanes file plane_ruin.json, localized name; package hub_plane_ruin (6214 nodes). Launcher
+    build/run_ruin.bat. Note: the mesh editor reads its catalogue at start - a set created later is ignored silently
+    until restart (the first packaging "hung" for an hour).
+  - Accounting (server, GameSimulationCityDamage.cpp, CityDamage.h): per city object and assembly node the weapons'
+    energy; first stage 25 MJ x cbrt(volume / 1e5 m3) (a tower 63 MJ), x4 gutted, x12 destroyed (volumes switched
+    off); the first variant by the hit kind (shaped -> missile, laser / slug -> laser); infrastructure (girders, roads,
+    tubes, monorail, crossings, canopy) takes none; a module without variants goes intact -> destroyed. Weapons: the
+    laser beam stops at the nearer of city / target ship and burns the building (power x dt); a missile's step
+    segment is tested against the city in its moving frame (the city does ~1 km a tick in orbit). Volumes carry
+    assemblyNode (package collision parent). Replicated: ObjectSnapshot::buildingStates {node, variant} (wire schema),
+    ClientObjectState; render: the node hidden (ObjectState::nodeHidden; a module group with a hidden node does not
+    collapse to its proxy), the variant package (ModelAssetGpuLibrary::getPackage) drawn in the node's LOD0 frame, LOD
+    by distance. DEV: ELITE_DEV_CITY_STRIKE="<s>:x,y,z:<MJ>:<kind>;..." (energy into the building at a city point),
+    ELITE_DEV_CITY_FIRE="<s>:laser:<dur>;<s>:missile" (the player's weapons on a schedule), ELITE_DEV_CITY_DAMAGE_LOG.
+  - LIVE (release, plane_demo): the laser burned node 480 (hubb_hab_tower, ~5.5 MJ/s through the reactor
+    controller), missiles hit the city (a girder when the ship drifted - the matched start drifts ~20..120 m/s in
+    the rotating hub, so aimed-fire runs are unreliable); strikes: missile / laser / gutted / destroyed stages logged;
+    28 then 124 buildings destroyed -> gone on screen (D:/tmp/cs_pair.png, only the girders), variants drawn in place
+    (D:/tmp/cs_var2.png). NOT author-accepted; the ruined city shown to the author next.
+  - Not yet: persistence of the damage across server restarts; NPC / dock reactions (lost pads, power); the client's
+    planning obstacles still include destroyed buildings' volumes.
+  - Author review of the ruined city (2026-11-18): «а так - норм», with two fixes, both done: (1) damaged buildings
+    show no lit windows - their facade boxes use eq_hub_dead_facade* (no eq_hub_facade prefix, so the shader draws no
+    windows) and the office screens are dead (eq_hub_window_dark); (2) «стенки с нестабильным освещением» = z-fighting
+    of coplanar interior geometry: both rooms drew a shared partition, corner-square slabs/walls of two adjacent faces
+    overlapped, end walls lay in the neighbouring facade plane, fallen/hanging slab undersides were back-to-back.
+    Fixed in hub_damage.py: inner walls WALL_IN 0.15 m inside their room, the x faces' rooms stop CORNER_GAP short of
+    the corner squares the z faces own (_Face.span), undersides offset by SLAB_T, furniture never overlaps in a room.
+    Coplanar-overlap scan of the tower variant: all wall / slab overlaps gone (only hidden box caps / furniture
+    bottoms, as in the intact modules). Live offscreen frame D:/tmp/ruin_fix_b.png: dark facades, rooms in the holes.
+    Flicker-free not yet confirmed by the author.
+- 2026-11-18 HUB EDITOR (roadmap step 2; author: «да, давай редактор»). Mesh editor mode «Хаб» (docs/MESH_EDITOR_SPEC.md 19):
+  - Hub MAP document tools/models/hub_maps/<hub>.json (elite.hub_map.v1): grid + frozen anchor, blocks with zone and
+    top / under module cards {module, x, z, yaw}, spin, piers, dock side, avenues per street line, lanes_off, drawn
+    red zones. hub_plane.py split: _generate_map(id) (the old random generator, same rng order) + layout_from_map(map)
+    (deterministic; access bridges seeded per street). plane_layout(id) = saved map or generated start map.
+    Evidence: generated map of plane_demo -> the same city as before the split (hub_map_compare.py: nodes, 5 spinning,
+    46 haze, 2 docks, 58 lanes, 370 connectors, 34 red zones identical; access bridges re-seeded 1548 -> 1580 nodes);
+    hub_map_check.py ALL PASS (frozen anchor; block added outside the extent moves nothing; lane off removes it and
+    its 9 connectors; drawn red zone; card move / turn; dock moved to another rim block -> 8 blue approaches).
+  - tools/models/hub_map_tool.py (catalog/list/generate/load/derive/save/build + `serve` HTTP for the page);
+    MeshEditorHub.cpp starts it once ({cmd: hubTool}); derive ~1 s after the ~6 s import.
+  - Page hub.js: top-down map, layers top/under, tools select/blocks/zones/avenues/lanes/red, palette of module cards
+    (previews), overlap/outside marks, lanes with arrows (two directions drawn apart), blue approaches, docks, undo.
+    Headless CDP run (Edge): place card, R turn, drag, undo x3, lane click off + rederive, red zone drag, new block,
+    layer 2 - all PASS, no JS errors (D:/tmp/ui3_edits.png, ui4_under.png).
+  - «Собрать в игру» pressed in the page on the saved plane_demo map: save -> sources -> world (in place: no diff of
+    initial_world_state / anchors / ports / hub_lanes) -> packaged hub_plane_demo in 85 s. Offscreen game at plane_demo
+    loads the rebuilt package (6254 components; D:/tmp/plane_map_a.png). plane_ruin rebuilt from the same map.
+  - Fixes on the way: hub_belt_world keeps a rebuilt hub's orbit phase / name / position in the files; _module_obb
+    knows the damaged variants (the ruined city's far proxies lacked them).
+  - Gates: 203 pass, 6 known red, 3 pre-existing new red (galaxy map catalog, ui fonts, system_map architecture).
+  - NOT author-accepted. Not yet: 2nd/3rd tier, non-grid outlines (disc / free), hand-drawn corridors (only switching
+    generated ones off), moving a whole block, multiple docks live in game.
+  - Process: a stray `python -` was run once more this session (stopped at once with TaskStop).
+- 2026-11-18 HUB TRAFFIC DESIGN DISCUSSION (author, not implemented, not all decided):
+  - Author: a Newtonian ship arriving is «довольно тяжёлый баллистический заряд» - on a braking failure it must not cut
+    through the hub; terminals should be turned so that a ship in trouble flies past. Found: today the rim piers
+    (ship alongside, perpendicular to the rim) and the hex dock (slot facing out) are all approached nose-to-city.
+    Proposed (pending the author's go): tangential approach along the rim from outside + an overrun corridor (red,
+    no-build, no traffic) in line beyond the berth, a decision point with go-around, flow-through berths (in along the
+    berth, out forward, rail balloon-loop style), holding areas outside the hub + slot queue (DockTrafficController
+    Queued/holds, EntryHoldPoint not executed yet), leave the berth right after unloading (wait for cargo at a holding
+    area), industrial docks built into the industry modules (refinery / works / fuel - captive jetties).
+  - Author: «доки для фронтиров надо тоже делать где-то возле складов»; «фронтир - это кобра и ему подобные» = the
+    Newtonian-law ships (Cobrett-I N1 class, NewtonianI/Y/X) -> their docks in storage / logistics blocks on the rim.
+  - Population estimate of plane_demo (from the map's habitable modules): ~1.2 M (0.8-1.5 M) residents, ~20k/km2.
+  - Monorail only along avenues in passenger zones, no stations; pressurised tubes under avenues; no pedestrian
+    network inside blocks. Open question to the author: stations / port links.
+- 2026-11-18 CORRECTION + F12 FINDINGS + ASTRONAUT:
+  - Author: «фронтир - это небольшой грузовик для локальной доставки» (Cobra-like, Newtonian); one frontier dock is not
+    enough for the megacity -> many small frontier docks by the stores (rim storage / logistics blocks). Supersedes the
+    "frontier = Newtonian ships in general" note above.
+  - Author looked at the hub in game: «есть некоторые вопросы по отдельным моделям, но в целом - очень хорошо».
+  - F12 today (offscreen evidence D:/tmp/f12_a.png, f12_vys.png, f12_hub3.png): from flight F12 shows the player's
+    2500 km cube (icons only), also at Vysokiy - the Hub mode is reached only via System map -> hub -> «ХАБ». The Hub
+    mode of plane_demo draws lanes (green/blue), red zones, wire icons of the spinning bodies and the dock; the city
+    itself (the assembly) is NOT drawn; the composition panel says «city x6» (the spinning bodies counted as city).
+  - Author's request: the Hub map in two modes - 3D (as now, far view of the surroundings) and 2D (a plan like the
+    hub editor's, to pick the dock to land at); hub traffic: generated cars, trucks, passenger trains.
+  - Astronaut milo_002 (CGTrader, license record ASSET_LICENSES/models/astronauts/milo_002, SHA-256 recorded) put into
+    the mesh editor «Прочие объекты» as objects/astronaut_milo (GLB -> glTF unchanged by tools/mesh_editor/glb_to_gltf.py;
+    1 mesh, 35 312 tris, NO rig / animation in this GLB). Verified: listed and opened by the editor, 0 errors.
+    lumi_001 not added (no license record).
+- 2026-11-18 HUB MAP: 3D BOXES + 2D PLAN + BLOCK HUD MARKER + F12 NEAR A HUB (author: «в 3Д нам достаточно будет
+  просто коробок и отметок для дока ... что касается самого хаба - это будет в 2Д карте. там можно выбирать кварталы -
+  в игре появляется метка на HUD»):
+  - Hub PLAN document assets/data/navigation/hub_plans/<hub>.json (elite.hub_plan.v1; tools/models/hub_plan.py, written
+    by hub_belt_world.py = by «Собрать в игру»): blocks (zone, centre, top / under heights), module footprints per
+    layer, streets, docks (module + anchor), spinning bodies, population estimate. C++ game::navigation::HubPlanCatalog.
+  - 3D Hub map: a planar city = one wire box per block over the plane (+ a dim one under it) instead of the
+    placeholder rock; its map size from the plan (auto-fit). Docks: the existing dock port cards.
+  - 2D plan: V in the Hub map (HubMapView::setPlanView: yaw 0, pitch 90 deg, a left drag pans, no orbit; the hub pitch
+    clamp skipped): zone-filled blocks, building footprints (top layer), streets, lanes, «Док» labels, block names
+    when there is room; fit to the city. Every block is a card (decorateHubPlanBlocks: "hub-block:<module>/b<i>_<j>",
+    Infrastructure with semanticLocalOffsetMeters); an open block card is tracked (TargetTrackingState infrastructure
+    + localOffsetMeters) -> a HUD diamond at the block centre following the city (resolveInfrastructureKinematics).
+  - F12 from flight: the matched hub, else the nearest hub of the system within 30 km (playerLocalHubId), else the
+    cube (MAP_NAVIGATION_CONTRACT.md + check_navigation_context.py updated). Composition: «Город», «Жилые барабаны
+    ×2», «Гостиничные доки ×3» instead of «city ×6».
+  - Evidence (offscreen, D:/tmp): f12_city.png (F12 at 2.8 km of plane_demo, not matched -> its Hub map, boxes, fixed
+    composition), plan_b.png (2D plan + block card «Центр 5,3 · Зданий 24»), plan_hud.png (HUD diamond «Центр» over
+    the block in flight). DEV map script actions added: plan, activate:<objectId> (opens a Hub map card).
+  - Not verified: a real mouse click on a block (the card was opened by the DEV action through the same overlay
+    state); block names localized only as the generator's Russian zone titles. NOT author-accepted.
+  - Gates: check_navigation_context PASS; reds = the pre-existing 3 (galaxy map catalog, ui fonts, system_map
+    architecture "System CPU frame must be built before input/picking").
+  - Process: two more stray `python -` runs this session (stopped with TaskStop) - 4 in total today.
+- 2026-11-18 HUB CITY TRAFFIC (author: «давай трафик»): a presentation only, no server state - every vehicle a pure
+  function of the universe time (celestial snapshot simTimeSeconds) and the hub plan, so all clients see the same:
+  src/scene/HubCityTraffic.{h,cpp} (cars on 2 lanes each way of every street over the plane and upside down under it,
+  trucks on the outer lane beside wheeled zones, a vehicle leaving at the far crossing re-enters at the near one; one
+  3-car monorail train per monorail beam shuttling with a 25 s dwell at the ends); drawn by SceneRenderer next to the
+  HubBeltCity object within 3.5 km of the camera, LOD by distance, into the station instance batches.
+  Models tools/models/units/hub_traffic.py (hubt_car_a/b/c, hubt_truck, hubt_train; packaged by the mesh editor,
+  hub_modules). The hub plan got "roads" (deck heights over / under the plane, lanes 3 / 9 m, monorail rail top
+  16.8 m and side 18 m). Evidence: D:/tmp/traffic_za.png / traffic_zb.png (3 s apart: cars moved along the lanes,
+  the train came along the beam). Not checked: the under-plane traffic in a frame, frame-time cost. NOT accepted.
+- 2026-11-18 SHIP vs CITY CONTACT BUG (author: landed on a landing platform, «пробил ее насквозь. визуально если
+  смотреть из камеры дрона - все целое, но корабль перестал отвечать на управление, а вид из кабины - очень трясет»;
+  then «по-идее корабль должен был просто рассыпаться на части»). Root causes in GameSimulation::collideShips:
+  (1) the contact normal was the sum of the box-centre offsets: against a wide thin slab (hubv_pad_star 160 x 6 m,
+  hubb_parking 10 m thick) it pointed sideways to the slab's centre - the ship was pushed along the pad and sank
+  through; the contact point halfway to the slab centre gave a false lever arm / spin; (2) the ship velocity was the
+  finite-difference combat track: one tick after a position jump it is km/s off - reproduced: a ship touching a pad
+  after the dev start read «closing 19022 m/s», 4.5e7 MJ, CRUSHED (control state cleared = no response) and spun
+  at 214 rad/s (the cockpit shaking); the crushed hull has no break-up visual (the drone saw it whole).
+  Fix: obbOverlap returns the least-penetration axis (face axes preferred) -> the normal = depth-weighted axes; the
+  contact on the ship box face; the ship velocity from its travel frame (localToWorldVelocity); a static object's
+  first tick (no velocity yet) pushes apart without an impulse. Evidence (offscreen, ELITE_DEV_CITY_TRACK now finds
+  the nearest .city and logs mode / frame): sunk 1 m into a pad 40 m off its centre -> pushed straight up to rest at
+  y 0.71, no contacts logged (before: the 19 km/s crush); a full-thrust dive at 125 m/s -> 1.94 GJ, 3 links torn,
+  bounce up. Not yet: a break-up visual for a crushed hull; swept contacts (km/s J-speeds can tunnel a 6 m slab).
+  Self-test PASS; gates: the 3 pre-existing reds only.
+- 2026-11-18 CONTACT VELOCITIES IN THE HUB FRAME (author: «ты считаешь абсолютные скорости или относительные? я
+  садился со скоростью что-то около 2 м/с ... относительно хаба - это 0»): a ship's contact with a hub's static object
+  now takes the closing velocity in that hub's frame (HubNavigationFrame::kinematicFrame: the object rests in it but
+  for its spin; the ship's velocity against the hub at its point) - not the difference of two ~18 km/s world
+  velocities. A contact > 300 m/s against a static logs "[Collision] HARD" with the frame, both speeds, the motion
+  mode. DEV: ELITE_DEV_START_VEL="vx,vy,vz" (with ELITE_DEV_START_AT: the velocity against the city).
+  Evidence: a 2 m/s touch-down on hubv_pad_star -> «closing 1.99997 m/s, 0.23 MJ» (no damage), a 0.3 m/s rebound
+  (no gravity in the hub, no landing clamps yet - the ship floats off slowly); the full-thrust dive still 125 m/s,
+  1.94 GJ; a ship sunk into the pad: pushed out, no impulse.
+- 2026-11-18 HUB AIR TRAFFIC BY THE HUB'S BLOC (author: «воздушный трафик из фронтиров и др. их там не обязательно
+  делать слишком много, но они должны быть» + «можешь использовать разные корабли в рамках политического блока к
+  которому принадлежит хаб»): tools/models/hub_plan.py air_fleet -> the hub plan's "air_fleet": the hub's polity (its
+  owner; a prototype hub: its system's hub owner) -> bloc (economy_rules blocs_members); catalog ships whose
+  manufacturer's polity (colonization canon industry.json) is in the bloc (weight 1), the blocs it trades with
+  open / licensed (0.35 / 0.15); hulls <= 100 m, no war / jump-train / liner classes; <= 60 m twice as often; + the
+  city shuttle hubt_shuttle. plane_demo (Sol Authority -> sol): OCS-4, SL-12, ST-6, PC-30, PDT-7 (+ C-120 licensed, +
+  shuttle). All 19 catalog ship models packaged by the mesh editor (assets/compiled/ships). Client:
+  scene::hubCityAirTraffic - ships on the green lanes / blue approaches (HubLaneCatalog), 1 per 3.5 km of lane (half
+  on blue), 70 % of the lane speed, hull fits the lane's max length, nose -Z; drawn within 9 km. Evidence:
+  ELITE_DEV_TRAFFIC_LOG: «air 74 (nearest 171 m), fleet 7, lanes 58»; D:/tmp/air_ship.png (a hull inside a green lane
+  tube), air_z3b.png. Not measured: frame cost (ground traffic is ~1750 vehicles in 3.5 km). NOT accepted.
+  Correction: «фронтир - это небольшой грузовик для локальной доставки»; the Sol bloc's local carriers here are OCS-4 /
+  SL-12 / ST-6 (the Cobretts belong to cognium_pool - not in Sol's open / licensed trade).
+- 2026-11-18 HUB TRAFFIC FRAME COST (author: «надо после изменений в рендере проверять стоимость кадра»; rule saved).
+  A/B in build-relwithdebinfo, ELITE_DEV_NO_VSYNC=1, ELITE_DEV_FRAME_STATS=5, start 40 m over an avenue of plane_demo,
+  DEV switch ELITE_DEV_HUB_TRAFFIC=0|ground|air (default both). First version: none 13.9 / ground 14.6 / air 18.3 /
+  all 19.3 ms p50 (air +4.4: 40 ships in view = 1100 mesh draws - the ship packages are LOD0 only, 24-68 parts, and
+  nothing was frustum-culled). Fixes: frustum cull per vehicle / ship (city-frame planes), packages cached and
+  prewarmed once per frame, ships beyond 800 m draw only their 4 biggest parts (1100 -> ~245 draws), ground radius
+  2 km (a car ~2 px there), air 5 km. Result (clean runs): none 14.0 / all 16.6 ms p50 (+2.6), p95 22.9 / 27.1. The
+  separate ground / air runs of the last pass were disturbed (CapCut, Telegram, a python ai-studio process on the GPU:
+  100-1400 ms frames) - to re-measure on a quiet machine. Next if needed: real coarse LODs for the ship packages,
+  thinner distant road traffic. ELITE_DEV_TRAFFIC_LOG prints the counts (air in view / mesh draws).
+- 2026-11-18 HUB TURNOVER + DAILY SHIP SCHEDULE (author: «прописать товарооборот и сделать тупо расписание, которое
+  будет лежать и на сервере и на клиенте ... сколько реально нужно доков ... все доки сделать доками - но на клиенте ...
+  игрок нападает на корабль. тот становится настоящим»): tools/models/hub_schedule.py (called by hub_belt_world.py) ->
+  assets/data/navigation/hub_schedules/<hub>.json (elite.hub_schedule.v1): client-side docks (2 berths per rim pier,
+  fuel berths, 8 frontier pads per parking deck, star pads), turnover t/day (consumer ~8 kg/resident/day, industry 1500
+  / block, stores-logistics-port 2500 / block transshipment, refuel 2000 / block), visits of a 24 h cycle (the bloc
+  fleet's cargo hulls; service hulls excluded), dwell by cargo, dock assignment with waiting, demand per dock kind.
+  plane_demo: 215 visits/day (120 bulk, 88 frontier, 7 fuel; OCS-4 115, SL-12 45, ST-6 43, C-120 12); cargo berths 68
+  available / 12 needed at peak, pads 45 / 9 (the city has ~5x the berths its turnover needs); fuel berths 0 (the
+  refuel block's fuel piers are not on an open side - fuel goes over cargo berths).
+  Shared code game::navigation::traffic::HubTrafficSchedule (+Catalog): the visit pose as a function of the universe
+  time (berth: in along the pier axis from 3 km out, decelerating; docked; lift 80 m, turn, out; pad: down from 900 m,
+  up and away from the centre). Client: SceneRenderer draws the visits within 5 km, frustum-culled, far ships as their
+  4 biggest parts (drawShip shared with the air traffic). Evidence: «7 visits active (nearest 267 m)»; D:/tmp/
+  visit_pad_z.png - an ST-6 parked on a parking pad. NOT yet: the server materializing an attacked visit (next), the
+  approach paths vs the overrun / tangential design, frame cost of the visits (to measure).
+- 2026-11-18 AUTHOR'S NEW BATCH (author away for a while; work autonomously):
+  1. Turnover + schedule shared by server and client (DONE first slice above); docks client-side only; the server only
+     needs: a player attacks a scheduled ship -> it becomes real and the server simulates it (NEXT).
+  2. All hubs of the jurisdiction built on the planar template, varied (bigger / smaller, elongated, disc-like, a pair
+     of layers); then «создай эти хабы везде где они уже распланированы» - every planned hub except the MINES («шахты -
+     надо будет подумать»). Hub fixes: power GENERATORS per block / several blocks, security services - POLICE docks and
+     RESCUE (МЧС) docks, named by their location. TRUSSES everywhere («хотя бы в качестве мачт или опорных столбов»).
+  3. Models: a BEACON (large, antennas, rotating habitat, dock, two guard fighters, staff, own generator, needs crew
+     rotations and supplies); RESEARCH LABS (large, torus modules, generator, dock; several distinct models; on moons,
+     small asteroids or free in space; need supplies) - agents running (tools/models/units/space_stations.py,
+     hub_services.py).
+  4. PEOPLE: from the astronaut model several characters - heights, builds (thin, fat, very fat, muscular, athletic,
+     obese, normal), female / male / children - by re-proportioning; all with skeletons and animation incl. with
+     props; a separate mesh editor section «Люди»; people are the same in every colony.
+  5. NATIONAL STYLES (now requested, superseding «national styles only later»): hub modules per political system in its
+     spirit - plainly practical somewhere, hints of ancient architecture elsewhere, Chinese descendants in ultramodern
+     buildings, Americans in compact houses (much territory), some national-style buildings; on arrival hubs must look
+     different but share one mechanics layer (no binding to a specific place).
+  6. SURFACE SETTLEMENTS on airless bodies (like the Moon) from the hub elements; size plausible for the population;
+     the same logistics, transport, pedestrians.
+  Order taken: finish 1 (server materialization), integrate 3's service modules into the generator (2), people (4,
+  agent), style kits (5, agents), then 2 (all planned hubs), then 6.
+- 2026-11-18 SERVICES, POWER, BEACON, LABS (agents + integration):
+  - tools/models/units/hub_services.py (agent): hubs_power_plant (520 x 520 m: 2 fusion domes, 3 rows of 180 m
+    radiators on lattice masts, transformer yards), hubs_power_unit (160 x 120), hubs_police_dock (station, hangar,
+    deck at 16 m with 3 pads, 2 PC-30 parked), hubs_rescue_dock (hangar with open bay, 2 pads, tug, jib crane, tanks);
+    lattice trusses on all (author: «фермы везде обязательно»). Previews D:/tmp/svc_*.png.
+  - tools/models/units/space_stations.py (agent, editor «Станции»): stn_beacon_core (~0.5 x 0.4 x 1 km: antennas, 62 m
+    dish, reactor on a truss boom, hex dock z -400, apron with 2 fighters, supply apron) + stn_beacon_hab_ring (spinning
+    habitat, r 150 m, origin = spin centre at the core's origin about +Z); labs stn_lab_torus_a (+ _ring, r 300 m,
+    spinning), stn_lab_torus_b (twin static tori, experiment boom), stn_lab_torus_c (flat torus, 8 pods, telescope),
+    stn_lab_surface (on 12 truss columns, ground y 0 - for moons / asteroids, landing pad at (-300, 14, 0)).
+    Previews D:/tmp/stn_r1.png, stn_r2.png. Not yet placed in the world.
+  - Generator: hub_plane.add_services(map) (also applied to saved maps by tools/models/hub_map_add_services.py): one
+    power block (hubs_power_plant) per ~10 blocks from inner industry / storage blocks, one services block (police +
+    rescue + power unit) per ~16 blocks on rim blocks with an open side; zones "power" / "services" (editor colours,
+    the F12 plan colours); their plan block titles carry the side of the city («Службы: полиция и МЧС · Восток»).
+    Schedule: the police deck's free pad gets a PC-30 patrol every 90 min (25 min down), the rescue pad an ST-6 every
+    4 h. plane_demo map upgraded: 4 power + 2 services blocks; rebuilt + packaged (6230 nodes); schedule 210
+    visits/day; cargo berths 52 / 11 needed, pads 29 / 8, police 2 / 2, rescue 2 / 1. Evidence: D:/tmp/svc_game.png,
+    power_game.png (in game).
+- 2026-11-18 SCHEDULED VISIT -> REAL SHIP ON ATTACK (server): GameSimulationScheduledTraffic.cpp - castScheduledVisits
+  (the laser beam / the missile step segment in the city frame vs every active visit as a sphere of half its length,
+  the pose by m_orbitalUniverseTimeSeconds from the shared HubTrafficSchedule) -> materializeScheduledVisit: spawns the
+  visit's catalog ship (ShipDescriptorRegistry::resolve by the visit's passport, now in the schedule) at the world point
+  through the hub navigation frame, with its schedule velocity; the city's materialized visit indices replicate
+  (ObjectSnapshot::materializedVisits) and the clients stop drawing that visit. Evidence (offscreen, ELITE_DEV_CITY_FIRE
+  laser at a docked OCS-4): «visit plane_demo.v0062 (OCS-4, bulk) attacked -> real ship 176 in hub plane_demo», then the
+  laser «target 176 at 311 m, 1.1 deg off the boresight» and the new NPC fires back / moves (simulated). First try
+  placed it via the city axes -> 6.7 km off; fixed through the hub frame's worldToLocalPosition.
+- 2026-11-18 PEOPLE (agent): tools/people/make_people.py (Blender, ~50 s) -> 13 characters from the milo_002 astronaut
+  (person_m_normal / tall / thin / athletic / muscular / fat / obese, person_f_normal / thin / athletic / fat,
+  person_child_teen 1.45 m, person_child_small 1.10 m): 22-bone skeleton + prop.L / prop.R sockets (weights computed on a
+  sealed voxel copy, transferred), 7 clips (idle, walk, run, wave, carry_idle, carry_walk, tool_use); props prop_box,
+  prop_tool. glTF + model.json (kind person) in assets_source/models/people; mesh editor section «Люди»
+  (MeshEditorCatalog.cpp + settings). Contact sheet D:/tmp/people_lineup.png. MISSING for animation: the editor imports
+  glTF meshes as static OBJ (no skin / clips; GLTFLoader not vendored); the game has no skinning at all (asset skin
+  section, bone palette shader, clip player, prop attachment) - plan recorded in the agent report.
+- 2026-11-18 PEOPLE ANIMATION PREVIEW + NEW CLIPS + ARM CLEARANCE AUDIT (agent, not committed): mesh editor opens a
+  skinned glTF with clips in a new step «Анимация» (MeshEditorSession::animPreview copies the glTF + bin + textures and
+  the passport's props into <web>/cache/<cat>/<id>/anim/, url + clips in the 'opened' message; command animCrowd for
+  «все люди»; viewer.js GLTFLoader r128 + AnimationMixer + SkeletonHelper, props on node prop.R; clip list, play /
+  pause, slider, speed, loop, skeleton, all people in a row). make_people.py: new clips dance (4 s), jumping_jacks
+  (1 s), jump (1.6 s, ballistic flight g = 9.81), bow (2.6 s), leg IK for planted feet; per-frame clearance audit
+  (arms vs the person's own torso slices / helmet ellipsoid / thigh capsules, rest-pose relative) with automatic
+  remedies (arm spread, elbow swivel IK, per-clip alternative); table in D:/tmp/people/work/people_clearance.json and
+  the passports (animations[].clearance_cm / spread / alt / loop / prop). Finding: nothing limited the arms before -
+  almost every clip put the arms 3-20 cm into the bulky suit. After: 139 of 143 clips clear; still inside:
+  person_m_muscular carry_idle / carry_walk (-3.7 cm), tool_use (-5.7), person_m_obese tool_use (-1.6) - author's
+  call (bigger box / thinner arms / other pose). Evidence: headless Edge CDP test (scratchpad people_anim_test.mjs)
+  all PASS, shots D:/tmp/people_shots/people_anim_*.png. Game side still has no skinning.
+- 2026-11-18 NATIONAL STYLE KIT EAST (agent): tools/models/units/hub_style_east.py - 15 modules hubx_{ultramodern,
+  ancient,indian}_{tower,slab,office,downtown,landmark} (twisted glass tower, pearl TV tower; Pharos tower, stoa, agora,
+  acropolis temple; shikhara tower, haveli block, jali office, gopuram, Taj-like landmark), tinted lit facades
+  eq_hub_facade_*, trusses on all; STYLE_ZONE_MODULES (downtown / residential / hotel) and STYLE_POLITIES (ultramodern:
+  gj832_tianhe, eps_eri_harmony, hd40307_firmament, tau_ceti_cognium (debatable); ancient: lalande_hellas,
+  hd114783_hellas3; indian: delta_pav_karma, delta_pav_freekarma, hd20794_newindia). Previews D:/tmp/east_prev/.
+- 2026-11-18 NATIONAL STYLE KIT WEST (agent): tools/models/units/hub_style_west.py - 16 modules hubx_{practical,
+  belt_clans,american}_*: concrete armour towers / bunker slabs / brutalist HQ / exoskeleton shaft / bastion with radar;
+  welded tank towers / stacked habs / rock-dome market / hull tower / clan rock; 57-house American suburb block, brick
+  walk-up, strip mall, art-deco tower, glass condos, capitol + mall. STYLE_POLITIES: practical (wolf359_citadel,
+  proxima_outpost, cyg61_kern), belt_clans (eps_eri_strife, gj581_freeclans), american (hd20794_hellas2). Previews
+  D:/tmp/west_*.png. Integration: tools/models/units/hub_styles.py (style tables, polity_style), hub_belt._module_obb
+  knows hub_services / hub_style_* (the generator's footprints), hub_plane._zone_modules(style).
+- 2026-11-18 HUB GENERATION PROFILES + THE SOL JURISDICTION'S HUBS AS CITIES: tools/models/hub_profiles.json (size,
+  shape blob / disc / long, under on / off, port share, style, attach offset); hub_plane.hub_profile + generator
+  (disc: quiet rim, long: half noise; under off; port front threshold); hub_belt_world.py --attach --city-offset:
+  the city + its spinning bodies / dock join an EXISTING hub as modules "<hub>.city" / "<hub>.cty_*" (marked
+  "generated": "hub_city"; only these are replaced; the hub's canon station and docks stay - checked: Vysokiy keeps
+  hub_hex_dock_a / hub_hex_dock_base / guidance_dock_cylinder_b); tools/models/hub_attach_profiles.py runs it for every
+  profile. Built, attached, packaged: earth_orbital_hub (Высокий, 6349 nodes), earth_hub.tikhiy (disc 11x9, 13359),
+  canaveral (long 10x5, no under level, 5305), wenchang (long 11x6, port 0.9, 8356), kourou (disc 7x7, 6127), ekvator
+  (6331), aurora (disc 6x5, 4389); the cities lie 6 km below each hub's station. Each has its plan / lanes / schedule
+  (e.g. Tikhiy 426 visits/day, cargo 44 / 17 needed, pads 97). Ceres (mining) untouched («шахты - надо будет подумать»).
+  Evidence: D:/tmp/tikhiy.png, vysokiy_city.png (in game over the Earth). Gates: 203 pass, the 3 pre-existing reds only.
+  NOT verified: docking regressions - this afternoon's offscreen runs ran at exactly 4 fps (frame-gap 250 ms x 716,
+  own frame 3.5 ms: the display / session throttled while the author is away), the assisted pre-turn limit-cycles at
+  4 Hz in BOTH the Vysokiy run and the reference plane_demo dock run that docked before -> re-run when the machine is
+  attended. A Vysokiy run without START_AT failed «ship is not matched to target Hub frame» with the OLD world too (the
+  matched dev start needs a city point) - not a regression.
+- Open after this batch: (a) the planned hubs of the OTHER colonies (sites_3126: 581 sites; minus 115 mines ~460) are
+  map catalog entries only, not world objects; a city assembly per site (2-5 min packaging each, 100+ KB of plan /
+  lanes / schedule data) does not scale -> proposal: generate the planar city at runtime from the hub id (port the
+  generator to C++ + instanced module rendering) and simulate other systems' hubs; (b) surface settlements on airless
+  bodies; (c) skinned animation (editor GLTFLoader + game skinning) for the people; (d) the beacon / labs not placed in
+  the world yet; (e) a frame-cost A/B of the scheduled visits.
+- 2026-11-18 AUTHOR'S DECISIONS (after the Sol batch): (1) ALL hubs are built «by id» (generation), on the condition
+  that every hub is repeatable and recognizable: unique landmarks (statues, arch / plain bridges, a skirt around a
+  building, a very wide square with a monument in a corner, the block layout itself). Plan: the generator writes a
+  small frozen map per hub (repeatable even if the generator changes later), the game draws the city from the map with
+  shared instanced module models - no per-hub packaging. (2) Surface settlements = the same hubs on a planet; terrain
+  must give recognizable canyons / ridges / plains in the same places - the surface field is already deterministic
+  from the seed (FeatureClass: MountainRange, ImpactCrater, Volcano, Lake, IceCap); canyon / rift and plain classes are
+  missing. (3) Beacons in every inhabited system and along interstellar routes (the model has 1855 beacon nodes in 28
+  systems, the runtime only Sol's 19 relays); labs where something is interesting (around «Жопа мира», unmined belts,
+  some anomalies), not everywhere; missing kinds to place next: military outposts, route refuelling stations, pirate
+  settlements, smuggler hubs. In work: placement pass in tools/colonization_lab (agent), landmark kit
+  tools/models/units/hub_landmarks.py (agent).
+- 2026-11-18 HUB CITIES ASSEMBLED IN MEMORY (commit 5bfdc8062): tools/models/hub_city_layout.py writes the frozen
+  layout src/assets/data/navigation/hub_cities/<hub>.json (module palette, node groups, nodes [id, module, group,
+  pos, rot] in the packaged assembly's order; 0.1-0.9 MB vs 50-150 MB per-hub package); src/model_asset/HubCityAssembly
+  builds the metric production asset from it + the shared module packages (module LOD {0,2,3} -> city LOD 0..2,
+  OBB-box group proxies = LOD3 module_proxy, "hlod" 12 m, collision "<node>.<part>.<k>"). ModelAssetGpuLibrary and the
+  server's hit volumes (GameSceneSetup packageHitVolumes) use it when a layout exists (DEV A/B: ELITE_DEV_CITY_PACKAGE=1
+  = the old package). Evidence: EliteHubCityAssemblyCheck - 9 cities (7 Sol + plane_demo / plane_ruin) SAME as their
+  packages (nodes, collision ids / placement, placed triangles per LOD, proxies, groups, bounds); assembly 50-190 ms per
+  city (1.3 s cold); in game D:/tmp/tikhiy_layout.png = the same city; frame A/B Tikhiy 2 x 70 s no vsync: layout p50
+  15.7 / 16.4 ms p95 37.0 / 36.6 vs package p50 16.1 / 17.1 p95 37.2 / 37.5 (noise). Fixed on the way: stale module
+  packages hubk_hab_a/b/c (2244 tris vs the 128-tri source) repackaged; hubm_* and the 19 hubl_* landmarks packaged.
+- 2026-11-18 PLACEMENT PASS (agent, commit 27f79ba8c): tools/colonization_lab/outposts.py - 171 beacons into the runtime
+  (25 bridge, 60 relay, 65 military, 21 interstellar route relays), 14 labs, 21 military outposts, 5 refuelling
+  stations, 10 pirate settlements + 7 smuggler hubs (hidden_sites); docs/WORLD_OUTPOSTS_PLACEMENT.md (rules, per-system
+  table, assembly proposals, 9 open questions). Not yet: economy_live.py rerun (+183 hubs in the economy files), the
+  beacons / labs as world objects.
+- 2026-11-18 COLONY HUBS + TOUR FIXES (commits b072615f2, aa515ca90): tools/models/hub_colonies.py <site id> - profile
+  (size from population 22k / block, shape / under / port from the id, style = the polity's, landmarks on), world entry
+  (an orbital hub of its system), city attach, frozen layout. Built: Citadel (Wolf 359, practical), Agora (Lalande,
+  ancient), Strife belt (eps Eri, belt_clans), Homestead (HD 20794, american), New Karma (Delta Pav, indian), GJ 832 b
+  platforms (ultramodern, 7182 nodes), Vorota (HD 104067, far). units/hub_landmark_place.add_landmarks (signature +
+  landmarks; only with "landmarks": true - the Sol cities keep their frozen maps). GameServer::materializeWorldSiteHubs
+  spawns the authored hubs of other systems (their body gets no generated station).
+  FIXED (tour 2026-11-18): (1) hubs of other systems had a 0 s Kepler period (gravity parameters applied by
+  switchSimulationContext BEFORE they spawned) -> hub velocity 29 000 km/s, a route to them never ended; applied
+  after spawning (Citadel: orbit 5.5 km/s, period 8305 s). (2) A hidden window with vsync ran at 4 FPS (the GPU wait
+  ~190-250 ms a frame) - the client autopilots stepped at 4 Hz and rocked the ship (the author saw it on the preview;
+  most likely also this afternoon's "docking regressions"): Window::swapBuffers, unfocused + 3 frames >= 150 ms -> vsync
+  off, frames paced to 60 Hz; vsync back on focus. Evidence: D:/tmp/tour4 (Sol -> Wolf 359 jump + 36 M km route to the
+  Citadel: ROUTE COMPLETE in 620 s, frames 01..06). DEV script verbs: waitfor:system:<id> | route | hubnear:<hub>:<km> |
+  dockdone [@max s], capture:<png>, dock:<module>:<anchor>; ELITE_DEV_HUB_VEL_LOG=<hub>.
+  OPEN: the jump exit warning «норма до 1106 км» ignores the currents' residual (52 000 km at Wolf 359, lock 200) - it
+  fires on every jump into a system with currents (a design question for the author). Gates: 203 pass, the 3 old reds.
+- 2026-11-19 DOCKING START + JUMP PROCEDURE (author 2026-11-18: «не игра должна говорить, что ей нужно, а автопилот
+  включать нужный ему режим»; the computer owns the modes and its own boundary conditions). Root causes (live, Wolf 359
+  Citadel, D:/tmp/dockrepro3..14):
+  (1) docking held 0 m/s for 20 min: the start sample of the accepted program carries the ship's residual drift
+  (0.03 mm/s, any direction) as its velocity; applyRuntimeProfile steers the whole profile along that direction -> the
+  +45 m/s2 ramp projected onto the path became -28 m/s2. RouteExecutionCore::buildContinuousReference: a sample below
+  0.05 m/s takes the path's own direction (to the next sample). (2) Same drift read as a course-envelope breach in
+  ManeuverTrackingController (Assisted spatial) -> feed-forward dropped, no launch: course loss measured only above
+  0.05 m/s. (3) Station-held ships skip the matched-frame refresh: travelFrame stale while the station wrote the local
+  offset against the live hub -> at the release normal flight put the ship 96 km under Wolf 359 e (crash); the station
+  pose step now refreshes the travel frame (GameSimulationDockTraffic). (4) requestJump ran outside the ship's system
+  pass (server messages / pending loop) and planned the start zone in ANOTHER system's gravity context (zone at the Sun
+  while in Wolf 359) -> the zone hold braked the planet's orbital speed, the ship was run down: requestJump defers to
+  the ship's own pass (passOwns). (5) The procedure refused «нужен нормальный полёт» / failed during a station
+  departure: now it asks the departure when docked, waits for the release (PendingJumpRequest, logged reasons),
+  leaves stabilization itself; the zone's dominant body is decided by BodyFlightRules::dominantBody at the ship (not
+  read from the free flight's not-yet-filled primary); an unknown zone-body velocity holds the ship's own (not 0).
+  EVIDENCE: D:/tmp/dockrepro14 - route 1209 s, docking 197 s (also 170-241 s in 5 earlier runs, no stall), jump from the
+  pad: departure -> release -> normal flight -> zone at Wolf 359 e -> aim -> charge -> JUMP 3->4 in 470 s; exit at
+  Lalande. Unit: maneuver_tracking_controller / in_corridor_centering / tunnel_proving_ground / assisted_layout_matrix /
+  autopilot_law_api PASS (standalone build D:/tmp/navtests); client_route_autopilot_tests FAILS «runtime speed profile
+  erased Newtonian centripetal feed-forward» ALSO on the baseline (pre-existing; it stops at the first failure).
+  DEV: ELITE_DEV_ROUTE_START_DUMP=1 ([RouteStart] accepted profile + geometry); runs go under the scratchpad
+  watchdog.sh (docking stall / silent log / player destroyed -> kill). NEXT: the colony tour again under the watchdog.
+- 2026-11-19 HUB SECURITY / TRAFFIC CONTROL / COLLISION AVOIDANCE (author: «оборонительные установки ... увязать все
+  компоненты хаба в работающую реагирующую на все систему ... красные корридоры ... санкции»; «любой мирный корабль ...
+  маневр уклонения в меру своих возможностей»; «любой корабль попавший в близкую зону видимости игрока становится
+  настоящим»). docs/HUB_SECURITY.md. Server GameSimulationHubSecurity.cpp (+ pure src/game/traffic/HubSecurity): wrong-way
+  judge in hub lanes (warning -> 1500 Cr -> +750/10 s +300/km, x1.5 repeat, cap 15 000, lock at 30 s; never fire in
+  peace), fines banked via economy::service::chargeFine (BankingModel payFine: unpayable = 0 % fine debt; zone fines
+  too, ECONOMY_BANKING §9a); air-traffic slots shared (navigation/traffic/HubAirTraffic) and PROMOTED to kinematic
+  catalog ships within 5 km of a player (hand-back > 6.5 km on track / lane end; cap 16; replicated city
+  promotedAirSlots); Newtonian evasion offset layer (CPA, RCS / main drive after turning, starboard rule) for promoted +
+  dock traffic; deterministic defence ring (rim PD lasers / coilguns, radar, 8 pickets; strays every 60 s killed at the
+  engagement radius); client HubDefencePresentation + hubd_* models (tools/models/units/hub_defence.py); wire schema 49.
+  Unit check EliteHubSecurityCheck 29/29. Audit fixes in: per-system caches/timers, threat cache per (time, system),
+  thread-safe catalog init, forgetShipState on despawn, fine totals mirror the bank result. LIVE (Debug,
+  D:/tmp/hubsec1..4): promotion works (16 slots promoted / handed back at lane ends, no crash); the wrong-way judge and
+  the evasion did NOT trigger live - a free-flying player measured against the city object in stage 3 sits ~0.6-0.7 km
+  off where it was put (y/z, both with and without a one-step velocity projection; projection left at 0), so it was
+  never inside a lane; the same offset shows in the CPA (d ~600-700 m for a head-on lane ship). OPEN: find the frame
+  / epoch of a free-flying ship vs the city static object in stage 3. Unit check passes. NOT accepted.
+- 2026-11-19 NIGHT BATCH (author away; agents + lead; built together, gates 204 pass / 6 known / the 3 old new-reds:
+  check_client_galaxy_map_catalog, check_ui_platform_fonts, system_map/check_architecture - pre-existing):
+  HUBS: docs/HUB_COVERAGE.md (tools/models/hub_coverage.py): 637 inhabited sites; 277 new orbital colony cities
+  (hub_colonies_batch.py), all 293 cities assemble (EliteHubCityAssemblyCheck). New shape «spire cluster»
+  (units/hub_spire.py, author reference D:/tmp/refs/yt_lqpHpz6Tv2s: towers with cantilevered pads, lit causeways at
+  560/720/880 m, capital-ship berth), sha1 pick for 50 hubs. Server: assembleHubCityCollision (collision only) - start
+  14.4 GB -> 1.77 GB. Client: cities beyond 400 km not assembled until near (SceneRenderer, ModelAssetGpuLibrary::get
+  loadIfMissing) - Sol entry frame 10 s -> 2.4 s. OPEN: minimum city 12 blocks oversized for small sites; 146 surface,
+  39 outpost, 20 hidden, 12 graveyard, 12 belt/Lagrange sites without a hub (see the doc); the near-load is synchronous
+  (~0.1-1.3 s per city on approach).
+  FUEL: refuel service (GameSimulationRefuel, docs/FUEL_STATIONS.md, 647 places, 32 illegal; Ctrl+U, verbs refuel /
+  waitfor:refueled); fuel = J charge (jump_charge good). ECONOMY: docs/ECONOMY_BANKING.md - 22 national banks /
+  currencies, wallet + accounts + overdraft, no-death-spiral rules (emergency credit 25k Cr / 90 d, tow never refused,
+  restructuring), daily price step with damping; fuel free (prices.fuel_free_of_charge / ELITE_FUEL_FREE) with the list
+  price computed; F8 ФИНАНСЫ tab (live: D:/tmp/tour/00_finance.png - 21 000 Cr, Казначейство СА, fuel list 7 790 Cr/t,
+  to pay 0). EliteEconomyCheck 46/46. Wire schema 48.
+  FORTUNA (Fomalhaut 61): closed by data (collision cascade 3121: tau 16, corridors 2/3 collapsed, Fortuna-1 a 0.25 deg
+  thread) + a narrow rule: approach-shell drift (driftAuPerTau). EliteJumpAccessCheck: blind 99 % caught; fresh lane
+  record 2.9 %. Lexie: AUTHOR 2026-11-19 CANON - habitable paradise; look block (sapphire/turquoise sea, glint, night
+  sea glow, airglow, aurora) - NOT yet the "most beautiful": renders flat, night side shows blocky patches - next pass.
+  Day-length cloud belts now apply to all planets. WORLD'S ASS: docs/WORLDS_ASS_REGION.md + canon/worlds_ass_region.json
+  (3 pirate groups, rogue Cognium «Нить» + Tianhe «Хоу И», 4 labs, 8 wrecks + field «Тихая заводь», PROPOSAL lost
+  generation ship «Парамита» - author to confirm). MINES: 24 hubq_* modules + hubq_mine_site (docs/MINE_MODELS.md;
+  bucket wheel, rails/wagons/loco, pipe conveyor, pit kit, canyon, portal, headframe, settlement, bulk terminal, pier,
+  drilling rig) - site reads flat; next: sculpted asteroid terrain, more canyons.
+  ROUTE FIX: J-field level replicated (motion.jFieldLevelMps2): the route pilot took the net-of-medium accel (negative
+  at 0.87 c) for a ramping field and dropped to 1 g - overshot Agora (Lalande, 417 M km). Tour restarted with it.
+  OPEN for the author: questions in each doc (banks/currency names, start money, fuel tax; Fortuna risk display and the
+  trapped-inside rule; HD 102195 only via the ice shoal; «Парамита»; mine placement; who owns Sol hubs in
+  initial_world_state.json - world_sites.py overwrites them).
+
+### Author's future notes (2026-11-19, not to implement yet)
+- Pirate hubs built from the hulls of old ships, once full ship hull models exist (welded / docked derelicts as modules).
+- Fortuna approaches through low-visibility clouds with glitches (dolphins alongside), another wrecked lost ship there,
+  flocks of thousands of birds = souls (Windaria image).
+
+## ARCHITECTURE FIXES AFTER THE AUDIT 2026-11-19 (author: "берись за найденные проблемы, без большого рефакторинга")
+### 1. Multi-system correctness - DONE (live + load-test evidence)
+- Defect (verified in HEAD, seen live): client commands were drained in GameServer::update BEFORE the system passes, in
+  the last pass's context -> toggleStabilization / toggleFreeFlight / jEngineBlocked used another system's bodies (live:
+  a jump at HD 20794 zoned on the Sun). Fix: a non-empty command queue switches the context to its ship's system.
+- Combat ran only in pass 0 over all systems' ships (lasers / missiles / fragments / ship-static collisions crossed
+  systems, missiles took pass 0's gravity). Fix: updateCombat(dt, tickStart) - bookkeeping once per tick, lasers and
+  missiles per pass for that system only (CombatMissile::systemId), fragment and static-collision filters by system.
+- Per-pass timers made per system: NPC refuel scan, activation shadow (its decisions erased per system, not cleared
+  globally); pending jump age only in its own pass.
+- Guard: GameSimulation::commandContextOk (flight, J engine, refuel, dock arrival / departure) logs
+  `[SystemContext] VIOLATION` and counts; EliteServer --load-test prints the count.
+- Evidence: load test 61 bots / 61 systems / 300 s: 0 violations; same with ELITE_DEV_NO_COMMAND_CONTEXT=1 (old path):
+  129+ violations (toggleStabilization 47, toggleFreeFlight 47, toggleJEngine 35). Live two-system run (Sol NPCs + the
+  player in HD 20794, 2.0 passes/tick, D:/tmp/multisys): jump (reference K3), docking 242 s, refuel 0.72 t, flight modes,
+  laser + missile hit at 2.9 km, 0 violations. check_active_system_context / check_server_runtime_ownership PASS.
+- Side finding: tour part 2 docking refusals were the DEV start not applied (non-Sol hub id) - with a valid start the
+  same hub docks (D:/tmp/dockrepro).
+- Load test with ELITE_DEV_JUMP_CHARGE_S=1: 24 of 34 jumps done across 49 systems, 0 violations; without the fix 207.
+### 2. Lifetime - DONE
+- Defect (verified): ~25 EntityId-keyed tables had no common removal; m_burnStates / m_laserUnits / m_combatLoadouts /
+  m_zoneWatch / m_combatTracks were never erased; removeTrafficShell cleared 2 tables. hexDockPairs / hub security
+  caches validated by m_staticObjects.size() (an erase + insert keeps the size: dangling pointers).
+- Fix: GameSimulation::forgetShipDetail(id) (ship -> shell: the full ship's transient state) and forgetShip(id) (the id
+  leaves: everything; removeTrafficShell and the promoted-traffic despawn call it). m_staticObjectsGeneration bumped by
+  spawnStation / setStaticObjectIdentity / setStaticObjectMapInfo / setStaticObjectPackageHitVolumes /
+  attachStaticObjectToHub; hexDockPairs and the hub security city cache validate by it.
+- Contract: tests/architecture_contracts/check_entity_lifetime.py (54 EntityId tables; each erased by forgetShip* or
+  listed with a reason; no size-validated static caches; mutators bump the generation) - PASS, and FAILS when a table is
+  dropped from forgetShip (checked). Live two-system rerun D:/tmp/multisys2: jump, docking 258 s, refuel, combat, 216
+  promoted-traffic despawns, no crash. EliteHubSecurityCheck 29/29.
+### 4. Economy: atomic save, ONE fuel stock, ONE fuel price; fuel PAID again - DONE
+- Defects (verified): the state file was rewritten in place (a crash = "unreadable, fresh state", every account
+  zeroed); the simulation kept its own m_fuelStockT (from fuel_stations.json, only decreasing, never saved) next to the
+  economy's stock; the station markup (priceFactor) was applied only in the simulation, the wallet showed another
+  price; payment came AFTER pumping and a refused payment left the fuel in the tank; fuel_free saved, never read.
+- Fix: writeFileAtomically (<file>.tmp + MoveFileExW REPLACE_EXISTING|WRITE_THROUGH; failure keeps the old file);
+  quoteFuel carries the station markup (FuelQuote::stationFactor); m_fuelStockT removed - the refuel PREPAYS through
+  service::buyFuel (EconomyServer::chargeFuel: what the account can pay, else the lifeline minimum on credit; the
+  tonnes leave the stock at once), the pump delivers at most the prepaid amount, returnFuel/refundFuel gives back the
+  unused part (money + stock); fuel_free is a rule, not saved. fuel_stations.json = pump / tank infrastructure (its
+  stock_t only as the tank capacity when no economy runs).
+- Author 2026-11-19: "уберем нулевую заправку для игрока ... пусть берет кредиты": national_banks.json
+  fuel_free_of_charge = false (ELITE_FUEL_FREE=1 for tests); start money unchanged (20 000 + 1 000 cash, overdraft
+  4 000, lifeline 25 000 / 90 d).
+- Evidence: EliteEconomyCheck 52/52 (new: markup x3 in the quote, no markup at a legal hub, atomic create/replace/no
+  temp left/failed write keeps the file, prepaid 0.5 t - 0.2 t refunded = paid 0.3 t and stock -0.3 t). Live
+  D:/tmp/econlive: refuel at Homestead prepaid 0.715 t x 5 781.39 Cr/t = 4 136 Cr; F8 FINANCE before 21 000.00 Cr,
+  after 16 802.10 Cr, "-5 611.62 HMD заправка 0.72 т (комиссии 62.04 Cr)", the shown price 7 844 HMD/t = 5 781 Cr/t =
+  the charged price; station stock 1 911.0 -> 1 910.3 t.
+- Open (trade MVP): the F8 MARKET tab still shows the stateless EconomyModel::market(day) for goods - to be replaced by
+  replicated server quotes in trade step 2 (docs/TRADE_DESIGN.md).
+### 3. Hub / city runtime - DONE
+- HubPlanCatalog / HubLaneCatalog / HubTrafficScheduleCatalog: already thread-safe in HEAD (function-local static
+  initializers, read-only after; committed with the hub security batch) - verified.
+- New race found: EliteCobraMk1::EliteCobraMk1Descriptor() set `static bool initialized = true` BEFORE filling the
+  descriptor (server thread + client registries) -> a function-local static initializer.
+- Defect (verified): the FIRST assembly of a city ran synchronously in the render frame (hubCityAsset), no
+  one-city-per-frame limit (only the construction-stage rebuild was off-thread). Fix (ModelAssetGpuLibrary::get): a
+  layout city is assembled off-thread (assembleHubCity in std::async, one job at a time), uploaded at most once per
+  50 ms (one a frame), not drawn until then; the job's CPU asset is dropped after the upload (the cached second CPU copy
+  in hubCityAsset is no longer made). Per-hub legacy packages (no layout, 9 hubs) still load synchronously.
+- Evidence: live D:/tmp/citycheck - Homestead city assembled off-thread (31.5 ms), docking 253 s, the city drawn at the
+  pad (3_docked.png); Earth hub D:/tmp/cityasync (assembled 79-97 ms, drawn after; the start frame 454 ms vs 1056-1467
+  ms in the previous build - that frame also holds other first-use work, so not a clean measure).
+### 5. sites_3126 cached per process; ONE jump exit rule - DONE
+- Defect (verified): the 1.7 MB sites_3126.json was parsed per RequestJump command (GameServer), per jump-exit
+  fallback (GameSimulationJump) and per dock site at a system's first pass (GameSimulationDockTraffic); two exit
+  pickers with different tie-breaks.
+- Fix: WorldSitesCatalog::shared() (loaded once, thread-safe static) used by GameServer (jump + startup), the dock
+  sites, JumpSumps; src/game/navigation/rules/JumpExit.h pickJumpExitBody - ONE rule (most world sites, then canon,
+  then heaviest; planets >= 1000 km) fed by the atlas (server) or the gravity bodies (fallback, logged); the fallback
+  no longer takes a companion star for a planet (mu < 13 Jupiter masses; load test: 17 Cygni B).
+- Evidence: live jump to Eps Eri without a named exit -> eps_Eri_b (= the tour's choice); load test 61 bots / 240 s
+  with fast jumps: 19 / 26 jumps done, 0 context violations, server tick p50 31 / p95 59 / max 96 ms; the entry
+  catch-up (~0.5 s of ticks after a jump) is the same before and after - another cause, open.
+### 6. One writer of initial_world_state.json - DONE
+- Defect (verified): 4 tools read-modify-wrote the file (world_sites.py, hub_colonies.py, hub_belt_world.py,
+  hub_district_world.py); world_sites.py replaced EVERY system-0 hub - its next run would have dropped 23 Sol hubs
+  (Luna, Mars, Jovian moons, Titan, Venus, belt_demo, plane_demo, plane_ruin, proto_district, ...) AND erased the city
+  modules hub_belt_world --attach had put on 7 Earth hubs (tikhiy's dock_modules -> null).
+- Fix: tools/world_state_io.py - update(fn) under a lock file, atomic write, one format; upsert_hub / replace_owned
+  with "world_state_owner" per hub; a generator replaces only its own hubs and keeps modules other tools attached
+  ("generated"); the 4 tools go through it.
+- Evidence: tests/architecture_contracts/check_world_state_writers.py PASS (merge keeps other writers' Sol hubs, a
+  dropped own hub goes, attached city modules survive, no lock / temp left, no direct writer left); world_sites.py
+  regenerated: 297 hubs before and after, no content change besides 8 owner tags; world_sites.py --check OK.
+
+## TRADE MVP step 1 / step 2 (docs/TRADE_DESIGN.md §9, §9a) - SOURCE + UNIT PASS, LIVE PARTIAL, PAUSED 2026-11-19
+- Paused by the coordinator for an architecture re-audit of the authority boundaries (money / cargo / price /
+  transactions, CargoRegistry keying by ShipInstanceId). Not committed.
+- Built: CargoRegistry (EconomyServer member, keyed by ShipInstanceId), GameServer::applyCargoLoad (manifest -> ShipLoadState
+  cargoTonnes / containers), TradeQuoteModel (§2.3 kappa 0.5 + spread / handling / VAT / turnover; docking fee function),
+  trade_fees.json (fiscal styles), EconomyServer::trade (Buy / Sell, all or nothing), input VAT refunds, BankingModel holds,
+  ClientEconomyCommand (protocol 32, tag 3), ClientTradeSnapshot (snapshot schema 50), F8 РЫНОК from server quotes, F8 ГРУЗ
+  tab (tradetab:5), DEV verbs cargo:add / cargo:clear / trade:buy|sell / trade:report; economy_state/2.
+- Evidence: EliteEconomyCheck 84/84 (new: C20 15.1 t grain, gross = net + 1.7 x C20, 120 t into 200 t = -8.04 %,
+  buy->sell same day always loses, hub limits, all-or-nothing refusals, sell at Тихий, holds, save/restore exact, VAT
+  refund after 30 d); wire protocol / data-plane round trips PASS; contracts entity_lifetime, active_system_context,
+  server_runtime_ownership, world_state_writers, wire_* , replication_snapshot PASS.
+- LIVE step 1 (D:/tmp/trade1/game_step1.log, D:/tmp/trade1/step1_cargo_tab.png): cargo:add:steel:60 -> "[Cargo] ship 201:
+  manifest 60 t net, 3 C20 (gross 65.1 t) -> mass 260 -> 325.1 t; full-charge jump range 82.672 -> 75.1247 ly"; F8 ГРУЗ
+  shows 3/6 C20, 65.1 t gross, 75.1 vs 82.7 ly (-9.1 %).
+- LIVE step 2: NOT done (the run was stopped at docking by the pause). First attempt: dock from 40 km failed "ship is not
+  matched to target Hub frame" - the script needs finish:hub + route:official before dock:.
+
+## FIXES BEFORE THE TRADE MVP (re-audit 2026-11-19)
+### R2. Atomic economy restore - DONE
+- Defect (verified): restoreState changed fx / markets, cleared the ledgers, then could throw - a mixed state; the
+  caller then started "fresh" and the next save wrote over the original file (every account lost).
+- Fix: parse everything into temporaries (fx, market cells, ledgers, a dry-run cargo parse, VAT refunds), commit only
+  after the whole file parsed; an unreadable file at start is renamed <file>.bad-<time> (if that fails, saving is
+  disabled); writeFileAtomically writes via CreateFileW/WriteFile/FlushFileBuffers before MoveFileExW.
+- Evidence: EliteEconomyCheck 86/86 (new: a state failing half-way is rejected and changes nothing; an unreadable state
+  file is kept as .bad-<time>, not overwritten).
+### R1. The one-tick lag of free-flying ships (hub security 600-700 m) - DONE
+- Root cause (proved live, D:/tmp/hubsec_audit): updateFreeFlights moved the travel frame to epoch n in stage 1, but the
+  world position was rewritten only by the integration in stage 4 - stage 1-3 consumers (hub security, evasion,
+  traffic promotion, combat vs HubTactical ships) saw a free-flying ship v_world x dt behind the hub objects
+  (26-36 km/s x 0.02 s = 525-715 m). Not a frame / cache / float issue.
+- Fix: re-materialize the world position and velocity right after the frame step (as updateShipReferenceFrames does for
+  HubTactical); the double "m_securityStepDt" correction removed.
+- Evidence: D:/tmp/lagfix/lane.log - ELITE_DEV_LANE_START against the lane: in lane 0 at 4 m lateral, WRONG WAY ->
+  warning, fined 1500 cr through the bank after 5 s; the oncoming ship's CPA 0 m (was ~600 m), honest CANNOT CLEAR at
+  60 m/s head-on. Flight A/B D:/tmp/lagfix/ms: jump to HD 20794 (K3 reference), route 98 s, docking 230 s (was
+  242-258), prepaid refuel, undock, missile hit - unchanged behaviour.
+### R3. Cargo of a lost ship leaves the manifest once (minimal part of docs/CARGO_SALVAGE_DESIGN.md) - DONE
+- Defect (verified): a destroyed player ship kept its manifest; the world is not saved, so after a restart the ship
+  came back whole and applyCargoLoad put the cargo back - paid money, resurrected goods.
+- Fix (minimal, per lot - the design's per-container CargoUnit / holder binding / WreckField physics come later on the
+  same records): EconomyServer::recordShipLoss(ShipLoss), IDEMPOTENT by event id: every lot leaves the manifest
+  (CargoRegistry::takeAll) into LostCargo records (state aboard_wreck, legal known_owner, rights holder = owner, claim
+  none, system, world position, time, cause), saved at once (economy_state: loss_events, lost_cargo, next_lost_cargo).
+  GameServer detects a player ship's first destroyedCause (all three loss paths set it) once per entity. DEV
+  ELITE_DEV_DESTROY_PLAYER_AT=<s> (GameSimulation::devDestroyShip, the surface-impact path).
+- Evidence: EliteEconomyCheck 88/88 (loss moves the cargo once, a repeated event does nothing, after a restore the
+  cargo stays lost and the event resolved). Live D:/tmp/losscheck2: 40 t steel aboard -> destroyed -> "ship loss
+  loss:1:2250 ... 40 t -> lost-cargo records", mass 303.4 -> 260 t; state file: cargo [], lost_cargo L1, loss_events;
+  restart -> "manifest 0 t".
+### R4. The price and the day the player saw are sent - DONE
+- Defect (verified): the client never sent quoteDay (-1 = any) nor a price limit; the server's "price moved" / "the day
+  changed" guards never fired; the decoder accepted +Inf / NaN quantities and limits.
+- Fix: SpaceState::sendEconomyCommand sends the snapshot's day and, without an explicit limit, the shown ask x 1.02
+  (buy) / bid x 0.98 (sell) - the deal window (trade step 3) will send its exact quoted unit price; decodeClient-
+  EconomyCommand rejects non-finite or negative quantity / limit.
+- Evidence: live D:/tmp/losscheck/a.log - "BUY 15.145 t food_staples ... list 573.71 -> deal 573.737 Cr/t" accepted with
+  the client-sent day and limit. Wire contract scripts PASS.
+### R5. A prepaid refuel is refunded when the ship leaves the simulation - DONE (code path, not live-triggered)
+- Defect (verified): updateRefuels erased a refuel whose ship was gone, and forgetShip erased m_refuels, both without
+  endRefuel - the prepaid, undelivered tonnes went back neither to the station's stock nor as money.
+- Fix: both call endRefuel(Cancelled) first (with no ship it only refunds through returnFuel).
+- Evidence: build + contract checks; the path needs a ship despawned mid-refuel (NPC traffic) - not reproduced live.
+### R6. Small ones - DONE
+- applyDevStartPoint (runs before the command drain, in the last pass's context) switches to the player's system first
+  (it read the star / "up" of another system; false [SystemContext] violations).
+- ShipCore::addCargo / removeCargo and Ship::addItem / removeItem removed (dead; a second writer of the cargo mass) - the
+  cargo mass has ONE writer: the manifest via GameServer::applyCargoLoad -> ShipCore::setLoad.
+- Evidence: builds (Debug + RelWithDebInfo), contract checks PASS, the DEV start runs in every live check above.
+
+## TRADE MVP step 3: the F8 MARKET deal window (docs/TRADE_DESIGN.md §8.1, §9 row 3, §9b) - SOURCE + UNIT + LIVE PASS 2026-11-19
+- Built: src/game/presentation/TradeDealPresentation.* (pure): buildTradeDeal(session.trade, window state) prices the deal
+  with the SAME TradeQuoteModel::explainDeal the server charges with; the slider limits = min(C20 places + payload via
+  CargoRegistry::extraC20/fits on the replicated manifest, hubGivesUpToT / hubTakesUpToT, money = spendableCr, aboard);
+  whole-Cr lines by largest remainder (shown lines = shown total). BankingModel::spendableCr (what pay() covers without
+  lifeline: cash, accounts incl. overdraft, fees). ClientTradeSnapshot + stockExponent / minStockShare / hubBuyCapShare /
+  spendableCr -> snapshot schema 51 (wire protocol unchanged, 32). ServicePanelsRenderer::renderTradeDeal (right column of
+  РЫНОК), new actions TradeSelectGood / TradeDealSide / Units / Step / Slider / Max / Confirm / Cancel / Retry, wheel over the
+  panel = quantity, devClick. SpaceState: applyTradeDealAction / tradeDealKey (↑↓ row, ←→ qty, Shift x10, Tab side, U units,
+  Enter / R confirm, Backspace cancel, 1..6 tabs - read via glfwGetKey because Input is reset under a service page) /
+  confirmTradeDeal (Buy / Sell with limitUnitCr = the exact quoted unit price, quoteDay = the snapshot day). Strings:
+  service.trade.deal.* in ui/services/trade.json (en / ru / zh-Hans / es / ja). DEV: tradeclick:<what>[:arg] (a click on the
+  region the last frame drew), tradekey:<key>[+shift], tradedeal:report.
+- Unit: EliteEconomyCheck 99/99 (new testTradeDealWindow: lines sum to the total and shown lines to the shown total; the
+  server charged EXACTLY the window's total for buy 2 C20, money-limited buy, re-quote, sell all; the window's hold max
+  +0.01 t -> no_space; money max +0.5 t -> no_money; a moved market -> price_moved and the window shows the new price).
+- Contracts PASS: entity_lifetime, active_system_context, server_runtime_ownership, wire_protocol_boundary,
+  wire_data_schema, replication_snapshot_boundary, function_key_presentation_route, service_panel_shell,
+  localization_boundary.
+- LIVE (earth_orbital_hub, docked; D:/tmp/trade3/b.log, screenshots D:/tmp/trade3/01..08_*.png, layout fixed after run a):
+  window BUY 3 C20 grain clamped to the money limit 35.565 t, preview total -24 999.99 -> "[Trade] ... BUY 35.5655 t
+  food_staples ... account -25000 Cr; stock 48154 -> 48118.4" (answer total -24999.99); SELL max (aboard) preview
+  +18 701.41 -> server "+18701.4 Cr" (answer 18701.40633 = preview); DEV buy 3 t then Confirm in the same frame ->
+  "REFUSED (price_moved)", panel «цена изменилась ..., повторить?» + ПОВТОРИТЬ (R) -> R -> server total -10645.1855 =
+  re-quote. After each deal the panel shows the server's answer, the new available money, C20 used and the hub stock.
+- Not done / deviations: Esc is the global session menu - cancel is Backspace; the exact quoted price is sent as the limit
+  (design said preview -/+1 %); F8 tabs not reordered (НАВИГ. ДАННЫЕ stays in F8 until its move to F5, §11a); no trend /
+  lot cost-basis columns; the rest of F8 still hardcoded Russian; the server's refusal text is Russian; the price-moved
+  precision fix (6 decimals when equal at 2) and the Left/Right wording of the key hint were made after the last live run
+  (built, not re-captured).
+
+## TRADE MVP step 4: port fees (docking + berth) and the import duty (docs/TRADE_DESIGN.md §5.2, §9 row 4, §9c) - SOURCE + UNIT + LIVE PASS 2026-11-19
+- Built: TradeQuoteModel berthFeeCr (4 h included in the docking fee, then 25 Cr/h, <= 400 Cr / 24 h, x port index),
+  FiscalStyle.dutyShare, explainDeal(..., dutyShare) with a "пошлина" line; CargoRegistry::fifoDutyShare (the lots unload()
+  takes, FIFO); EconomyServer::chargeDocking / chargeBerth (idempotent per callId, 512 remembered), importDutyRate (style
+  duty x economy_rules customs.by_channel fee_mult; same polity / unknown origin = 0; closed counted as black until step 9),
+  a separate "пошлина" ledger line on a sale; BankingModel::payOrDebt (payFine is now its case; port fees: "сбор в долг",
+  never refused), Purpose::Parking (8); service::chargeDockingFee / chargeBerthFee; GameSimulation::updatePortCall from
+  updateDockSitePilots (the ship's system pass): dispatcher Docked -> docking fee once, leaving Docked -> berth fee;
+  m_portCalls erased in forgetShip; ShipCatalogRuntime::dryMassTonnes. Data: trade_fees.json deal.berth_* and
+  styles[].duty (4/3/6/5/8/2 %). Replication: ClientCargoLine::dutyShare -> snapshot schema 52 (round-trip contract extended).
+  Deal window: "duty" line (service.trade.deal.duty, 5 languages). DEV: ELITE_DEV_BERTH_TIME_SCALE=<k>,
+  cargo:add:<good>:<t>:<origin hub>.
+- Unit: EliteEconomyCheck 111/111 (new testPortFeesAndDuty: Cobrett call = 384 Cr, a repeated docked / released event books
+  nothing, 10 h call = 384 + 150, a broke pilot -> 584 Cr debt not a refusal, duty = style x channel 1/1.5/2.5/4 over 505
+  foreign grain markets, FIFO duty share of a mixed hold, the window's total with a duty line = the server's charge).
+  Contracts PASS: entity_lifetime, active_system_context, server_runtime_ownership, wire_protocol_boundary, wire_data_schema,
+  replication_snapshot_boundary, service_panel_shell, localization_boundary, function_key_presentation_route;
+  wire_data_plane_contract_tests (built by hand with g++) PASS.
+- LIVE (earth_orbital_hub, D:/tmp/trade4/a.log, ELITE_DEV_BERTH_TIME_SCALE=360):
+  "[PortFee] player 1 call call:201:hub_hex_dock_a:356080: DOCKING at earth_orbital_hub (bureaucratic, index 1, dry 260 t)
+  384.00 Cr: paid 384.00" - one line for the whole stay (Docked repeats every tick); DEV 10 t grain with origin
+  site.002.barnard_post sold via the window: "SELL 10 t ... duty 324.164 (6 %) ... account +4934.57" = the window's
+  4934.567804; after undock "BERTH at earth_orbital_hub 13.17 h -> 229.35 Cr: paid 229.35". F8 ФИНАНСЫ
+  (D:/tmp/trade4/04_finance_after_undock.png): "-384.00 CR стыковка Высокий (260 т сухой массы, индекс порта 1.0)",
+  "пошлина -324 Cr (6.0 % ввоз ...)", "-229.35 CR стоянка Высокий: 13.2 ч (сверх 4 ч по 25 Cr/ч)". Run a showed the raw
+  key "duty" in the window (the key was not in SpaceStateServices DealKeys) - fixed; run b (D:/tmp/trade4/b/b.log,
+  b/01_sell_duty_preview.png) shows «пошлина 6.0 % (ввоз из другой политии) -324».
+- Deviations / not done: no VAT on docking / berth (§5.2 "taxes on taxes" item 2 - with the taxes of step 7; the call stays
+  384); the duty is charged at the sale, not at entry (customs inspection at docking - step 9); berth time = the server
+  timeline clock, not universe time; the port-call state is not saved (a restart while docked: no berth fee for it);
+  hangar / holding area / in-hub tow fees not done; only the dispatcher-docked berths (hex docks) charge - other dock kinds
+  have no Docked event yet.
+
+## TRADE MVP step 5: the server ContractBoard (docs/TRADE_DESIGN.md §3, §9 row 5, §9d) - SOURCE + UNIT + LIVE PASS 2026-11-19
+- Built: src/game/economy/ContractBoard.{h,cpp} (state: series, shared per-hub postings, taken contracts; pure model:
+  isPublishDay / nextPublishDay, fair reward, trafficOf / attractivenessOf / npcTakeRatePerDay, npcTakes hash roll,
+  projectBuilding; buildContractSeries from hub_modules supply + sites_3126 construction projects), data
+  src/assets/data/economy/contract_rules.json (contract_rules/1). 238 supply, 413 crew-shift (out + back), 6 750
+  construction series (each project x up to 4 suppliers of the same body, weekly; lots <= 40 t / 60 000 Cr).
+  EconomyServer: takeContract (origin berth only; deposit placeHold; advance; contract lot owner issuer:<actor>),
+  deliverContracts (dispatcher Docked hook: updatePortCall -> service::notifyShipDocked -> GameServer binding ->
+  applyCargoLoad), abandonContract (origin = cancel 10 % + advance back, deposit released, posting reopened; elsewhere
+  = failure), daily failure past deadline + 5 d (penalty 50 % + advance back via payOrDebt Purpose::ContractPenalty,
+  deposit captureHold, lot seized); Sell refuses contract cargo ("contract_cargo"). Fresh boards on start (last
+  board-life days replayed). EconomyModel::board / BoardEntry removed (one source). BankingModel: Purpose::ContractPenalty
+  (9), captureHold, findHold, logEvent cuts a broken UTF-8 tail. CargoLot.people (P20 crew lots: ceil(n/12) x 9 t, one
+  C20 place each - no passenger hardware yet), CargoRegistry::takeContract / contractTonnesOf. Persistence
+  economy_state/3 (+contracts; /1 /2 read; temporaries then commit). Replication: ClientTradeSnapshot board / contracts /
+  dayNow / boardHubId (ClientContractRow), snapshot schema 53; ClientEconomyCommand TakeContract / AbandonContract /
+  DevEconomyDays + contractId, wire protocol 33. UI: F8 tab 0 "КОНТРАКТЫ" (board with timers, open first, my contracts,
+  card, take / abandon with confirm, keys), ФИНАНСЫ shows held deposits; service.trade.contracts.* in 5 languages.
+  DEV: contract:take:<id|pick:part>, contract:abandon:<id>, contract:report, contractclick:<...>, econ:days:<n>,
+  econ:await:<series part>.
+- Unit: EliteEconomyCheck 131/131 (testContracts: d_k strictly every 14 d; 40 000-seed NPC half-life 1.393 / 1.391 d at a
+  busy hub, frontier 13.9 d; 120 server days - every posting exactly on its series' d_k, Europa supply 14 d apart; the
+  real board's busy-hub first-day NPC take -> half-life 1.39 d; take -> deposit held + advance, only at the origin, gone
+  for player 2; contract cargo not sellable; on-time hand-in = reward - advance, deposit released; 2 d late = -20 %;
+  failed with no money -> penalty + advance back as debt, deposit forfeited, lot seized; abandon in flight / cancel at
+  origin; save/restore byte-exact; a broken contracts block rejected whole; fresh server starts with 442 open postings).
+  Contracts PASS: entity_lifetime, active_system_context, server_runtime_ownership, wire_protocol_boundary,
+  wire_data_schema, replication_snapshot_boundary, service_panel_shell, localization_boundary,
+  function_key_presentation_route; wire_data_plane / wire_protocol contract tests (g++ by hand) PASS.
+- LIVE (D:/tmp/trade5/b/run.log, DEV start hub:earth_orbital_hub@40, `econ:await:earth_hub.kourou.x06` = +6 economy
+  days): F8 КОНТРАКТЫ at Высокий (01_board.png, 02_confirm.png: "Стройка ... 40 т, 2 x C20 -> Куру, на доске ещё 2 сут 07 ч,
+  залог 2 760", card + "ПОДТВЕРДИТЬ: ВЗЯТЬ (залог блокируется)"); confirm ->
+  "[Contract] player 1 TAKE SER-earth_hub.kourou.x06-build@earth_orbital_hub/10201/0 (construction, 40 t construction_bulk)
+  ... reward 5200, advance 1040 paid, deposit 2760 held ... deadline day 10207"; undock, route + dock at
+  earth_hub.kourou.cty_dock -> "DOCKING at earth_hub.kourou ... 384.00 Cr" then "[Contract] player 1 HAND-IN ... at
+  earth_hub.kourou (Куру), day 10201 deadline 10207: delivered, payout +4160 Cr (reward 5200 - advance 1040) ... deposit
+  2760 released (hold 1); net worth 25440 Cr, held 0 Cr". 04_finance_taken.png (блокировка залога, аванс +1040),
+  06_contracts_delivered.png ("сдан вовремя +4 160 Cr"), 07_finance_delivered.png (+4160.00 CR сдан ... в срок, залог
+  разблокирован). Run a (D:/tmp/trade5/a/run.log, run_a_01_board_scrolled.png) found the selected posting off the visible
+  list (no click region) - fixed: open postings first, the list scrolls to the selection.
+- Deviations / not done: construction series from sites_3126 added (§3.1 table) and are the ones used live (Высокий is
+  no supply_parent); NPC rate rescaled (traffic = arrivals / 500 clamped 0.1..1, a = 1 for a fair posting) so the stated
+  1.4 d half-life holds; take = load (no taken-not-loaded state); failure removes the lot from the manifest; no
+  reputation, framework contract, x1.3 repost, operator's own ship, shortage on failure, NPC virtual delivery, event
+  postings (shortage / state order / passengers / relief / smuggling), insurance, licences; the F8 header day is the
+  client's (no DEV offset); server messages Russian; ФИНАНСЫ memo lines overflow into the right column (cosmetic).
+
+## SENSOR-LIMITED SPEED (docs/SENSOR_LIMITED_SPEED.md, minimal set) - SOURCE + UNIT + LIVE PASS 2026-11-19
+
+- Rule: `src/game/navigation/rules/SensorSpeedRules.h` (pure): v_max = 2kR / (t_r + sqrt(t_r^2 + 2kR/a_b)), k 0.8,
+  t_r 1.5 s (3 s with navComputerState == 2), R = max(radar, 150 km optics); `chartedBy`: green corridor -> hub radar zone
+  (route_zones.json hub_radar_km 3000) -> local catalogue system within 1.5 x its farthest body (proxy "surveyed shell")
+  -> approaches with a usable lane record (proxy, nav computer alive). Uncharted: deep space, approaches without records,
+  distant catalogue systems, beyond the shell. No new survey data.
+- Applied only in the client autopilots: `RouteLegPilot::step` (speed vs destination, a_b = current J limit) and
+  `BodyAutopilot::stepTransfer` (closing speed, a_b = ramp); inputs `BodyAutopilotShip::sensorRangeM / sensorReactionS`
+  filled by `SpaceState::applySensorSpeedInputs` (SpaceStateRoute.cpp) from `clientBodyAutopilotWorld`; output
+  `BodyAutopilotOutput::sensorSpeedLimitMps`. Manual flight untouched. HUD line `cockpit.autopilot.sensor_speed`
+  (5 languages) under the autopilot panel. Log `[SensorSpeed]` on a change of reason; `[Route]` lines add "sensor v_max".
+- Unit: EliteBodyFlightRulesCheck PASSED (doc table 834.5 / 164.5 / 32.9 km/s - the doc's row 3 "~40" was k = 1, fixed).
+  EliteEconomyCheck 131/131; check_architecture, check_entity_lifetime, check_active_system_context,
+  check_localization_boundary PASS. Other check_*.py reds (client_galaxy_map_catalog, model_asset_* x7, ui_platform_fonts)
+  are in files not touched here (baseline). No snapshot / wire change.
+- LIVE (D:/tmp/sensorspeed): point:300,0,0 + leg orbit Mars -> speed holds 77 935 m/s from t+30 s (far3.log,
+  far3_95.png: HUD "обзор 150.0 км · скорость по обзору 77.94 км/с · участок не обследован"); J autopilot to the Moon from
+  there holds 77.61 km/s (farap2.log, farap2_95.png); hub:earth_orbital_hub@40 + same leg -> corridor -> hub zone -> shell,
+  no bound, 28 853 km/s at t+60 s (near.log, near_80.png).
+- Finding: the player hull is a legacy descriptor (no passport, catalog radar 0, installed PPI LCD radar 1000 m) - hence
+  the 150 km optics floor (otherwise v_max 533 m/s). Not done: route-map time estimate, radar damage, server-side
+  bound / NPC, live check of approaches + lane record / deep space / failed nav computer.
+
+### SENSOR-LIMITED SPEED variant 1: the hard bound only in / near a hazard - SOURCE + UNIT + LIVE PASS 2026-11-20
+
+- Author decision 2026-11-20 (variant 1): uncharted space is bound only in / near a known or suspected hazard; empty
+  uncharted space has no bound (pilot's / autopilot's risk); charted space unchanged (no bound).
+- Rules (SensorSpeedRules.h, pure): `HazardZone` (annulus with optional arc, or sphere), `hazardDistanceM`,
+  `nearestHazard`, `stoppingDistanceM`, `inHazard(d, v, t, a)` = d <= v t + v^2/2a at the CURRENT speed (t = reaction +
+  the field's ramp to full, a = 0.4 a_max = `HazardBrakeFraction`, the autopilots' planned braking),
+  `hazardApproachSpeedMps` = sqrt(v_max^2 + 2 a d) - the braking envelope the route pilot / J autopilot fly on the way
+  in (same a as the margin -> no on/off chatter, unit-checked). Near a body = 10 R (`NearBodyRadii`; or the atmosphere
+  top) - low orbits to past GEO, giants' inner moons / rings; Hill spheres would cap whole systems.
+- Data (existing only, `SpaceState::applySensorSpeedInputs`): generated belts / Kuiper belts / debris disks / trojans via
+  `jumpSumpsOfSystem` (x-z annulus, half-height 2 x the sump scale height, trojans = +-34 deg arcs at L4/L5); planetary
+  rings (body ring bands, equatorial plane, 1 km half-thickness); every autopilot gravity body; a deep-space place's swarm
+  (icy_debris_field radii_ly max / debris_group extent_au, sphere at the frame origin). NOT covered: in-system gas / ice
+  clouds and wreck fields (no data), comet clouds (Oort: 11 orders sparser than the main belt - deliberately not a hazard,
+  as in the sumps), red route zones (administrative), Hill spheres.
+- Input: new `BodyAutopilotShip::sensorHazardDistanceM`; pilots bound by the envelope (RouteLegPilot, BodyAutopilot).
+  HUD line only while bound, with the reason: keys `cockpit.autopilot.hazard.{belt,rings,body,debris,ahead}` + changed
+  `cockpit.autopilot.sensor_speed` ({2} = reason), 5 languages. Log `[SensorSpeed] hazard: ...`. DEV:
+  `ELITE_DEV_NO_BEACONS` now also clears "inhabited" (Sol's shell uncharted; hub zones / corridors stay).
+- Unit: EliteBodyFlightRulesCheck PASSED; EliteEconomyCheck 142/142; check_architecture, check_localization_boundary,
+  check_active_system_context PASS.
+- LIVE (D:/tmp/sensorspeed): hzfar (point:300,0,0, leg Mars): "clear (nearest Пояс Койпера)", no bound, 33 563 km/s
+  (hzfar_110.png, no bound line; was 77.9 km/s). hzbelt (NO_BEACONS, point:3.4,0,0, leg Mars across the main belt):
+  unbound to 105 021 km/s, bound AHEAD at 1.42e7 km (= stopping run) t+139 s, envelope braking (hzbelt_260/380.png
+  "через 7.63 / 1.44 млн км"), enters the belt at t+426 s at 77 935 m/s and holds it (hzbelt_500.png). hzbody
+  (NO_BEACONS, body:deimos, J autopilot to the Moon): hub zone -> "near body Марс INSIDE", 77.61 km/s (hzbody_100.png).
+- Findings / limits: leaving a hub radar zone that lies inside a hazard puts the ship INSIDE at once (997 km/s -> hard
+  braking to v_max, no envelope); only the nearest zone, heading ignored (conservative); belts are solid annuli (Kirkwood
+  gaps / passages not modelled); predicate uses world speed, bound is vs the destination. Deep-space field, rings,
+  trojans: unit / source only.
+
+## ECONOMY: state save off the action path + the open port call persisted (economy_state/4) - SOURCE + UNIT + LIVE PASS 2026-11-19
+
+- Measured first (DEV `ELITE_DEV_ECONOMY_SAVE_TIMING=1`, `[EconomySave]` lines; relwithdebinfo, D:/tmp/econsave): the old
+  path (`writeFileAtomically(m_stateFile, saveState())` after every trade / fee / contract / cargo action, on the server
+  thread) cost serialize 19-37 ms + write 2-12 ms = 21-48 ms PER ACTION for an 842 KB state (before.log, 11 actions).
+  Section probe: rest of the tree ~4 ms, board JSON 6-17 ms, dump 5-13 ms.
+- Fix (EconomyServer): `saveNow` only marks the state dirty; `flushStateIfDue` (called from `advanceTo` = every server tick)
+  saves at most once per 2 s: the server thread builds only the small JSON tree (ledgers, cargo, fx, losses, port calls)
+  and copies the market cells + the board's postings / contracts (`StateParts`); ONE background `StateWriter` thread
+  builds the markets / board JSON, dumps and writes with the unchanged `writeFileAtomically` (.tmp + FlushFileBuffers +
+  MoveFileExW): latest wins, one write in flight. The destructor writes a dirty state and joins the writer (clean exit).
+  A crash loses at most ~2 s + one write, never leaves a torn file (the `.bad-<time>` restore path is untouched).
+  `ContractBoard::toJson(postings, contracts)` static overload. Old per-site writes all go through saveNow.
+- After (same script, after2.log / econportcall a+b.log): server thread 0.8-1.2 ms per flush (tree + copies), 0.01-0.1 ms
+  hand-off, 0 per action between flushes; writer 15-30 ms board+dump + 2-13 ms write in the background. Intermediate
+  version (board only off-thread): 4-7.5 ms.
+- Port call persisted: EconomyServer keeps `OpenPortCall` per shipKey (callId, hub, dock module, player, sinceUniverseS)
+  plus the booked-event map (idempotency) in `port_calls` of economy_state/4 (/1-/3 still load: no calls; a broken block
+  is rejected whole). service::chargeDockingFee opens it (new binding `shipKeyOf` = registry instanceId),
+  chargeBerthFee closes it and takes the hours from it; `resumePortCall` / `closeStalePortCall`. GameSimulation::updatePortCall:
+  on the first sight of a pilot ship in this process (`m_portCallsChecked`, erased in forgetShip) a saved call is resumed
+  when Docked at that same berth (no second docking fee) or else closed with the berth fee up to now. A ship loss drops
+  its open call (no berth fee, as before).
+- Clock choice: berth time = the UNIVERSE clock (`m_universeClock`, anchored to real time by reset(), so it continues
+  across a restart; also the clock of economy days / contract deadlines); the server timeline clock restarts at 0 and is
+  now only the fallback when no saved call exists. Server downtime counts as berth time (the ship sat at the berth).
+  The DEV economy day offset is not used (it does not survive a restart). ELITE_DEV_BERTH_TIME_SCALE still multiplies.
+- Unit: EliteEconomyCheck 135/135 (+4: open call save/restore byte-exact; after a restart 10 h later docking = duplicate,
+  berth 10 h -> 150 Cr once; /3 file loads, broken port_calls rejected; throttled writer: first change written by the
+  thread, the second (within 2 s) on shutdown, == saveState(), no .tmp). check_architecture, check_entity_lifetime,
+  check_active_system_context PASS.
+- LIVE (D:/tmp/econportcall): run A docked at earth_orbital_hub ("DOCKING ... 384.00 Cr"), state saved 0.8 ms server
+  thread, process KILLED 10 s later (crash) -> file valid, economy_state/4 with the open call. Run B (same file, start
+  40 km out): "state restored", "saved call call:201:hub_hex_dock_a:362320 ... closed (the ship is away from that berth
+  after a restart): 7.6 h -> berth fee 89.99 Cr (booked)" (DEV berth x360), file: open [] , booked bits 3, ledger line
+  "стоянка ... 7.6 ч".
+- Not done / limits: the resume branch (Docked at the same berth after a restart) is unit-tested only - without a world
+  save the ship never starts docked; a burst of actions still costs one ~1 ms flush per 2 s; all save sites now
+  lag up to 2 s (incl. the ship-loss record, documented in the header).
+
+## JUMP ENTRY CATCH-UP (the open item of §5 "sites_3126 cached") - SOURCE + LIVE PASS 2026-11-19, not committed
+- Instrumented (DEV, ELITE_DEV_JUMP_ENTRY_TIMING=1): GameServer::update per-phase times ([JumpEntryTiming] tick N: pre /
+  commands / ctx<sys> / sim<sys>[stages] / losses / sensors / economy / snapshot+maps; every tick >= 25 ms and every tick
+  for 2 s after the simulated-system set changes); SpaceState: frames that ran > 2 server steps or left a debt; the
+  client fence line. M8E-HYDRATE gained ship_loop / object_new / object_update / fence_clear / object_remove /
+  history_trim.
+- Live scenario (D:/tmp/jumpentry, offscreen): ELITE_DEV_START=hub:earth_orbital_hub@50, ELITE_DEV_JUMP_CHARGE_S=3,
+  script 15:jump:9 (Sol -> Eps Eri, exit eps_Eri_b).
+- Server side is NOT the cause: the entry tick (first pass of system 9: 13 dock sites started, hub security of 40
+  cities, the exit) 4.5-5 ms (sim9 3.5 ms); the next ticks 1.5-3 ms; ctx switch < 0.3 ms; one snapshot tick 37-56 ms
+  (the first build with system 9's 176 objects / 40 hubs); no file I/O / JSON on entry (WorldSitesCatalog cached).
+- Cause (verified): the CLIENT. ClientWorldState::applySnapshot drops the 20-entry snapshot history on the system /
+  timeline fence (m_snapshotBuffer.clear()); every entry is a canonical full-set snapshot (Sol: ~1400 objects with
+  module graphs) and freeing them took 507-610 ms on the main thread (fence_clear_ms 507.7 / 592 / 610). That frame
+  (gap 530-860 ms) is the frame time the fixed-step server is advanced by -> 8 steps / frame (catch-up limited) with
+  0.2-0.3 s debt for the next ~5 frames = the "entry catch-up". Same mechanism, smaller: the history trim (pop_front)
+  freed one snapshot per apply in Sol, 23.6-24.7 ms each.
+- Fix (src/game/client/ClientWorldState.cpp): SnapshotHistoryReleaser - dropped history snapshots (fence + trim) are
+  moved to one background thread that frees them (plain data: vectors / strings, no GL, no registry back-refs);
+  joined at exit. DEV A/B: ELITE_DEV_SYNC_SNAPSHOT_RELEASE=1 frees inline as before. check_architecture still sees
+  m_snapshotBuffer.clear() (the fence itself is unchanged).
+- Evidence, same build, same scenario: A (inline) fence 592 ms of a 609 ms apply-snapshot, frame gap 860 ms (A_sync:
+  610 / 659 ms); B (off-thread) fence 0.14 ms of a 19.4 ms apply-snapshot, no frame gap at the entry, largest frame
+  around it 190-227 ms (= this harness's normal Sol frames, 250-450 ms gaps before the jump). history_trim 24 ms -> 0.0001
+  ms; apply-snapshot >= 100 ms lines in Sol before the jump 19 -> 2. Both runs quit cleanly (DEV quit, no watchdog).
+- Still open (side findings, not fixed): (a) in Sol every apply-snapshot spends 52-105 ms in canonical_ms
+  (materializeCanonicalReplicationSnapshot copying the omitted ~1400 objects of the full set per snapshot) - the main
+  reason the offscreen game is chronically catch-up limited in Sol; Eps Eri 0.1-1 ms. (b) The headless load test
+  (EliteServer --load-test) has no ClientWorldState, so its catch-up after jumps is not this cause; its jump-entry
+  server ticks were not re-measured here.
+- Checks: EliteEconomyCheck 135/135; check_architecture, check_entity_lifetime, check_active_system_context PASS.
+
+## CLIENT SNAPSHOT HISTORY = POSE SAMPLES (open item (a) of "JUMP ENTRY CATCH-UP") - SOURCE + LIVE PASS 2026-11-19, not committed
+- Cause (measured): in Sol the server publishes sparse snapshots (~200 of ~1400 objects); materializeCanonicalReplicationSnapshot
+  starts each history sample as a copy of the previous one, so every apply deep-copied ~1400 ObjectSnapshots with
+  their module graphs / structural links / hit volumes / city building states (canonical_ms 49-51 p50, 64-68 p95).
+- Readers of ClientWorldState::m_snapshotBuffer (audited): update() interpolation (ships: transform, referenceFrame,
+  systemId; objects: worldPosition, orientation, systemId, graph.assemblyModules), the System / Detail / Hub map
+  samplers (ids, poses, velocities, names, hubAttachment, orbitalMotion, traffic, hubs), the fence/trim, and
+  previousCanonical for the next merge. Prediction reconciliation does not read it. Nobody reads the module graphs,
+  structural links, fragments, repair jobs, hit volumes, buildingStates / materializedVisits / promotedAirSlots or the
+  ships' receptions / radarContacts / damageEvents from history - the live m_ships / m_objects own them.
+- Fix (src/game/client/ClientWorldState.cpp only): stripToHistorySample() right after the materialization moves those
+  fields out of the new history sample (has* flags false, assemblyModules kept) and hands them to the existing
+  SnapshotHistoryReleaser. The merge function, the wire format and the server are unchanged. DEV A/B:
+  ELITE_DEV_FULL_SNAPSHOT_HISTORY=1 keeps full samples; ELITE_DEV_HYDRATE_LOG_ALL=1 logs [M8E-HYDRATE] for every apply.
+- Evidence (D:/tmp/histstrip, relwithdebinfo, offscreen, NO_VSYNC, Quadro; same build A = full history, B = stripped):
+  idle at hub:earth_orbital_hub@8 150 s: canonical p50/p95/max 51.1/67.7/171 -> 1.9/3.1/40 ms (max = the bootstrap
+  full set); catch-up limited frames 296 -> 4; frames after load p50 62.5 -> 8.7 ms, p95 205 -> 13.0 ms, >33 ms 790 -> 4.
+  Flight (@50, route to the hub + automatic docking at hub_hex_dock_a, 200 s): canonical 49.1/64.0/113 -> 2.1/3.0/53;
+  catch-up limited 342 -> 4; frame p50 62.0 -> 9.1 ms, p95 208 -> 12.9 ms. Long run BK: docking completed
+  ("пристыкован, площадка P1", waitfor dockdone 67 s), approach captures BK_1..3 / docked look consistent (dock frame
+  centred on the corridor). Jump Sol -> Eps Eri (BJ2, CHARGE_S=3): jumped, fence apply 5.5 ms, no catch-up after entry.
+- Side note: with the faster frames the jump procedure at script t=15 reported "zone to reach" (flies into the zone
+  first) where the slow run had "zone here"; the jump then completed normally.
+- Checks: EliteEconomyCheck 135/135; check_replication_snapshot_boundary, check_prediction_reconciliation,
+  check_local_predicted_presentation, check_replication_interest_retention, check_architecture, check_entity_lifetime,
+  check_active_system_context PASS; architecture_contracts (D:/tmp/elite_contracts) replication_interest,
+  detail/hub map runtime sampling, system map ship / infrastructure sampling, remote_ship_presentation,
+  client_observation_interest PASS (they do not compile ClientWorldState.cpp). Not accepted by the author.
+
+## CLIENT INTERPOLATION BRACKET INDEX (2026-11-19) - DONE
+- Defect (verified in code): ClientWorldState::update() found each ship / object of the older and newer bracket
+  samples with a linear find_if per entity (reference frame sampler, NPC ships, objects): O(N^2) a frame, ~1400
+  objects in Sol.
+- Fix: id -> sample maps of both bracket samples built once a frame (first wins, as find_if); the three lookup sites
+  use them. EntityId is uint32, no truncation.
+- Evidence (same scenario as CLIENT SNAPSHOT HISTORY, D:/tmp/histstrip, Sol idle @8 km, no vsync, relwithdebinfo):
+  B_strip -> C_index frame median-of-p50 8.7 -> 7.5 ms, median-of-p95 13.0 -> 11.4 ms, over33 4 -> 2;
+  C_index_b.png: HUD and radar contacts as before.
+
+## TRADE MVP step 6: the protected minimum for debt withholding (docs/TRADE_DESIGN.md §1.3, §9 row 6, §9e) - SOURCE + UNIT + LIVE PASS 2026-11-19, not committed
+- Found: withholding from income existed only for a RESTRUCTURED debt (BankingModel::receive, 25 % of every receipt:
+  sale, contract advance / payout, VAT refund - gross, no floor). payOrDebt debts (port fees, penalties) are 0 % term
+  loans auto-debited from a credit balance on due dates, not withheld from income; unpaid -> overdue -> >60 days ->
+  restructured -> withheld.
+- Built (one place, receive; money still moves only through EconomyServer): the income is credited whole, then
+  withheld = min(25 % of it, free money after the credit - rules.garnishProtectedCr); the debt falls by exactly that,
+  the same comes off the account (fee semantics unchanged). freeMoneyCr = cash + account balances above holds, no
+  overdraft. Data: national_banks.json rules garnish_protected_cr = 6100 (+ note; also in the generator's canon) =
+  2 x 2 454 reactor fuel (§5.3) + 2 x 384 docking + 400 one day of berth = 6 076. Ledger lastWithheldCr / Day ->
+  economy_state/5 ("last_withheld"; /1-/4 load). Wallet garnishDebtCr / lastWithheldCr / lastWithheldDay / protectedCr ->
+  snapshot schema 54. F8 ФИНАНСЫ: one row "Удержание долга из дохода | долг X · удержано Y · защищено 6 100 Cr"
+  (service.trade.finance.garnish / garnish_value, 5 languages). Ledger note "(в погашение долга X, защищено 6100 Cr)"
+  only when the floor set the limit. Standing text "реструктуризация: 25 % дохода сверх защищённого минимума".
+  DEV: econ:spendall (ClientEconomyCommand::DevSpendAll = 7, WireProtocolVersion 34; EconomyServer::devSpendAll pays all
+  spendable money incl. the overdraft to its limit).
+- Unit: EliteEconomyCheck 142/142 (+7: below the floor nothing withheld; across it only 900 of 1 000 withheld, 6 100
+  stays; above it the full share (25 % in testBanks; 10 % in national_banks.json); 400 random receipts CR+HRL payers / debts with spending - the floor holds, free money
+  never drops, the debt falls by exactly the withheld amount; economy_state/5 round trip byte-exact + wallet fields;
+  /4 file loads). Contracts PASS: check_architecture, check_entity_lifetime, check_active_system_context,
+  check_wire_data_schema, check_wire_protocol_boundary, check_localization_boundary, check_replication_snapshot_boundary,
+  check_service_panel_shell, check_server_runtime_ownership, check_account_auth_polish; WireDataPlaneContractTests and
+  WireProtocolContractTests built by hand with g++ (wallet garnish fields round-trip) PASS.
+- LIVE (D:/tmp/garnish/run.log, scratchpad run_garnish.sh, watchdog): econ:spendall paid 25 000 -> account -4 000;
+  docking with no money "paid 0.00, debt 384.00" (01_finance_docked_broke.png); econ:days 60+60 -> grace -> delinquent ->
+  restructured 4 467.65 (02_finance_restructured.png: row "долг 4 468 · удержано 0 · защищено 6 100 Cr"); sale 14 t grain
+  +7 317.54 -> withheld 1 217.54 (25 % would be 1 829), account exactly 6 100.00, debt 3 250.11
+  (03_finance_sale1_protected.png); sale 10 t +5 226.88 -> the full 25 % (the rate then) 1 306.72, account 10 020.16, debt 1 943.39
+  (04_finance_sale2_full_share.png). State file economy_state/5, "last_withheld":[10315,1306.72]. An earlier run with
+  a 30 t second sale paid the debt off (withheld = the debt left) and showed the floor note wrongly - fixed.
+- Not done (deviations from §1.3): the base is the gross receipt (not revenue - lot cost / reward - trip costs); the
+  floor is on the balance, not "per 30 days" nor "fixed monthly costs + 4 000 Cr" (no crew / ship loan / insurance
+  costs in the model yet); the 0 % debts' auto-debit is not floored (it would push small debts of a pilot with < 6 100
+  into arrears). The F8 page header day ("день 10195") does not follow the DEV economy clock - pre-existing.
+- 2026-11-20 author: "25 % may be too much - milk the cow, don't milk it dry": garnish_share 0.25 -> 0.10 in
+  national_banks.json (+ canon); the standing / restructuring texts no longer hard-code 25 %. Unit tests keep their
+  own 25 % (testBanks). Not re-run live.
+
+## F5 GOVERNMENT SERVICES: navigation data moved from F8; Галера+ (docs/TRADE_DESIGN.md §11a, §11b) - SOURCE + LIVE PASS 2026-11-20
+- Built: F5 has a native page (was a blank target): two apps as tabs - the state services app (localized name
+  `service.government.app`: ru КОСМОУСЛУГИ / en GOV.SPACE / zh 星网通办 / es MI CARPETA ESTELAR / ja マイ星ポータル -
+  a proposal, the author may rename) with the navigation data section (moved from F8; licences step 11, taxes step 7
+  join it), and Галера+ (military service, empty fields until enlisted). GovernmentPresentation, SpaceState::
+  buildGovernmentPage, ServicePanelsRenderer::renderGovernment, ServicePanelActionType::GovernmentTab; keys 1 / 2.
+- F8 tabs in the §11a order РЫНОК · КОНТРАКТЫ · ГРУЗ · ФИНАНСЫ · ХАБЫ (TradeTabOrder, keys 1..5 = that order); tab ids
+  unchanged so `tradetab:N` scripts keep their meaning, the retired id 3 opens the market. DEV: `service:government`,
+  `govtab:0|1`.
+- Checks: check_service_panel_shell, check_architecture, check_localization_boundary,
+  check_function_key_presentation_route, check_client_service_ui_polish PASS; EliteServicePagesCheck PASS (run from
+  build-relwithdebinfo - from the repo root it cannot find the star atlas); EliteEconomyCheck 142/142.
+- LIVE (earth_orbital_hub, D:/tmp/f5gov/run.log, 01..06_*.png): F5 app in space and docked (Sol nav archive, 4 records,
+  onboard memory / carriers), Галера+ empty form, F8 market on key 1, cargo on key 3, tradetab:3 -> market.
+- Seen, not of this slice: on every F5-F8 page the big title is clipped at the top and the selected tab's box sits
+  ~half a line below its label (text y vs box y) - a shared layout offset, left as is.
+- Author's open items (§11b): pilot licence categories in the state app (step 11); a shipless pilot - the hiring board
+  (where: F5 employment service or F8 private hire).
+
+## TRADE MVP step 7: the income tax (docs/TRADE_DESIGN.md §5.2, §9 row 7, §9f) - SOURCE + UNIT + LIVE PASS 2026-11-20
+- Built (minimal set): TaxModel (pure: TaxBook, rollTaxPeriod, settleTax), one book per player in EconomyServer;
+  residence = the home bank's polity, rate / admin fee by its fiscal style (trade_fees.json income_tax + tax_admin_fee:
+  bureaucratic 25 % + 2 %, corporate 15, planned 10, security 20, theocratic / clan 0; income_tax block: 90-day period,
+  due 15 days later, 5 % penalty, 5 % withholding). Cash basis: sales (after the deal's fees), contract rewards /
+  advances = revenue; purchases (net of reclaimable VAT), docking, berth, fuel, services, contract penalties and a
+  forfeited deposit = expenses; fines not deductible. Due day: payOrDebt(Purpose::Tax) - unpaid -> 0 % debt + a one-off
+  5 % penalty (Purpose::Fine, "пени в долг"). Withholding at source 5 % on a foreign issuer's contract money, credited
+  at home only via an open / licensed channel. economy_state/6 ("taxes"; /1../5 still load), snapshot schema 55
+  (session.wallet tax*). F5 state app -> НАЛОГИ section (govsec:0 / navigation data govsec:1).
+- Checks: EliteEconomyCheck 158/158 (testIncomeTax: the pure book, a sale + docking -> estimate, day 1080 assessment,
+  day 1095 paid / broke player 2 -> debt + 5 % penalty, economy_state/6 byte-exact round trip); check_architecture,
+  service_panel_shell, localization_boundary, wire_data_schema, wire_protocol_boundary, replication_snapshot PASS;
+  EliteServicePagesCheck PASS.
+- LIVE (earth_orbital_hub, D:/tmp/tax7/run.log + 01..04_*.png): DEV grain sold +7 362 Cr, docking -384 -> F5 profit
+  6 978, estimate 1 779; clock +80 days -> "[Tax] period 10170..10259 closed: profit 6 978 x 0.25 -> tax 1 745 + fee 35,
+  due day 10275" -> "day 10275 DUE 1 779 Cr -> paid 1 779". The first run showed integer fields as 0 (fmt %d with a
+  double) - fixed, re-captured.
+- Not in the minimal set (§9f): monthly advances, loss carry-forward, VAT on port services, stamp duty.
+
+## TRADE MVP step 8: market regimes (docs/TRADE_DESIGN.md §2.5, §9 row 8, §9g) - SOURCE + UNIT + LIVE PASS 2026-11-20
+- Built (minimal set): regime by the polity's government (trade_fees.json regime_market + market_regimes): corridor
+  (Sol, Selva-Verde, Novo-Thebaid: basket food / water_gas / medical held in anchor x [0.9, 1.15] - in the daily step AND
+  in the deal / snapshot side from the first day; below 50 % of target a buyer's day ration max(1 t, 2 % stock)),
+  planned (state price anchor x [0.8, 1.0] hashed per polity / good / 360-day plan, no deal impact; the hub sells only
+  the stock above 70 % of target, "нет в продаже: госпотребность"), mobilization (planned for fuel / weapons / metals /
+  machinery), no_state, free. MarketSide fixedPriceCr / giveCapT (TradeQuoteModel), EconomyServer::regimeSide /
+  recordRation; ClientMarketRow fixedPriceCr / giveCapT / regimeNote (snapshot schema 56), the client deal preview uses
+  the same side; the market row shows the note.
+- Bugs found on the way: regime_market iterated items() of a temporary json (dangling - nothing loaded; the code
+  already warned about it); the build's assets copy is refreshed only by the full build (ninja EliteEconomyCheck alone
+  ran with the old trade_fees.json); the corridor applied only after a daily step (first live run showed -11 %).
+- Checks: EliteEconomyCheck 166/166 (testMarketRegimes: state price / cap / ration in the quote model; a planned hub
+  beacon.BCN-009-BR at the state price with the 70 % cap; a corporate hub untouched; Sol basket in the corridor after a
+  year).
+- LIVE (earth_orbital_hub docked, D:/tmp/regime8/01_f8_market_sol.png): the basket rows carry «цена в коридоре», food at
+  -10 % (was -11 % before the side clamp), other groups free.
+- Deferred (§9g): the pre-election ceiling, the black market / shadow orders and closed borders (step 9), requisition.
+
+## TRADE MVP step 9: contraband - customs at docking, seizure + fine, the black market (docs/TRADE_DESIGN.md §2.8, §9h) - SOURCE + UNIT + LIVE PASS 2026-11-20
+- Built (minimal set): legality by the hub polity's regime family (EconomyModel loads trade_goods legality +
+  regime_family; Sol = strict). Default (author may revise): until licences (step 11) only "banned" is contraband;
+  "restricted" trades openly with a note. The open market refuses banned goods. Customs at docking (EconomyService,
+  once per port call after the docking fee): p = customs inspect_p by channel (home bank vs hub bank) x 1.5 strict x 1.5
+  planned, deterministic roll; inspection fee 600 Cr; found (hidden in legal cargo 0.7, attention +25 %/seizure by that
+  polity in a year, <= x2) -> seized, fine 2 x value via payFine (never refused), a contract carrying it fails;
+  seizures persisted (economy_state/7). Black market: F8 ГРУЗ button on a banned lot / trade:black:<good>: shadow price
+  x 2.5, no VAT / handling, <= 50 t/day/hub, not in the tax book. Protocol 35 (SellBlack, DevCustoms), snapshot schema
+  57 (cargo legalityHere / blackBidCrPerT). Rules: trade_fees.json "smuggling".
+- Checks: EliteEconomyCheck 180/180 (testSmuggling); architecture / wire / replication / localization / service panel
+  contracts PASS.
+- LIVE (D:/tmp/smuggle9/run.log, 01..04_*.png): DEV 2 t narcotics + 10 t grain, econ:customs:1, docked at Высокий ->
+  "[Smuggling] SEIZED 2 t worth 162 000 Cr, fine 324 000 Cr" (grain kept; F8 ФИНАНСЫ: досмотр -600, штраф в долг
+  324 000); then 3 t narcotics -> ГРУЗ shows «ЗАПРЕЩЕНО ЗДЕСЬ» + «ЧЁРНЫЙ РЫНОК +607 500 Cr» -> "BLACK SALE 3 t x 202 500".
+- Balance note (to tune): narcotics 81 000 Cr/t makes one seizure a -300k debt and one black sale +600k - the balance
+  list (prices) covers it.
+- Deferred (§9h): patrols in space, bribes, reputation, hidden compartments, re-stamping, closed borders, the planned
+  economies' black market, contraband contracts.
+
+## TRADE MVP step 10: NPC flows and dumping (docs/TRADE_DESIGN.md §2.4, §2.6, §9i) - SOURCE + UNIT + LIVE PASS 2026-11-20
+- Built (minimal set): stepCell dumping above 1.3 x target (deeper for short shelf life; trade_goods shelf_days now
+  loaded), glut (> 2 x) / shortage (< 0.3 x) step limits 12 %/day (normal 8 %); NPC speculators between the hubs of one
+  system on 1-3-day-old bulletins (an 8-day price ring per market), shipping when the margin over ask + 40 Cr/t beats
+  15 %, landing in 1-3 days; state-held goods (planned / mobilization) excluded. Rules: trade_fees.json "npc_market".
+- Performance: the first version cost 60 ms per economy day on the server thread (erase from the middle of the
+  shipment vector, a polity / regime lookup and string compares per hub pair); rewritten to one-pass arrivals and a
+  per-market state-good table -> 2.8-3.0 ms (unit run and live).
+- Checks: EliteEconomyCheck 186/186 (testNpcMarket: dumping settles at the formula for ore / fresh food, -12 % glut /
+  +12 % shortage limits, a year of flows ~2.8 Mt shipped, Sol worst drift bounded).
+- LIVE (D:/tmp/npc10/run.log): econ:days 40 -> "[NpcFlows] day 10230: 5000 shipments today (7 134 t), 9994 in
+  flight, step 2.99 ms", mean daily |dp| 0.08-0.10 %.
+- Deferred (§9i): inter-system speculators (no jump graph in the economy), the player's bulletin ring (§2.7), saving
+  shipments in flight.
+
+## TRADE MVP step 11: licences + the pilot licence categories (docs/TRADE_DESIGN.md §4, §9j, §11b) - SOURCE + UNIT + LIVE PASS 2026-11-20
+- Built (minimal set): licence types in trade_fees.json "licences" (export_control 15 000: J charge, nav sensors,
+  computing, arms, munitions; hazardous_c 2 000: reactor fuel; excise 3 000: alcohol, luxury, narcotics), issued by
+  the berth hub's polity for 360 days, fee x port index, paid (refused without the money); EconomyServer legalityFor /
+  licenceForGood / hasLicence / buyLicence. A restricted good without the licence is now contraband (the step-9
+  interim rule removed): open market "licence" refusal, customs seize, black market shadow x 1.3. Pilot licence
+  categories (author: like Дія): + cargo courier (assisted) at start, - newtonian (later) - shown only, the hiring board
+  will check them. F5 state app sections: taxes / licences / navigation data (govsec 0/1/2). Protocol 36 (BuyLicence),
+  snapshot schema 58, economy_state/8. DEV licence:buy:<type>.
+- Bugs on the way: a "\n" in a patch script became a real newline inside a C++ char literal (build error, fixed); the
+  GameServer BuyLicence branch was not applied by the patch (the first live run answered "unknown good
+  export_control") - added, re-run. The trade-server test "a broke player buying computers" now hit the licence
+  refusal first: switched to medical equipment (legal).
+- Checks: EliteEconomyCheck 202/202 (testLicences); architecture / wire / replication / localization / service panel
+  contracts PASS.
+- LIVE (D:/tmp/licence11/run.log, 01..03_*.png): F5 -> Лицензии lists the pilot categories (+/-), 3 offers of Sol;
+  licence:buy:export_control -> "[Licence] export_control from sol_authority for 15 000 Cr, until day 10556", the row
+  turns «ПРОДЛИТЬ»; reactor fuel without the class C licence -> "REFUSED (licence) ... (F5 -> Лицензии)".
+- Deferred (§9j): VAT registration, passengers, mining, rescue, mercenary, bloc licence, Lotus cordon, late fines,
+  requirements.
+
+## Ship arrest / auction and the hiring board - BLOCKED by missing base layers (finding 2026-11-20)
+- The plan (TRADE_DESIGN §11b, ECONOMY_BANKING 2026-11-20) needs either per-instance ship configuration (install
+  another product - applyRefitOperation refuses it) or a runtime player ship change (F6 purchase transaction, boarding,
+  ControlRegistry rebind; the client learns its controlled entity only in the session welcome). Neither exists. A bare
+  arrest without an auction can strand a broke pilot forever - not shipped. Recorded in TRADE_DESIGN §11c. Next by
+  plan meanwhile: step 17 (money-command journal), then step 13 (insurance).
+
+## TRADE MVP step 17: a crash right after a deal keeps the deal (docs/TRADE_DESIGN.md §9 row 17) - SOURCE + UNIT + LIVE PASS 2026-11-20
+- Minimal form instead of a JSONL command journal: every money / cargo event (deal, fees, customs, black market,
+  taxes, licences, contracts, ship loss, DEV cargo) asks for an URGENT save - handed to the background writer at the
+  next tick, not after the 2 s throttle; the daily step and the port-call open stay throttled. EconomyServer::saveNow(what,
+  urgent = true), m_urgentSave.
+- Bug found by the new check: on Windows the atomic rename fails while another process holds the state file open (the
+  check's own polling reader; in life an antivirus / a backup) and the save was silently dropped until the next change.
+  The writer now retries (10 x 20 ms, then 10 x 100 ms) unless a newer state is already waiting.
+- Checks: EliteEconomyCheck 203/203 ("an urgent save is on disk 54-70 ms later", 4 runs stable after the retry; it was
+  flaky 2 of 3 before).
+- LIVE (D:/tmp/crash17/run1.log, run2.log): docked, BUY 15 t grain, taskkill /F 0.3 s after the server's deal line;
+  restart -> "state restored ... day 10196", account 9 963.24 CR, lot L1 food_staples 15 t, VAT to reclaim 1 739.46.
+- Observed, not of this slice (first attempt of the same run): the client dock tracker diverged at the
+  earth_orbital_hub gate (DockClientTrack segment 1, remaining 0, cross_track 100 -> 112 m growing, actual 5-6 m/s) and
+  never docked within 300 s; the retry docked normally. Flaky docking - to investigate separately.
+
+## TRADE MVP step 13: cargo insurance (docs/TRADE_DESIGN.md §3.6, §9k) - SOURCE + UNIT + LIVE PASS 2026-11-20
+- Built (minimal set): a per-ship cargo policy bought at a berth (F8 ГРУЗ button / cargo:insure): the own lots aboard
+  for 30 days, premium 0.4 % of their value at the hub's traded price (regime applied); a ship loss pays 90 % of the
+  insured lots lost (10 % deductible); contract cargo and contraband excluded. trade_fees.json "insurance". Protocol 37
+  (InsureCargo), snapshot schema 59, economy_state/9.
+- First run of the check: the quote valued Sol grain at the raw cell price (below the corridor) while the market trades
+  at the corridor price - switched to the regime market side.
+- Checks: EliteEconomyCheck 213/213 (testInsurance). LIVE (D:/tmp/insure13): 10 t grain -> "insured for 5 629 Cr,
+  premium 23 Cr, until day 10226", ГРУЗ shows the policy.
+- Deferred (§9k): hull insurance, surety bonds, route risk.
+
+## F6/F7 BASE 1: per-instance ship configuration (another product in a slot) - SOURCE + UNIT + LIVE PASS 2026-11-20
+- Why: ship arrest's "exchange seizure" and refit trade need installing ANOTHER product (applyRefitOperation refused
+  it). Investigation (subagent map of ShipCore / replication) -> the narrow path, not a full re-init:
+  - refit::configuredDescriptor(base, module, product): a process-wide APPEND-ONLY store (mutex; never freed - cores
+    and demoted shells keep raw descriptor pointers; the same key returns the same pointer), built by the preview's own
+    swapProduct; configuredDescriptor(base, overrides) applies a "moduleId=productId" list (the client's resolve).
+  - ShipCore::reinstallConfiguration(d): switches m_desc / native descriptor, construction.bind, the same rebuilds as
+    adoptInstanceState (hits, mass, devices, runtime) + re-inits the radar unit from the new passport (the slot stays
+    occupied, init would silently keep the old radar - found by the check); catalog hulls only (Cobra profiles refused).
+    Motion, modules, load, reactors untouched. recordProductOverride keeps the list.
+  - apply of another product = reinstall + a new unit (serviceModule replace); the preview is applicable now.
+  - Replication: ShipRefitSnapshot::productOverrides (snapshot schema 60); the client re-resolves the descriptor when
+    the list changes (it resolved only on a ship's first snapshot - found live: the client kept the catalog product).
+  - DEV verbs service:refit, refitship:<n>, refit:replace:<module|radar|drive>:<product|first>, refit:report.
+- Checks: EliteRepairRefitCheck PASS (radar N-2 -> N-10: live 10 000 km = preview; drive U-43 -> U-33: forward 6.696 ->
+  5.107 m/s2 live = preview, mass 1 938.48 t = preview; the configured descriptor shared / stable); ShipCatalogCheck,
+  ServicePagesCheck, ShipThermalCheck, NavigationCapabilityCheck PASS; EliteEconomyCheck 213/213; architecture / wire /
+  replication contracts PASS.
+- LIVE (D:/tmp/config_f7/run.log, 01..02_*.png; ELITE_CATALOG_SHIPS=bharat.ship.c-120.konveyer near earth_orbital_hub):
+  "[Refit] apply ship=1380 module=C-120-A6A2.1 result=APPLIED", the client: overrides [C-120-A6A2.1=xz.radar.n10],
+  module product xz.radar.n10; then the drive -> ofu.drive.u33, F7 shows «U-33 · Урал-33» installed and Урал-43 among
+  the alternatives. The player's own Cobra (legacy, not catalog) is refused with a clear reason.
+- Limits (recorded): no ship persistence exists - a configuration is lost on restart like every ship state; a demoted
+  shell keeps the configured descriptor but a re-materialized core starts with an empty override list (the client
+  then shows the catalog product); a player ship's radar stays the synthetic ideal sensor (pre-existing rule); refit
+  apply is still free (payment is the next layer); the Cobra hull cannot be reconfigured.
+
+## Ship arrest - exchange seizure (ECONOMY_BANKING 2026-11-20, TRADE_DESIGN §11d) - SOURCE + UNIT + LIVE PASS 2026-11-20
+- Built on base 1: at a berth of the polity whose bank holds a debt overdue >= 90 days (a restructured debt counts from
+  its start while < half repaid - the restructuring resets "overdue", found while designing the claim) the court does an
+  exchange seizure: refit::exchangeSeizure swaps catalog modules for their cheapest compatible working products, the
+  smallest swap that covers the rest first (no excessive seizure, ZPO §803; the first version sold the 1.79 M Cr jump
+  core for a 50 000 Cr debt), the gap sells at 60 %; BankingModel::repayFromProceeds repays that bank (arrears first),
+  the rest goes to the client; the ship is not detained and stays flyable. GameServer::arrestShip from the berth
+  binding; EconomyServer::arrestClaim / settleArrest; trade_fees.json "arrest".
+- Checks: EliteEconomyCheck 224/224 (testArrest: repay order, the 89 / 90-day and restructured claims, settlement),
+  EliteRepairRefitCheck PASS (50 000 debt -> life support L-20 -> OFU-O4, proceeds 54 000; seize everything -> 46
+  modules in 2 rounds, the C-120 still flies 6.70 -> 2.46 m/s2), ServicePages / ShipCatalog PASS.
+- LIVE (D:/tmp/arrest/run.log): econ:spendall + 160 economy days (delinquent -> restructured) -> docked at Высокий ->
+  "[Arrest] player 1 at earth_orbital_hub: 0 module(s) exchanged ... debt 4 466 -> 4 466 Cr" - the player flies the
+  legacy Cobra: nothing seizable, the tool of trade is left alone (by design).
+- Observed: the step-17 urgent-save check failed 3 of 5 runs right after a build (the rename refused for ~1.2-2 s -
+  most likely Defender scanning the fresh 650 KB file) and passed 9 of 9 on an idle machine. Writer retries extended
+  to ~3 s; a failed write now logs the Win32 error code. Recorded as a load-dependent risk.
+
+## F7 apply costs money (2026-11-20) - SOURCE, built; live pending (with the ship-change run)
+- GameServer::chargeRefit before GameSimulation::applyRefit: the preview's labour + materials paid at a berth through
+  EconomyServer::chargeService (a repair may draw the lifeline credit - the minimum repair is always payable; a
+  replacement is a fee); not enough money / not at a berth -> GameSimulation::refuseRefit publishes the reason (F7 shows
+  it); DEV off a berth = free with a log line (the DEV refit verbs keep working). The arrest's exchange seizure stays
+  free (the court).
+
+## F6/F7 BASE 2: the player changes ship mid-session - SOURCE + LIVE PASS 2026-11-20
+- Map first (subagent): GameSimulation::m_playerId is only a bootstrap alias (no live flight / replication use);
+  the live flag is m_playerControlledShipIds; ControlRegistry had no rebind; the server already rebuilds every
+  session snapshot from the current binding; the client learned its ship only in the welcome; ShipRole cannot change.
+- Built: ControlRegistry::rebindHuman; GameServer::transferPlayerControl (owned by the same actor, ShipRole::Player,
+  free, not destroyed, same system <= 20 km; registers a ship spawned after the bootstrap in the instance registry,
+  ownership -> the player, resetSessionControlState on both ships, setPlayerControlled moves, PlayerRegistry::assignShip,
+  the ideal-radar runtime configured, a per-player control epoch); ClientShipCommand::BoardShip (protocol 38) queued
+  and executed after the command drain (the reset clears the per-entity queues); ClientSessionSnapshot
+  controlledEntityId + controlEpoch (snapshot schema 61); GameClient follows a new epoch (m_playerId,
+  setLocalControlledEntity, prediction resync); SpaceState::followControlledShip re-inits PlayerShipView with the new
+  descriptor, cancels the route / body autopilot, points F7 at it. DEV: ELITE_CATALOG_SHIPS_BOARDABLE=1 spawns the
+  lineup as Player-role; board:<n> boards F7's n-th owned ship.
+- LIVE (D:/tmp/board/run.log, 01..04_*.png; no DEV start relocation - the lineup spawns at the bootstrap position):
+  "[Board] ship 201 -> 1380: DONE", "[Control] client: controlled ship 201 -> 1380 (epoch 1)", "SpaceState: the cockpit
+  moves 201 -> 1380", then freeflight + HOME: "[FreeFlight] ship 1380 thrust FULL ... main 6.69595 m/s2" (the C-120's
+  acceleration), END brakes; F7 lists the C-120 first ("корабль 1 из 2"). EliteEconomyCheck 224/224, ServicePages,
+  RepairRefit, architecture / wire / replication / function-key contracts PASS.
+- Found on the way: the first attempts were refused "far" (38 km) - ELITE_DEV_START moved the player 40 km away from
+  the lineup spawned at the bootstrap position; the C-120 has a 5 000 t jump core but no J-charge capacity, so the
+  client planner says "no jump drive" (data, not the handover; the message is misleading - to fix wording).
+- Limits: only Player-role ships can be boarded (no role change API; an NPC-role ship would lack the ideal radar and
+  freeze the cockpit view); the old ship stays Player-role and idle; inputs in flight at the switch may reach the new
+  ship for one tick; no persistence of ships; the multiplayer acceptance harnesses assume fixed identities (not run).
+
+## TRADE step 14 core: buying a ship in F6 + boarding it (on bases 1-2) - SOURCE + LIVE PASS 2026-11-20
+- Built: ClientShipCommand::BuyShip (protocol 39; detail = passport, target = offer id), executed after the command
+  drain: GameServer::buyShip at a berth recomputes the same deterministic offer (devShipOffers), only the
+  manufacturer's NEW offer for now (a used offer would hand out a pristine ship - wear / damage are not carried yet),
+  charges it (EconomyServer::chargeService, Purpose::Other - not deductible, a capital purchase), spawns a Player-role
+  ship owned by the player's actor 5 km ahead in the hub's frame (GameSimulation::spawnShipBeside - the lineup's
+  placement factored out), refunds if the spawn fails, EconomyServer::recordOperation shows the result. F6: «КУПИТЬ» on
+  a new offer; F7: «ПЕРЕСЕСТЬ НА ЭТОТ КОРАБЛЬ» on an owned, not controlled ship (BoardShip). DEV: econ:grant:<Cr>
+  (ClientEconomyCommand::DevGrant, protocol 40), buyship:<passport>, service:shipyard. Also: F7 apply costs money
+  (previous commit) is exercised by the same build.
+- LIVE (D:/tmp/buyship/run.log, 01..03_*.png): DEV grant 20 000 000 -> "buys bharat.ship.c-120.konveyer
+  (#manufacturer) 14 879 000 Cr: DONE" -> F7 lists it -> "[Board] ship 201 -> 1577: DONE", the client and the cockpit
+  follow, "[FreeFlight] ship 1577 thrust FULL" / BRAKE; the account 5 141 620 CR afterwards.
+- Not done (step 14): used ships (wear / damage onto the instance), leasing, a ship as loan collateral, selling a ship,
+  ship persistence (a bought ship is lost on restart like every ship), the hiring board (next: an employer's ship is
+  the same spawn + boarding with an employer owner).
+
+## The employment service in F5 (the hiring board, TRADE_DESIGN §11b) - SOURCE + LIVE PASS 2026-11-20
+- Built on bases 1-2: per hub and week two courier vacancies (a transport company's Cobrett-I, 4 000 Cr / 30 days,
+  needs the pilot licence category cargo_courier) and one military post of the hub's polity (PK-30 / R-7, 2 500 Cr /
+  30 days, 720 days, citizens only - the home bank's polity). Hire (F5 «НАНЯТЬСЯ» / job:hire:<n>, at a berth): the
+  employer's Player-role ship spawns 5 km off and the pilot boards it (transferPlayerControl allows the hired ship of
+  that player; the ownership stays with the employer); the wage is paid daily (wage / 30) by the employer's bank and is
+  taxable revenue; quit («УВОЛИТЬСЯ» / job:quit) boards the own ship back. Галера+ shows the unit, ship, rank and term of
+  a military job. EconomyServer vacanciesAt / vacancyRefusal / start- / endEmployment / payWages (economy_state/10);
+  ClientShipCommand HireJob / QuitJob (protocol 41); wallet vacancies + the job (snapshot schema 62);
+  trade_fees.json "employment".
+- Found live: quitting was refused "far, 533 km" - the docked own ship, uncontrolled, keeps a stale world position while
+  the station orbits; two ships at the same station now count as "here" by the station frame.
+- LIVE (D:/tmp/jobs/run.log, 01..04_*.png): F5 -> Служба занятости lists 3 vacancies; hire courier0 -> "DONE", the
+  client 201 -> 1577; 3 economy days -> wages (account 20 404); quit -> "DONE", the client 1577 -> 201; enlist ->
+  "DONE", 201 -> 1578; Галера+: «силы обороны: Солнечная Администрация», патрульная эскадрилья «Высокий»,
+  sol.ship.pk-30.strazh, пилот (рядовой), 10199 - 10919.
+- Not done: reports in Галера+ (transfer, leave, discharge), the term's end, hijacking an employer's ship, jobs needing
+  other licence categories, a pilot WITHOUT an own ship (after a total loss) - the board is the way back to flying
+  once ship loss leaves the pilot shipless (not modelled yet).
+
+## TRADE step 12: rescue (МЧС), variant A - SOURCE + UNIT + LIVE PASS 2026-11-20
+- Built (minimal set): the "sar" licence (18 000 Cr / year, any berth of the polity); SOS calls from the world per
+  hub and day (p 0.15, open 2 days; a capsule 60 % / a ship without power 25 % / medevac 15 %; 4 000 / 6 000 /
+  10 000 Cr) only at hubs a route can reach (the server passes the world's hub list - economy-only plants and surface
+  cities have no world position: the first live run offered 28 calls incl. those and "no position for the hub");
+  ClientEconomyCommand::TakeSos (protocol 42) by a licensee; the call completes when the pilot's ship reaches that hub
+  (checked every 30 ticks; the search near the hub is abstracted until navigation can target a point in space); the
+  reward is paid by that polity's bank and is taxable. F5 state app -> МЧС (the licence here, the calls with «ПРИНЯТЬ»,
+  the accepted one "fly to"). Snapshot schema 63, economy_state/11. DEV: sos:take:<n | part of a hub id>, sos:goto,
+  sos:report; a licence off a berth in the hub frame in DEV only (the docking queue was too slow for the check).
+- Missed earlier and fixed now: the employment step bumped economy_state to /10 without rerunning EliteEconomyCheck -
+  6 schema / offer-count checks failed; updated (224/224).
+- LIVE (D:/tmp/sos/run.log, 01..03_*.png): start 40 km from Вэньчан, licence, 8 calls in Sol; take the capsule at
+  Вэньчан -> route 40 km, ARRIVED -> "[Rescue] player 1 completed sos:earth_hub.wenchang@10195: +4000 Cr"; F5 МЧС shows
+  it «выполнен».
+- Observed again, not of this slice: docking at Высокий took 287 s in one run and the first route leg from the berth
+  never finished in 480 s - the docking / departure flakiness recorded for step 17.
+- Not done: variant B (duty for tax credits), the dispatcher's obligation / refusal fines, towing, salvage rights, a
+  real search in space (a derelict / capsule object), inter-stellar search.
+
+## TRADE step 15: bot pilots (minimal set) - SOURCE + UNIT + LIVE PASS 2026-11-20
+- Built: a hub agency (3 candidates / week, hidden traits skill / discipline / punctuality / thrift / honesty / nerve from
+  a hash, a beta-like spread; the CV embellishes the skill by (1 - honesty)); hire onto an owned ship the player does
+  not fly (HireBot, the server maps the entity to its instance key, capacity, dry mass); the order "trade loop" (this
+  hub <-> the other market hub of the system with the best legal margin); a daily abstract run with the server's own
+  deals on the owner's money (sized by the money - a C-120's hold first asked 3.8 M Cr), docking fees, route errors /
+  late legs / theft by traits, the wage 4 000 x (0.6 + 0.8 skill) / 30 days daily (30 unpaid days -> the bot leaves),
+  reports delivered a day late. F8 tab ФЛОТ (key 5; ХАБЫ moved to 6): the bots with ПЕТЛЯ / УВОЛИТЬ, the last
+  reports, the agency with «НАНЯТЬ на <ship>». ClientEconomyCommand HireBot / OrderBotLoop / FireBot (protocol 43),
+  snapshot schema 64, economy_state/12. DEV bot:hire:<n> / bot:loop:<n> / bot:fire:<n>.
+- Checks: EliteEconomyCheck 234/234 (testBots: the deterministic agency, the CV never understates, hire / refuse, the
+  loop, trips over 10 days with the wage paid, reports a day late, economy_state/12 byte-exact, a fired bot and an
+  idle bot of a broke owner leaving after 30 days - its late VAT refunds paid a few wages first).
+- LIVE (D:/tmp/bots/run.log, 01..03_*.png; the lineup C-120 near Высокий): hire «Нур Олсен» (skill 0.69, CV 0.75) ->
+  loop Высокий <-> «Гермес» fertilizers -> after 6 days: bought 10.97 t @ 1 415, sold @ 1 696 (+2 738 to the basis).
+- Fixed on the way: the trip result counted the reclaimable input VAT as a cost (showed -335 for a +2 738 trip).
+- Balance note: the loop picks by the list margin (20 %) without the fees; with the wage and VAT refunds 30 days out the
+  owner's net worth falls in the first weeks - to tune (a net margin estimate by explainDeal; a minimum margin).
+- Not done: other orders (contract delivery, mining, patrol, ferry), wilfulness, panic, hijacking, fines to the owner,
+  the Bayesian trait estimate, bots in other systems.
+- Docking investigation (subagent, 2026-11-20): not a drift - the station captures the ship ~190 m before the client
+  route ends and flies its own corridor (12 -> 8 m/s, an arc to the pad, 6 s touchdown, ~75 s); the client keeps
+  logging DockClientTrack against its old line (the "growing cross-track"). The one "never docked" run hit my own 300 s
+  script limit (215 s approach + 75 s station). To do: the client should release its autopilot on station capture
+  (SpaceStateDocking updateDockingExecuting, check dockDispatcher.stationControlled).
+
+## Docking: the client follower releases on the station's capture (2026-11-20) - SOURCE + LIVE PASS
+- SpaceState::updateDockingExecuting: when the player's dockDispatcher says active && stationControlled, log
+  "phase=station-handoff" once per request, releaseClientAutopilot and stop (the server flies its corridor; the docked
+  state ends the request as before). LIVE (D:/tmp/regime8/run.log): "[DockClient] request=1 phase=station-handoff ...",
+  docked after 289.8 s as before; no DockClientTrack lines against the old line after the capture.
+
+## Ship persistence for runtime ships (bought, employers') - SOURCE + LIVE PASS 2026-11-20
+- The server remembers the instance ids of the ships it spawns at runtime (BuyShip, HireJob) and saves them next to
+  the economy state ("<economy state>.ships.json", runtime_ships/1): passport, product overrides, owner, registration,
+  name, the hub + the local offset in its frame, who flies it, the hire links (own ship / employer ship by instance id);
+  on a purchase / hire / boarding / refit apply and every ~3600 ticks. On start, once the world's hubs exist, the ships
+  are spawned again at their hubs (GameSimulation::spawnShipAtHub) with the configured descriptor and the override
+  list, the hire links restored, and a pilot who flew one is moved back into it (transferPlayerControl(restoring =
+  true) skips the distance rule). Same instance ids -> the economy's bots / manifests / policies keep pointing at them.
+- LIVE (D:/tmp/shipsave/run1.log, run2.log): run 1 bought a C-120, boarded it, swapped its drive to U-33 ("APPLIED",
+  overrides [C-120-A1A1.1=ofu.drive.u33]); run 2 on the same files: "[ShipSave] restored bharat.ship.c-120.konveyer
+  (970001) at earth_orbital_hub -> entity 1548", "the pilot back in ship 1548: DONE", F7 lists it first with the same
+  override.
+- Not covered: damage / wear / cargo mass of a restored ship (the manifest is the economy's and restores), the
+  bootstrap ships and the DEV lineup (not runtime ships), ships in free space away from a hub (saved with their last
+  hub frame).
+- (2026-11-20, later) Bot loop choice by the NET margin: a 20 t trip priced by explainDeal on both ends (handling, VAT
+  minus what comes back, duty, turnover) plus two dockings; the Sol test loop moved from fertilizers (list 20 %) to
+  household goods (net 17.6 %), trips over 10 days +5 907 Cr. EliteEconomyCheck 234/234.
+
+## TRADE step 16 part 1: construction contracts on a hub's planned module (2026-11-20) - SOURCE + TESTS + LIVE PASS
+- Design choice (subagent survey): a brand-new runtime hub would touch ~6 load-frozen subsystems (EconomyModel hubs,
+  markets, channels, routable set, spawn, persistence); the player's construction instead TAKES OVER a PLANNED expansion
+  project of a world hub (its own geometry + hubc_* s1..s4 kits, no meshes touched; mine hub meshes untouched).
+- HubExpansion: setHubExpansionProjectOverride(hub, project, start, workDays, halts) (runtime, mutex'd plan cache, a
+  generation counter invalidates the stage keys -> client re-assembly + server hit volumes as for the hubs' own days).
+- EconomyServer (economy_state/13): setBuildableProjects (server: per world hub the first planned hall/yard/slab/hab/
+  tower/dock project), buildOffersAt (3 firms a week: price = 3.05 M x kind factor x 1.15..1.30, 30 x 0.9..1.4 days,
+  reliability 0.6..0.95), signConstruction (s1 = 15 % at signing), stepConstruction (s2/s3/s4 30/30/20 % due at 25/50/75 %
+  progress; unpaid -> 'funding' halt, paid -> resumes; 180 days unpaid -> abandoned; random 1..5-day halts p = 1 %/day x
+  (1.5 - r); done: the 5 % retention paid at the acceptance, then the module is let to the hub operator: (20 % - 2 %)
+  of the price a year, daily, taxable). GameServer applies the economy-day halts to the plan's days (offset by today).
+- Protocol 44 (SignConstruction), snapshot 65 (wallet buildOffers / buildProjects), F5 КОСМОУСЛУГИ -> «Стройка» section,
+  DEV build:sign:<n> / build:report. trade_fees.json "construction".
+- Tests: EliteEconomyCheck 242/242 (testConstruction: offers, refusal without money, s1, a 'funding' halt at 25 %,
+  resume, done = the price exactly, income, save / restore). First run caught the double retention (the milestones
+  already sum to 95 %) - fixed.
+- LIVE (D:/tmp/build16/run.log): docked at Высокий after 290.6 s; 3 offers for earth_orbital_hub.x02 (жилой модуль,
+  7.4-7.8 M Cr); signed -> "drawing earth_orbital_hub.x02 ... start 324, 30 days -> ok", "[HubConstruction]
+  earth_orbital_hub: hit volumes of the new construction stages"; F5 shows the contract (s1, 0 %, paid 1 124 850 /
+  7 499 000, строится) - 02_signed.png.
+- Not yet (part 2/3): asteroid sites / concessions, own production with depletion, staff, supply series paid by the
+  owner, the customer's-materials option, replication of overrides to remote clients (same process only now).
+
+## TRADE step 16 part 2: mining concessions (2026-11-20) - SOURCE + TESTS + LIVE PASS
+- EconomyServer (economy_state/14): siteOffersAt (mining_hub / belt_hub hubs one can fly to - the routable set; 3 bodies
+  a week: r 50..2000 m skewed small, grade 0.5..3, ore_rare 1 in 5, reserve = sphere x 2.4 t/m3 x 0.3, rent = 2000 +
+  6 x r x grade a year), leaseSite (application 50 000 + survey 200 000), the rig = a construction contract
+  (kind 'minehead', 3.05 M x 1.15..1.30; offered only to the concession's owner; never drawn - mine hub meshes untouched),
+  stepMines (daily rent, 90 days unpaid -> lapsed; once the rig is accepted: a shift of 12 x 3 000 Cr/month + 2 %/yr
+  upkeep, output 150 x (0.5 + grade/3) t/day x the reserve tail, into the mine's stockpile manifest and sold at the
+  hub's market by the ordinary deal (price impact, VAT, taxes), royalty 7 % to the state). trade_fees.json "mining".
+- Protocol 45 (LeaseSite), snapshot 66 (wallet siteOffers / mines); F5 «Стройка» lists my mines + the sites here.
+  Lease / sign need the ship AT the hub (docked or in its frame; free flight -> "not_at_hub" - before, an empty hub fell
+  back to the home hub). The buttons are always shown: hubs of other bodies (Ceres) have no berths yet.
+- Tests: EliteEconomyCheck 253/253 (testMining: offers only at mining/belt hubs, refusal, lease, rig offers only to the
+  owner, rig accepted day 1040, 10 days: 2 068 t mined + sold, save / restore, 95 days broke -> lapsed).
+- LIVE (D:/tmp/mine16/run.log, 01_mine_f5.png): DEV start at Ceres, route to the hub, 3 sites; leased астероид 8554
+  (r 505 m, reserve 388 Mt, rent 6 242 Cr/yr); 3 rig offers; signed «Тяжмонтаж» 3.609 M (s1 541 350). Hygiea (belt
+  reservoir) is not a world hub - hence the routable filter.
+- BALANCE NOTE: selling at the producing hub dumps the price (~11 Cr/t net of everything in the test: ~2.3 k/day
+  proceeds vs ~1.4 k/day costs) -> payback of the rig takes years. Part 3: pick the ore up from the stockpile / ore
+  haul contracts to processing hubs; check the ore bid at belt markets.
+
+## TRADE step 16 part 3: the mine's ore can be kept and hauled (2026-11-20) - SOURCE + TESTS (live: pending)
+- Concession.sellLocal (economy_state/14 field "sell_local"): SetMineSale (protocol 46, op 19, by radio, anywhere) -
+  sold at the hub daily / kept in the stockpile; LoadFromMine (op 20) at the mine's hub: the stockpile -> the hold
+  (what fits, an own lot with the stockpile's basis), then an ordinary lot to sell anywhere. Wallet mine: stockT,
+  sellLocal, here (snapshot 67). F5 «Стройка»: КОПИТЬ / ПРОДАВАТЬ ЗДЕСЬ, ПОГРУЗИТЬ. DEV build:keep/sell/load:<n>.
+- Tests 257/257: kept -> 564 t in 3 days; loading away from the hub refused; 100 t loaded; sold at Высокий.
+- Live: not yet - a rig needs 30+ economy days before any ore exists; to be checked with a DEV day skip / a long run.
+- BALANCE (open): 100 t of ore_common sold at Высокий = 1 554 Cr (15.5 Cr/t) vs base 96 Cr/t; at the mine 11.2 Cr/t
+  net. Per-tonne fees appear to eat cheap bulk goods - investigate the deal breakdown for ore next.
+- Also fixed: a trailing comma in government.json (the ja build_dock_hint line) from the previous hint edit.
+- (2026-11-20, later) BALANCE fix: bulk goods (groups ore, water_gas) pay 0.3 of the 12 Cr/t handling tariff (a bulk
+  terminal; real iron ore port handling a few $/t vs ~$10/t general cargo): MarketSide.handlingMult set in regimeSide,
+  used by explainDeal; trade_fees deal.bulk_handling_share / bulk_groups. The ore deal at Высокий: proceeds 2 994,
+  handling 1 200 -> 360 (+VAT 240 -> 72); the test mine's 10-day net 23 264 -> 42 650 Cr (11.2 -> 20.6 Cr/t).
+  257/257. Known gap: the trade snapshot's handlingCrPerT (the client's estimate) is still the general tariff.
+  The low ore bid at Высокий (~30 Cr/t vs base 96) is the market's surplus, left as is.
+
+## Author's play session 2026-11-21: hub city freezes + visual issues - IN PROGRESS
+Author's notes (live play, normal window, D:/tmp/user_play.log):
+1. Freezes when a hub city comes into view. LOG: [M8E-HITCH] frame gaps 409-531 ms (render phase) = dozens of module
+   packages (hubd_* defence, hubt_* traffic, hub_proto_*) loaded SYNCHRONOUSLY by ModelAssetGpuLibrary::getPackage in
+   one frame (file read + parse; the GPU upload itself is 4-13 ms from the prewarm loader); 45-66 ms frames when the
+   construction craft (hubc_tug / clawship / hauler / pod) appear; 527 ms for the procedural Saturn moons (MapProceduralBodies,
+   Titan 74 ms ...). Not caused by step 16 (no contract in the author's state).
+   FIX (source, compiled; link blocked while the author's game runs): getPackage loads on a std::async loader thread
+   and returns nullptr until ready; the craft and ship-package caches no longer keep a nullptr forever. To verify: the
+   frame gaps near Высокий after a restart.
+2. "The edges pop in sharply" (author): edge.frag (Elite Classic) kept alpha >= 0.95 x (1 - 0.4 t) -> ~0.57 at
+   fadeEnd, and edge_instanced.frag a fixed 0.7 floor, while the CPU culls edges beyond fadeEnd -> whole cities' edges
+   appeared at ~60 % at once. FIX: the floors fade to 0 over the last part of the range. To verify visually.
+3. Many corridors overlap near a dock ("выглядит стрёмно"): they should merge at a junction, then ONE corridor leads to
+   the dock. TODO (design + navigation lanes).
+4. A ship flew through the player's ship during the approach - no collision. TODO: which ship (presentation traffic vs a
+   promoted real ship), ship-ship collision coverage.
+5. The corridors (HubCorridorHudRenderer: a screen-space HUD, no depth) show through the station even in the dock;
+   the author wants them hidden behind objects. TODO: depth-tested corridors (scene depth at the HUD stage or a 3D
+   pass).
+6. Author's request: the hub map gets its own button (top right, on the map itself) "План хаба" -> a 2D plan of the hub
+   like the mesh editor's hub mode (blocks / streets / lanes / docks / piers): all docks and ships marked, the docking
+   function kept (pick a dock -> the same docking request). Note: the editor's overlay comes from the python hub_map_tool
+   "derive"; in the game the plan must be drawn from the runtime city layout (hub_cities nodes + footprints), the dock
+   modules, the green lanes and the ships of the snapshot. HubMapView already has applyPlanCamera (a top-down 3D view).
+   + on the plan, at the same place (top right), a button back to the 3D hub map: one toggle button, "ПЛАН ХАБА" in 3D
+     and "3D-ВИД" on the plan (author suggested "назад"; a toggle label avoids confusing it with closing the map).
+7. "After leaving the dock the control is not handed over" (author): by design (2026-11-07) the station flies a
+   departing pilot 11 km out (HexDockFacility departureTurnZ -11000), flips, brakes and releases at rest (~3 min); an
+   early takeover = hold the controls 3 s (SpaceState takeover, Owner::StationAxis) - not discoverable, no attempt in
+   the log. AND a bug: "[Corridor] ship 201 WRONG WAY ... fined 1500 cr" while the station was flying the ship.
+   PLAN: release to the pilot right past the dock portal / chamber zone (+ a big "УПРАВЛЕНИЕ ВАШЕ"); no corridor
+   fines while station-controlled.
+8. "A ship slowly flies through me" (author, twice): decorative hub traffic has no collision until promoted, or a
+   ship-ship collision gap. Author: a ram must have consequences (damage / destruction by the impact energy, a
+   message who hit). PLAN: identify the ship type from the log, then collisions between the player and traffic.
+9. "Only red lanes when flying from the dock into the hub" (author): the HUD colours a lane RED when it runs against
+   the player's travel (2026-11-17 rule). Высокий's lanes: green city lanes are pairs (p at y 320 / n at y 430, both
+   directions); the 14 blue dock lanes are ALL "dock.from.green" (city -> dock) - there are no dock -> city lanes, the
+   departure is the station's axis flight. PLAN (with item 3): the dock's IN and OUT: the inbound lanes merge at a
+   junction / holding node -> ONE corridor into the dock; ONE outbound corridor from the dock to a junction -> the city
+   lanes (green for a departing ship); the station hands over at the start of the outbound corridor (item 7).
+10. AUTHOR'S DESIGN for the departure (2026-11-21, supersedes 7's plan): the station flies a departing ship to the
+    11 km point only while the player does nothing; touching the controls disengages the auto-guidance at once. The hub
+    keeps its waiting areas like a FLOWER: the 6-pad dock has 6 outer spaces; the central axis is always free except for
+    the arriving ships. Existing geometry (HexDockFacility): 6 arrival holds at z -2600 / r 450 (the flower), queue
+    gates at z -8000 / r 2000, departures along the axis to departureTurnZ -11000 (on the axis - against the rule).
+    PLAN: out of the chamber -> off the axis into the ship's sector -> a DEPARTURE petal (between the arrival petals,
+    ~1.5 km out, off-axis), stop, "УПРАВЛЕНИЕ ВАШЕ"; the outbound corridor starts there (item 9); beyond the chamber any
+    control input = instant takeover (inside: "внутри дока ведёт станция"); no corridor fines while the station
+    flies; NPC departures use the same petals. PRIORITY: first after verifying items 1-2.
+11. "The front view shakes, the rear view and the drone camera look fine" (author, flying a green lane): LOG - the ship
+    hit STATION OBJECT 4 (Высокий) 26 times at 8-110 m/s closing (at 100-125 m/s in law A): panels and the centre frame
+    torn, the reactor bay frame destroyed -> both drive reactors CONTAINMENT FAILING -> dead quietly at t+31 / t+49 s;
+    now tumbling at 30.6 m/s without propulsion. The player got no clear message (only shake + siren). The impact shake
+    is (likely) on the cockpit camera only -> the views disagree. Unknown: how a green-lane flight got into the
+    geometry (no position in the collision log). PLAN: a clear crash message (impact force, damage report, reactor
+    containment countdown), the same shake on every view (or none), hub-local position in [Collision], a lane vs
+    geometry clearance check (no lane tube may touch the station's collision).
+12. "While spinning, a desync: the planet holds, the hub shakes" (author, the tumbling wreck): the hub's render pose
+    vs the camera's orientation disagree at high body rates (interpolation of the hub's frame vs the ship's attitude
+    sampled at different times, or float precision of the hub position relative to the camera). Same family as 11's
+    "front view shakes, the rear view / drone do not". TODO: reproduce with a DEV spin and compare the poses per view.
+13. TEMPORARY Ctrl+Alt+R (author): the ship fully restored - GameSimulation::debugFullRestoreShip (structure reset,
+    containment emergencies + dead-reactor marks cleared, alarms off, coolant 293 K, body rates 0, destroyedCause 0),
+    ClientShipCommand::DevFullRestore.
+- (2026-11-21) Items 1-2 + 13 - SOURCE + LIVE (approach + docking at Высокий, D:/tmp/build16/run.log, 3 runs):
+  * getPackage loads on a loader thread (nullptr until ready); module packages are lazyUpload (gpuFor never uploads
+    synchronously, pumpPrewarm does it within its budget); the city's GPU package object (the asset copy + index of
+    6 360 components) is built in the assembly job, not on the render thread. Worst ScenePerf frame 540 -> 109 ms;
+    "117 meshes in one frame" gone. REMAINING: two 400-500 ms render frames in the first ~16 s after the start (the
+    station.elmodel 761k tris, hub_proto_mega 8 884 comps, ring core, Earth's curated sea - the generic get(type) path,
+    where nullptr means the legacy path; to be made asynchronous carefully) + session-start updates 0.4-1.4 s.
+  * Edges (author's wish): Elite Classic edges dark far -> lighter near (the preset's far / near colours), no alpha
+    floor, never white (edge.frag, edge_instanced.frag). Visual check by the author pending.
+  * Ctrl+Alt+R full restore built (live check by the author pending).
+
+### Author's queue after the play session (2026-11-21, in this order unless said otherwise)
+A. Departure (item 10): out of the chamber -> a departure petal off the axis -> "УПРАВЛЕНИЕ ВАШЕ"; instant takeover
+   beyond the chamber; no corridor fines while the station flies; NPCs the same.
+B. Ships fly through the player: they should AVOID an obstacle (discussed before) - traffic avoidance of the player /
+   of each other; and a ship-ship collision when it does happen (no collision now).
+C. How the player hit the station inside a green lane: lane tubes vs the city collision check + a clearer collision
+   log (object, module, hub-local position, lane).
+D. A strong impact did not break the ship into parts (26 hits up to 110 m/s, 750 MJ): the break-up / fragment rule.
+E. Everything shook while the wreck tumbled (items 11-12): the views / hub pose desync at high body rates.
+F. Hub map 2D / 3D with docks and ships to pick (item 6).
+G. Not implemented: fly to a selected ship and take up a formation position (escort / form up).
+Plus: lanes hidden behind objects (5), the dock's one-corridor in / out (9), crash HUD message (11), the remaining
+start-up hitches (render), trade step 16 part 3 live.
+- (2026-11-21) A. Departure petal - SOURCE + LIVE PASS (D:/tmp/depart/run.log, ELITE_DEV_DOCK_AUTO_DEPART=15):
+  HexDockGeometry departureAxisStopZ -500 / departurePetalZ -1500 / departurePetalRadius 900, departurePetalPosition(k)
+  = between the arrival holds k and k+1; DockServiceTraffic: a pilot's AxialOut stops at -500 (30 m/s cap), then
+  ActorPhase::PetalOut burns to the petal and releases there (reportClear + Gone; early takeover allowed in PetalOut too);
+  SpaceState: beyond the chamber any control input takes over at once (StationAxis 0 s, autopilots still 3 s); the HUD
+  release distance = to the petal; GameSimulationHubSecurity: no lane judging while station-controlled. LIVE: cleared
+  from P1 -> off the axis -> stopped 893 m off the axis at ~1.46 km (speed 2.7 -> 0) -> "released by the station: free
+  flight"; the dispatcher dropped the ship (traces end); no [Corridor] fine. NPC departures unchanged (still the long
+  axis to -11 km then their sectors) - to align later.
+- (2026-11-21) C. "How did I hit the station in a green lane" - ROOT CAUSE FOUND + FIXED (SOURCE + LIVE check):
+  GameSimulation::devLaneClearanceReport (ELITE_DEV_LANE_CHECK=<hub>, server tick 1800): every lane tube vs every
+  collision box of the hub's static objects in the lanes' frame. Высокий BEFORE: 4 lanes INTRUDED - the X lanes at
+  +-430 m (green.x2.5.0 / x3.5.0, top.n by 55 m = the tube's centre inside, under.n by 21 m) by c4_3_canopy: the canopy
+  disc's hit cylinder (tools/models/units/hub_vista.py canopy_hits) ran from CANOPY_Y - 180 = 420 m to 650 m while the
+  visible disc is 600-650 m - an INVISIBLE 180 m slab under the disc across 1.4 km, right where the 430 m lanes run.
+  FIX: the disc's cylinder Y - 5 .. Y + 50; hubv_canopy regenerated (build_equipment_models --only hubv_canopy) and
+  packaged by the mesh editor (scratchpad package.mjs). AFTER: "64 lanes vs 7103 boxes, 0 lane(s) intruded" (tightest:
+  the under.p lanes at -100 m, 1 m from the deck's underside at the tube's edge). Applies to every planar hub with the
+  canopy (and the belt settlements' canopy).
+  [Collision] log now names the other body's module and the ship's position in its frame.
+- (2026-11-21) B. Ships fly through the player - SOURCE + CHECKS (live run had no conflict to show):
+  * Cause: the dock traffic / promoted air traffic are kinematic scripted ships (materialized near a player) and were
+    left out of the collision step (isDockStationControlledShip covers their shells); the air traffic evades ([Evade]
+    works: 5 events in the author's log), the dock traffic did not.
+  * Collisions: scripted ships take part as kinematic bodies (mass 1e12: the other ship bounces, both are damaged,
+    "half to each"); pairs scripted-scripted / scripted-vs-station-flown and scripted-vs-static geometry are skipped
+    (the dispatcher's business).
+  * Yielding: DockServiceTraffic::setObstacles (the server passes the player ships near the dock, FIXED frame each tick);
+    a non-pilot actor with a real ship ahead within len/2 + r + 60 m + v^2 / (2 x 15 m/s^2) slows its script to a stop
+    (time-stretch, the braking limited to 15 m/s^2, pose continuous) and resumes when clear ("yields" / "resumes").
+  * EliteDockTrafficCheck --yield-test: PASS (a Cobrett at 54 m/s stopped 106 m short of a ship 334 m ahead on its
+    track, held 20 s, resumed); the regular 1 h run: 0 invariant / separation / structure violations.
+- (2026-11-21) D. "A strong impact did not break the ship into parts" - SOURCE + LIVE: the only whole-hull rule was a
+  FIXED 3 GJ crush - more than a 260 t ship's entire kinetic energy at hub speeds (1.6 GJ at 110 m/s), so it could not
+  happen; the author's 26 hits (<= 750 MJ = 2.9 kJ/kg) tore a few links only. NEW: break-up by the specific energy the
+  hull absorbed: >= 2.5 kJ/kg (the full stop of a ~70 m/s impact) -> every structural link torn (applyPartImpulse 1e7
+  on every module), the parts fly as detached fragments, the ship out of the fight (scripted traffic exempt). LIVE
+  (D:/tmp/ram/run.log): "ship 1548: BROKEN UP - 10852 J/kg absorbed (2821.74 MJ, 260 t), 137 link(s) torn" after
+  hitting station object 11 ('station_core_rear') at 150.9 m/s.
+- (2026-11-21) E. "The front view shook while tumbling; the rear view and the drone did not; the hub shook, the planet
+  held" - ROOT CAUSE (source analysis) + FIX (SOURCE, compiled; no live repro yet): all three cameras use the same ship
+  pose, but ShipAttachmentResolver moves an attachment onto its DETACHED FRAGMENT when its parent module tore off (the
+  author's crash tore ship_frame_CF, the cockpit camera's mount). The fragment's pose steps at the snapshot rate while
+  the ship's is interpolated every frame -> the camera's position relative to the ship jumped -> near objects (the hub)
+  shook, far ones (the planet) did not (a translation, not a rotation, jitter). FIX: the fragment's local pose is
+  smoothed (~0.1 s, real time) where the camera rides it. Live repro pending (a torn cockpit mount).
+- (2026-11-21) LIVE TRAFFIC (author: "a ship in front of the player - the front camera - at attack range must become
+  real and an NPC, traffic or not"; "a hysteresis zone, a narrow area - a radius around the crosshair; a ship that
+  attacks the player is an NPC anyway"). SOURCE: GameSimulation::updateLiveTraffic (GameSimulationCombat.cpp, every
+  tick after updateHubSecurity). A MATERIALIZED traffic ship (dock traffic / promoted city air traffic) becomes live
+  when its hull is within 4 deg of a player's boresight inside the player's laser range (fallback 3 km), or when it
+  fights (m_combatHostility) or was damaged. Live = placed in its hub frame (HubTactical), physics + collisions as a
+  free body (isScriptedTrafficShip false), its own pilot: TrackFormationSlot to its script's point (the script keeps
+  running and only gives the point - noteTrafficSlot; hub-local offset, free of the hub/ship epoch gap). Hysteresis:
+  back to the script only after 8 s beyond 12 deg / 1.3 x range, intact, no fight, within 25 m of its point, >= 3 s
+  live (then kinematic again, no jump). Not promoted on / near the pads (|dock pose| <= 300 m) unless it fights/was
+  hit. A fighting/damaged live ship whose dock script ends stays a free NPC. LOD keeps live ships materialized.
+  LIVE (D:/tmp/live, ELITE_DEV_DOCK_OBSERVER=2 at the Earth dock): ship 1544 promoted at 2213 m / 3.49 deg, flew itself
+  27 s within 2-8 m of its point (37 -> 80 m/s), released at 34 deg off "on its point". With ELITE_DEV_CITY_FIRE laser:
+  the beam hit it -> "[Combat] ship 1544 fights back against ship 201" -> reason fight, left its route (stays live).
+  Known: the combat AI's chase speeds were absurd (1-8 km/s) there because its enemy is the teleport-held observer
+  (the enemy track velocity is garbage) - stand artefact, a real-flight duel check is still owed. Observer =1 places
+  the player with ~6.4 km/s local velocity and with ELITE_DEV_START the observer does not hold the real ship (both
+  pre-existing stand quirks). NOT covered yet: the client-only city presentation traffic and the scheduled visits
+  (those still become real only when a beam hits them: materializeScheduledVisit -> default cruise AI).
+- (2026-11-21) F. Hub map 2D/3D toggle (author: «в карте хаба ... кнопку вверху справа на самой карте - план хаба ...
+  на самом плане в том же месте нужна кнопка возврат в 3Д»). SOURCE: a "hubplan" map button (mapButtons, Hub mode,
+  top right of the map viewport) labelled ПЛАН ХАБА / 3D-ВИД (overlay.hub_plan / overlay.hub_3d, 5 locales), drawn
+  on the map (the only map button drawn there - the old map-chrome buttons stay in the panel), click ->
+  toggleHubPlanView (V still works). The plan: no planet backdrop (a dark sheet, like the mesh editor's hub mode),
+  opens 2.5x zoomed on the city (pan reset); back to 3D restores the 3D camera (yaw, pitch, zoom, pan). DEV pointer
+  target "button:<id>" (pointer:click:button:hubplan). LIVE (D:/tmp/hubplan, ELITE_DEV_START=hub:earth_orbital_hub@5,
+  `local`): a.png 3D with ПЛАН ХАБА top right; click -> "[HubMap] plan (2D) - the map button", b.png the plan
+  (blocks, streets, lanes, the docks, ships) with 3D-ВИД; click again -> "3D view"; on the plan a click on
+  hub-dock:hub_hex_dock_a/dock_gate_front opens the dock card with ПОКАЗАТЬ МАРШРУТ / СТЫКОВКА (c.png).
+- (2026-11-21) Hub plan follow-ups (author: «на 2Д схеме не нужна отдельно висящая станция и модули не из города»;
+  «каждому блоку адрес ... развозить по заявке»; «каждому модулю города посадочную площадку, кроме тех, у кого есть
+  доки»; «в 3Д кубики города закрашивать»). SOURCE: isHubCityModule (HubMapView.h: the HubPlan frame + "<hub>.cty*"
+  modules); the plan of a hub with a city draws / lists / picks only those (wires, module cards, docks) and is
+  centred + fitted on the city (HubMapView::setPlanCentre -> camera origin). HubPlanCatalog: block address = grid
+  letter + row ("B4"), building = "B4-07" / lower tier "B4-U03"; a roof pad (underside for the lower tier) on every
+  building that is not a dock / pad / pier and is >= 30 m wide (radius <= 40 m). Block card: name "B4 · <title>",
+  Адрес <hub>:B4, Зданий, Посадочных площадок; plan labels show the address from 34 px; pads drawn (frame + H, the
+  building address from 14 px) once >= 4 px. 3D view: the block boxes filled by zone colour (convex hull of each
+  projected box, HudPrimitiveBatch). LIVE (D:/tmp/hubplan): plan city-only + centred, block addresses on the plan,
+  card "B4 · Жилой район / earth_orbital_hub:B4 / 49 / 45". NOT verified: the 3D fill (the DEV mapturn did not tilt
+  the camera; the city edge-on), pads at close zoom (the DEV zoom verb does not zoom the hub plan). Landing on a pad:
+  not yet (the docking stack knows hex docks only). Open: the composition list <-> plan link (next).
+- (2026-11-21) Memory: the author's session process grew 3.4 -> 7.7 GB in ~20 min (no memory lines in the log) - to
+  investigate.
+- (2026-11-21) 3D Hub map: the city block boxes are SOLID (author: «в 3Д кубики города делать непрозрачными»): zone
+  colour toned for the edges, drawn far -> near before the wire edges. LIVE D:/tmp/hubplan/a.png (DEV mapturn now
+  turns the Hub map camera too): solid coloured blocks readable over the Earth.
+- QUEUE (author 2026-11-21) RING HUBS: one faction builds ALL its orbital hubs as rotating rings (spin gravity - its
+  construction principle): the 2D plan a long narrow strip, the 3D a big ring. Other factions: a few ring hubs "as an
+  experiment"; industrial hubs stay planar. Needs a ring city generator (tools/models/units/hub_plane.py analogue) + the
+  plan / lanes / docking on a rotating frame - to discuss / plan before work.
+- QUEUE (author 2026-11-21) PADS: a pad for every city module without a dock - on free plots, on roofs, on legs (like
+  oil-platform helipads), or a 1-2 place garage; the pad card: address, what the object is, a СТЫКОВКА button; then
+  the pad landing itself (approach, hover, set down - the docking stack knows hex docks only).
+- (2026-11-21) Hub map: the composition list <-> the plan, solid 3D, hidden lines (author: «клик по элементу хаба на
+  схеме выделяет элемент в списке, клик по элементу списка - выделяет рамочкой часть хаба»; «убрать прозрачность для
+  рёбер здания, стрелки маршрутов прятать за объектами»). SOURCE: hubCompositionZones / hubCompositionTypeForZone
+  (HubPlanCatalog.h: habitat=residential+hab_rot, hotel, shuttle_dock=dock, liner_platform=rig,
+  cargo_terminal=port+logistics, warehouse=storage, refuel_dock=refuel, service_dock=repair, market_exchange=downtown);
+  the panel's composition rows are clickable (SystemMapPanelActionType::SelectHubModuleType; again = off), the picked
+  row highlighted and scrolled into view; a block picked on the plan picks its row; the picked type's blocks framed
+  on the plan and caged in 3D. 3D city blocks are real solid boxes in the hub GPU geometry pass (depth-writing
+  triangles, NDC depth along the view in hub_map_*.vert; edges / hub lines depth-tested -> the wires behind a block
+  hide); the lanes / routes (screen-space overlay) are split where a sample's ray toward the camera meets a block
+  (CPU, ~80 boxes). Pads: kinds Roof (tall wide), Garage 1-2 places (low wide, ground floor), Stilts (narrow: a pad
+  on legs on the nearest free plot of the block, 25 m up). DEV: panel:module:<type>. LIVE (D:/tmp/hubplan): row
+  жилой модуль -> 6 blocks framed on the plan + the row highlighted; plan click A6 (Порт) -> the cargo terminal row
+  highlighted + scrolled into view, 11 port / logistics blocks framed; 3D solid boxes. NOT verified closely: the
+  hidden-line look in 3D at close zoom (the DEV zoom does not zoom the Hub map).
+- FOUND: the composition status ignores the city - "грузовой терминал / склады (в плане)" while the city has port /
+  storage blocks (status = runtime hub objects only). To fix: count the city blocks' zones as present.
+- (2026-11-21) HUB CITY PADS - landing (author: «меню посадки на площадку вызывать кликом по модулю, площадка там всё
+  равно одна»; «найди площадку» -> a possible HARD difficulty item later). SOURCE: the plan's upper-tier buildings are
+  overlay items ("hub-building:<city frame>/<address>", priority over the block): card = address, building, pad
+  (на крыше / гараж, мест: N / на опорах рядом / нет), СТЫКОВКА (key land_pad, enabled with a pad). Pads: Roof (tall
+  wide), Garage (low wide: an apron on a free plot of the block at the plane, 1-2 places), Stilts (narrow: a pad on
+  legs on a free plot, 25 m up). ClientShipCommand::LandOnPad (protocol 47): index 1 land (target = city frame module,
+  detail = address), 0 = the pilot takes the controls (any control input, 1.5 s grace after the click). Server
+  GameSimulationPadLanding.cpp: normal flight off + into the hub frame (within 60 km), the city's pad service flies it
+  kinematically (isDockStationControlledShip): to the transit height (tallest building + 80 m, <= 380 m, under the
+  430 m lanes) at <= 150 m/s, across, down at 6 m/s (2 m/s the last 30 m), LANDED, held; its place kept in the city
+  frame by the service (taken once, integrated; reading the ship back fed the hub/ship epoch step into itself and blew
+  up - found live). Found live too: left in normal flight the global integrator flew the held ship into the Earth
+  (fixed: normal flight off at the request). LIVE (D:/tmp/pad, DEV padland:<kind>): roof A2-03 LANDED 190 s (cockpit on
+  the roof, the plan shows the ship on A2); garage A6-02 LANDED 203 s (apron among the port buildings); stilts B4-01
+  LANDED 192 s, then DEV yaw -> "[Takeover] СЛУЖБА ПЛОЩАДОК: управление у пилота", the ship stays put (no jump, no
+  collision). NOT verified: the card's СТЫКОВКА clicked with the mouse (the DEV verb drives the same renderer request ->
+  SpaceState -> server path); pad meshes (no pad / garage / stilts geometry drawn yet); services on a pad.
+- (2026-11-21) PADS "полный фарш" (author: «сгенерируй площадки»; «добавь площадки в модули в мешэдиторе и также их
+  строящийся вид и повреждённый»; «информацию ... выводить в терминале на HUD»; «раньше было лучше с касанием руля - 3
+  сек ... с предупреждением»). SOURCE / ASSETS: tools/models/units/hub_pads.py - hubl_pad_roof (36 m deck on a low roof
+  frame: H, touchdown ring, hazard edge, edge lights, corner beacons, safety nets, hatch), hubl_pad_stilts (the deck
+  25 m up on four braced legs, stair tower, beacon), hubl_garage1 / hubl_garage2 (hangar + marked apron); construction
+  stages hubc_padroof_s1..3, hubc_padstilts_s1..3, hubc_garage1_s1..3, hubc_garage2_s1..3; damaged <module>_dmg_missile
+  / _dmg_laser / _dmg_gutted (CityDamage swaps them by _dmg_missile presence). 28 modules generated + packaged
+  (mesh editor), cards in the editor's hub mode (hub_belt._module_obb + hub_map_tool titles). The pad placement moved to
+  src/game/navigation/HubPlanPads.h (header-only, the plan loader and the city assembler share it): roof pad only on a
+  roof >= 36 m wide (deck top 2.2 m over the roof = the touchdown), garage = an apron at the plane with its hangar's
+  back to its building (yaw), stilts deck 25 m; the lower tier upside down. HubCityAssembly: applyHubPads appends one
+  node per pad right AFTER the layout's nodes and BEFORE the construction plan's (stable node indices for the damage
+  state) into the block's group. HUD terminal: ShipSnapshot::padService (snapshot 68) -> "СЛУЖБА ПЛОЩАДОК: нормальный
+  полёт выключен, корабль взят в кадр хаба / набор высоты транзита / над городом к площадке X / снижение / посадка
+  выполнена (руль - взлёт)" and refusals; the takeover is the common 3 s one with the warning (Owner::Pad).
+  LIVE (D:/tmp/pad): "[HubCityAssembly] earth_orbital_hub: 6896 nodes, 43 modules, 7950 collision, ... 536 pad nodes"
+  (collision assembly 1579 -> 1644 ms, render 97 -> 128 ms: not a new hitch); roof A2-03 LANDED 190 s with every HUD
+  line in the terminal. Previews checked (build/tools/mesh_editor/web/previews/hub_modules/hubl_pad_*.png): fixed the
+  wreck's floating under-frame and the stage plates on a leg top. NOT done: pad construction kits in the expansion
+  projects (tools/models/hub_expansion.py kits), a close outside view of a placed pad in the game.
+- QUEUE (author 2026-11-21, after the pads play test), in this order:
+  1. info cards: only the last clicked card stays open (ships and docks keep theirs); pad buildings: a ПОСАДКА button;
+     the picked block highlighted on the 3D Hub map too.
+  2. the composition list rows expand into their blocks / addresses (pick by address).
+  3. cameras: F4 = a bottom camera (wide format, at the ship's geometry centre: landing / cargo drop); the rear view and
+     the drone view without the pilot panel, the marker frame and the markers.
+  4. the red / green / blue zones in flight hidden behind objects (a blocker between the zone and the player hides it).
+  5. pads: a capture zone (a transparent cube with whitish edges) shown within ~100 m of the pad - entering it lands
+     the ship automatically on expensive objects; cheap ones / slums: manual landing; landing gear (extendable damped
+     legs) must be down before landing, they break on a hard impact.
+  6. refuel and repair blocks on every hub as priority buildings, like the trade platform (their menus, lanes to them).
+- (2026-11-21) QUEUE 1-2 DONE. Cards: one exclusive card at a time (MapObjectInfoPanelState::exclusive - everything but
+  ships (Tactical) and docks); ПОСАДКА (map.object_info.land_pad) on building cards AND block cards (a block lands on its
+  pad nearest its centre). Composition rows: click = highlight + expand into the type's blocks by address
+  (SystemMapInfoLine::Kind::Address, target "type:<t>" / "block:<frame>/<id>"); an address row picks that one block
+  (cyan frame on the plan / cyan cage in 3D, the type's others yellow); a block clicked on the plan picks its row,
+  expands it and lights its address. LIVE D:/tmp/hubplan a-c.png (жилой модуль -> 6 addresses, B4 picked; plan click A6
+  -> грузовой терминал expanded with 11 addresses, A6 lit, card A6 · Порт with ПОСАДКА).
+- (2026-11-21) QUEUE 3 DONE: F4 = the bottom camera (ShipCameraMode::Bottom / FlightPresentationView::Bottom): at the
+  ship's geometry centre looking down its -Y, the nose at the top, 68 deg vertical (about 100 deg across at 16:9),
+  letterboxed to 2.35:1, label НИЗ. The pilot's glass (marker frame, world markers, guidance, cockpit, instruments, the
+  radar scope + its line) only in the front view: rear / drone / bottom are camera views; the HUD terminal stays. DEV
+  map script f2 / f4. LIVE D:/tmp/pad (pad landing + ELITE_DEV_MAP_SCRIPT f4/f2/f3): a.png the bottom view over the
+  target roof pad (its H below, letterboxed), b.png rear without panel / markers / scope, c.png drone. Note: the scope's
+  text line hid in a second build (checked by source).
+- (2026-11-21) QUEUE 4 PARTLY: the flight HUD lanes / red zones (HubCorridorHudRenderer) - the planar city's blocks hide
+  them (a ring by its centre, a connector / zone edge by its middle: the segment from the sample to the pilot against
+  the block boxes, CPU); docked / flown by the station / the pad service: no lanes at all. NOT done: the station / dock
+  modules as occluders (no client bounds for them yet - needs the model packages' bounds or the scene depth). LIVE:
+  builds, the approach run shows the lanes above the city drawn, nothing more conclusive yet.
+- (2026-11-21) QUEUE 5 (pads: capture zone, auto / manual, landing legs). SOURCE: HubPlanModule::autoLanding by the
+  block's zone (downtown / hotel / residential / services / canopy / dock / repair / refuel = the pad service lands the
+  ship; industry / port / logistics / storage / power / rig / hab_rot = hand-flown). Capture zone HubPadZoneHalf 25 m x
+  HubPadZoneHeight 60 m over the deck, drawn (HubCorridorHudRenderer) within 100 m of the pad: whitish (automatic) /
+  amber (hand-flown) edges + the deck outline, occluded by the plan's buildings (each its own box now; a box the pilot
+  is inside does not count - one box per block hid everything from a ship low over it, found live). Landing legs: G
+  (ClientShipCommand::ToggleLandingGear, protocol 48), ShipSnapshot::landingGear (snapshot 69: 0 in / 1 out / 2 broken),
+  HUD terminal lines; Ctrl+Alt+R repairs broken legs. Server (GameSimulationPadLanding.cpp): the service holds over an
+  automatic pad until the legs are out ("выпустите опоры (G)" every 15 s); a hand-flown pad: brought to its zone top
+  and handed over ("площадка X ручная - садитесь сами"); updatePadTouchdowns: an automatic pad's zone takes a ship
+  flying in with legs out (pad:capture), a hand-flown pad counts a soft touchdown on legs (< 2.5 m/s) as landed and
+  holds it, >= 4 m/s breaks the legs, no legs -> warning (the hull contact is the ordinary collision); 15 s after the
+  pilot takes the controls back nothing captures him (take-off). The client treats a service it did not ask for (zone /
+  touchdown) as its own for the 3 s takeover. Bottom camera draws the zones / capture boxes (the landing guide).
+  LIVE (D:/tmp/pad): roof A2-03 (automatic) without legs - held over the pad with the legs prompt, DEV gear -> "ОПОРЫ:
+  выпущены" -> LANDED 208 s; garage A6-02 (hand-flown) - handed over at its zone top 145 s; F4 shows the amber deck
+  outline + zone box over the garage model, the front view the zone's edges. NOT verified live: a hand-flown
+  touchdown, the legs breaking, flying into an automatic zone by hand (need manual flight). Note: the zone deck outline
+  is the 36 m pad square also for garages (their apron is 22 / 40 x 20 m).
+- (2026-11-21) Pads as berths + the landing readout (author: «вывод в терминал - опоры вытянуты, посадка не быстрее
+  стольки-то м/с; на нижней камере - высоту от конца опор до того, что сейчас под брюхом (даже пролетающий корабль),
+  максимум 500 м, и скорость спуска, при превышении - красным»). serviceStationOf: a ship landed on a pad (the service
+  holds it, phase 3) is AT A BERTH of the city's hub (trade F8, refit F7, the full-rate refuel); the landing line
+  lists them. Legs out -> "ОПОРЫ: выпущены - касание не быстрее 2.5 м/с, от 4 м/с опоры ломаются (F4)" (thresholds
+  HubPadTouchdownMaxMps / HubPadLegsBreakMps in HubPlanPads.h, the server uses them). Bottom camera: ВЫСОТА (a ray down
+  the ship's belly against the city's roofs / pad decks / plane and the other ships' size spheres, minus half the hull
+  and the legs; > 500 м beyond) and СПУСК (the height's own smoothed rate = the closing speed to what is below; the
+  replicated relative velocity of a held ship is 0), red above 2.5 m/s within 30 m, +0.2 m/s per metre higher.
+  LIVE (D:/tmp/pad, roof A2-03 + F4): b.png ВЫСОТА 155.2 м / СПУСК 6.0 м/с, c.png 89.1 м / 5.9 м/с (red under the old
+  rule - fixed), the pad deck right below. DEV refuel on the pad: "REFUSED ... (the tank is full)" - the berth check
+  passed. OPEN (needs the author's go - it regenerates the frozen cities): refuel + repair blocks on every hub as
+  priority buildings (most hubs have neither / one of them).
+- (2026-11-21) Author: refuel / repair NOT on every hub - "главное, чтобы вокруг не было места вообще без заправки";
+  the cities may change (nobody has seen them). Coverage check: docs/FUEL_STATIONS.md - every hub with a market sells the
+  jump charge (609 markets), no system without fuel except Fomalhaut (a black tanker only) / TRAPPIST-1 (one small).
+  PROPOSED rule: a city gets a refuel block iff its hub's economy composition has refuel_dock, a repair block iff
+  service_dock (the city matches its «Состав» list); needs the city generator (hub_plane.py) + regeneration - next.
+- (2026-11-21) Author: player-founded hubs (a company pools money -> buys an asteroid / a licence -> founds and builds a
+  hub; pirates - the same chain). Design PROPOSAL: docs/HUB_FOUNDING.md (company, site, project, construction driven by
+  deliveries, operation, risks, pirates, the work order, 5 questions to the author). Nothing implemented.
+- (2026-11-21) Outpost kit for player / small settlements (author: «деревня на десяток ... генератор, очистка воды, ангары,
+  заправка, жилые, ремонтные модули»; «маяк пиратский - по расписанию»): tools/models/units/hub_outpost.py, 12 modules
+  hubo_core / reactor (~2 MW, boom + shadow shield + radiators) / water / hydro / hab (4-6) / hangar (1 ship) / fuel /
+  repair (box + 2 arms) / pad (24 m) / beacon / beacon_hidden (shuttered) / truss; generated + packaged + editor cards;
+  previews checked (the editor preview draws unknown new materials grey - the hydro glass is green in its .mtl). The
+  author's answers 1-6 recorded in docs/HUB_FOUNDING.md. NEXT: the outpost layout generator (a village from these
+  modules on an asteroid / a derelict / a truss), then the founding chain (company -> site -> order -> delivery ->
+  assembly), the city refuel / repair block rule.
+- (2026-11-21) After the author's pads play test: the service turns the ship (20 deg/s, easing; not snapped); the zones /
+  lanes stay on during the pad service; ПОСАДКА sends at once with the map open (the request waited for the map to close
+  - the flight input path does not run under the map) and returns to the front view; the pad service's route = the
+  docking tunnel (the same gates every 50 m along hubPadRoute from where the ship is); hubPadRoute (HubPlanPads.h)
+  rounds every building whose top is within 40 m of the transit height (footprint + 60 m, nearest clear corner; the
+  server flies it leg by leg); F4: steady figures (HudSteady, tenths under 10 m), the level bubble (the surface's up in
+  the ship's axes, green <= 3 deg / amber <= 8 / red); the landing legs indicator (front view lower right, F4 over the
+  band). LIVE (D:/tmp/pad): the tunnel ahead on the approach, ОПОРЫ: ВЫПУЩЕНЫ in the front view and F4, F4 158 м /
+  5.8 м/с white + bubble 0 deg. NOT verified: a route that needs a detour (none on the test paths).
+  QUEUE: a collision warning on the HUD (by time to impact, >= 500 m) + collisions with buildings with consequences; a
+  landed panel (services list) bigger than the terminal line; the cargo lift on the pads; floors on the 2D plan (two
+  layer hubs); the outpost layout generator; the founding chain; the city refuel / repair rule.
+- (2026-11-21) SOURCE (compiled objects; full build + live after the author closes the game): the pad service flies within
+  the ship's working thrust (applyAuthorityToControlParams: accel = min(8, max(strafe, 0.5 x main)), turns <= 3 x the
+  angular accel, 2..20 deg/s); < 0.2 m/s2 -> refused at the request ("корабль не управляем (нет тяги)") / let go during
+  the approach (the ship coasts). Take-off from a pad (author: «вращаю на платформе - пробивает кормой платформу»): after
+  the takeover the landing attitude is held (no turning) until 3 m over the deck or 60 s. HUD: the ВЫПУСТИТЕ ОПОРЫ (G)
+  blink (amber) when the service sets down / asked for legs / a pad within 100 m and the legs are in; F4: the city plane
+  bounded by the city (an unbounded plane read 350 m over the planet), the height smoothed (~0.25 s), 0.0 / 0.0 on the
+  deck; the route tunnel from a smoothed ship position (the gates shook). QUEUE: a pad tug for a disabled ship
+  (expensive pads), the tunnel direction to re-check live.
+- (2026-11-21) Fixes after the play test: the docking from the map "did nothing" - the safe-course check found no course
+  ("no proven safe course or stopping corridor") and the autopilot held an emergency stop silently; the reason now goes
+  to the HUD terminal ("СТЫКОВКА: нет безопасного курса отсюда ... отведите корабль на 100-200 м"). Live traffic far
+  from every player (> 5 km) goes back to its script (one fell 1.3 km behind its point 46 km away and stayed live).
+  The pad tunnel only in phases 0-2 and translucent (0.45); the capture box translucent (edges 0.22, deck 0.35); no pads
+  on power blocks; no pad on a building still under construction today (HubExpansion replace nodes not finished;
+  plan module -> layout node by folder + footprint centre); a cargo lift (shaft, platform with a container, bridge) at
+  the -X edge of the roof / stilts pads. The previous source batch had NOT been in the game: HubExpansion.cpp missed
+  <unordered_set> and the build failed silently in a background step - fixed, built. LIVE: 516 pad nodes (536 before),
+  the stilts approach runs slower within the ship's thrust. NOT verified: the translucent tunnel in view (not seen in the
+  capture), the lift in the game view, the docking reason line live.
+- (2026-11-22) Flight in the hub, live self-tests (offscreen runs, scratchpad run_dev.sh):
+  * Docking from normal flight refused silently ("not matched to target Hub frame"): ClientShipCommand::EnterHubFrame
+    (protocol 49) - the server takes the ship into the hub frame where it is (<= 30 km). LIVE: docked route + frames.
+  * The in-city docking guard removed (it cut the docking 10 m from the dock).
+  * Every city building was inflated 80 m (+ hull + 25 m) for the planner: the whole city a wall, no course off a pad.
+    City clearance 5 m (CityBuildingClearanceMeters). In contact with boxes (on a pad) the docking first lifts the ship
+    straight off them on its thrusters, attitude held (DockLiftClear, ~62 m). LIVE: lifted 62 m gently.
+  * The pad capture re-grabbed a ship lifting off: no capture until it has left the zone (g_padAwaitZoneExit).
+  * Pad landing = planner + autopilot (author): ПОСАДКА makes a docking-route request to "pad:<address>" over the city
+    frame module; its approach point over the pad at the transit height, computed in the planning frame relative to
+    the ship; within 250 m the pad service takes the ship (phase 1/2: the last metres + the descent on the legs).
+    LIVE: route + docking frames over the city, the service took it, landed (dk4).
+  * Lanes joined / left at ANY station (author: dive into the green zone, not through its entry point); every free
+    leg / join straight / exit checked against the buildings and the red zones (author). LIVE: route via a green lane,
+    33548 legs rejected as blocked, no collision.
+  * Touchdown sag on the damped legs (spring-damper, ~0.25 m at 2 m/s, a small rock, ~2 s). Not seen live yet.
+  * Ctrl+Alt+R read from GLFW before every input owner (it did nothing with the map open).
+  * Crosshair live-traffic promotion OFF (promoted OCS-4 fell behind and crashed into the city).
+  OPEN: the follower loses the route on tight lane turns over the city (cross-track 20 m -> 2.4 km at 60 m/s);
+  planning takes 50-75 s; the speed exceeds the hub limit (178 vs 150); a pad route straight leg hit the canopy disc
+  (c4_3_canopy) once before lanes were used; a run died silently right after the pad service took the ship (dock-site
+  loop spammed "released by the station" for pad-held ships - fixed, re-test running).
+
+- 2026-11-22 (later): crashes in the city found and fixed at the root.
+  * Ship collisions ran in updateCombat (tick stage 1) BEFORE the hub-attached statics moved to the tick's epoch
+    (stage 2): ships met the city where it stood one tick ago - hub velocity x dt, ~450 m at the orbital hub. The
+    "unexplained" crashes (c3_4_downtown, s29) were against ghost geometry 190+ m from anything real. collideShips now
+    runs after the statics move, per system pass (58007e021).
+  * Pad routes end ON the lane nearest the pad (RoutePlanRequest::endAtLaneExit; lane exits costed by straight distance,
+    no final free leg); the pad service climbs to transit height, flies across, descends after the legs. LIVE dk20-22.
+  * Continuous Assisted optimizer: a feasible path is polished <= 0.35 s per search branch (5000 polish evals = 59 s);
+    pad route 2.5 s (was 50-234 s). Lanes joined only from open sky (34cd912ea). Dock regression dk23: plan 6.3 s, docked.
+  OPEN: touchdown sag / legs not seen in a dev run (script has no gear key); lower-tier lanes z4.5.1.under and its dock
+  exit look to pass through buildings in the planner's obstacles (coarse check - verify).
+
+- 2026-11-22 (evening): traffic rules + planner hangs.
+  * Collisions now run AFTER the scripted traffic is posed (stage 3: dock traffic, promoted air traffic, pad service) -
+    a lane ship the player caught up with was one tick (~450 m) behind in the collision pass: flown through.
+  * Junction level rule (tools/models/units/hub_lane_levels.py, applied by hub_belt_world.py and to all 293 lane files):
+    a turn changes level on a street before / after the junction, never through an oncoming lane's tube (the opposite
+    lanes are stacked); <= 35 deg climb; a turn with no clear street is dropped. Totals: kept 3218, rebuilt 6444,
+    dropped 3218. Oncoming lanes drawn amber (they read as red zones).
+  * Assisted checkpoint re-seed: a craft lagging its profile keeps it (the target fell back 10-20 m/s every ~500 m:
+    the 120-140 sawtooth). The 0.8 x vmax gate cruise vs the curves' vmax may still cause a sawtooth - check live.
+  * Planner hang: an infeasible branch gives up after 1.5 s; an Assisted ship < 8 m/s has no committed start course /
+    1 km lead (a ship sinking onto a pad had it pointing down); a new route makes the pad service let go first; a pad
+    request over the city at the transit height is a HOP flown by the pad service (no planner).
+  * Tower-top pads (E4-01 at 936 m): transit = max(city transit, pad + 60 m); hubPadRoute skips the pad's own tower
+    (it ping-ponged between its corners). LIVE dk27: H2-03 -> E4-01 hop, climb to 996, across, over the pad.
+  * The pad service tunnel always shows while it flies the ship (a stale route guidance hid it).
+  OPEN: lane network connectivity after the dropped turns not measured; touchdown sag not seen in a dev run.
+
+- 2026-11-22 (night): DESYNC fixed at the root + two invariant checks.
+  * Server tick: the hub-attached statics (city, modules, hit volumes) now move to the tick's epoch RIGHT AFTER the hubs
+    (stage 2 block moved before every consumer: free flights, zones, reference frames, combat lasers/missiles,
+    collisions, traffic, planners). Collisions stay after the scripted traffic is posed.
+  * ELITE_DEV_EPOCH_CHECK=1 (server): a player's place in the nearest city frame vs its relative velocity x dt -
+    LIVE dk33: 0.004 m near the city (0.36-0.8 m at 10 km = the rotating-frame term, not a desync).
+  * ELITE_DEV_RENDER_EPOCH_CHECK=1 (client HUD): the city in the player's render frame must not move - LIVE dk34:
+    1e-4 m while in the hub frame (7 m drift only in free flight before the hub frame, legitimate).
+  * Both checks belong in every navigator scenario run.
+
+- 2026-11-22 (night, author away): navigator step 1 - scenario suite + fixes (docs/navigation/NAVIGATOR_PLAN.md).
+  * Suite scratchpad/navsuite.sh + navmetrics.py (pad from outside, pad series across the hub, tower-top pad, hub dock;
+    both epoch checks on). base -> v3 + fixes: collisions 2/0/0/0 -> 0 everywhere, dock speed error rms 40 -> 8 m/s,
+    series target reversals 14 -> 4.
+  * Turn speed: a continuous braking curve to the turn (was a yes/no switch flipping 130 <-> 320 m/s every sample).
+  * Traffic rule both ways: the player's autopilot keeps the gap to a ship ahead on its way (map-frame velocities -
+    world ones carry the hub orbit); a promoted lane ship keeps the gap to a player ahead in its lane (6 m/s2).
+  * Promotion of lane traffic nearest-first; a much nearer candidate takes the farthest real one's place.
+  * Lane turns rebuilt from the originals with a 20 deg climb, 12.5 m points (35 deg made a 46 deg peak - the autopilot
+    left a turn by 194 m).
+  * White noise on the front camera when the cockpit is gone (pilot-lost screen).
+  OPEN: cross-track spikes ~40 m on some lane turns; target reversals 30-44 on long legs (gentle 5 m/s waves of the plan).
+  * Formation (step 2, first cut): autopilot/FormationGuidance.h (wedge / echelon / column / diamond / line; phases
+    Wide -> Behind ("за спину") -> Close -> Hold; closing <= 60 m/s rel., comfort braking 4 m/s2) flown by the ordinary
+    pilot (AutopilotLawController) from SpaceStateFormation.cpp; DEV "join:<id|nearest>:<kind>:<slot>", "join:off".
+    LIVE fm1: joined a lane ship 3.8 km out, closing 60 m/s rel. behind it; leader handed back at its lane end -> the
+    pilot has the ship. OPEN: the approach is a straight line (no obstacles) - far approaches must go through the
+    planner (route to the safe point), direct guidance only for the last stretch / the slot; not in the UI yet.
+  * Give way (reflex rule 1): slow for a ship crossing / coming with its CPA < 8 s nearer than the hulls + 15 m.
+  * Junction turns <= 30 m/s (lane data). Suite v5: all 4 scenarios clean.
+  * 2026-11-22 (late): one flight-task slot (arbitrateFlightTask: the task started last owns the ship); lane corners
+    filleted into tangent arcs (one smooth curve; stage accounting takes the arc shortening); Assisted setpoint
+    feedback 0.25 -> 1 s (a +-12 m/s limit cycle on the 0.1-0.2 s old setpoint); tunnel opacity by the distance from
+    the moving ship (full near, a trace at 5.5 km); the player's radar (GameServer truth) gets the hub traffic not made
+    real, the stray bodies and a DEBRIS FIELD per city (40 pieces, 500 m, past the rim on a diagonal) - kind Debris,
+    grey cross on the PPI; land button on a block with only lower pads now lands there (it did nothing silently).
+    Suite v7: all 4 clean, peak cross-track 31-40 -> 11 m, speed error rms 2.2-4.3 m/s.
+  * 2026-11-22 (later): pad transit over the lane tubes (laneTubeCeilingMeters + 40 = 525 m at the Earth hub; at 380 it
+    cut every 430 m x-lane); a city straight that cuts a lane tube is no way (lanes taken); scripted service-direct
+    pad-to-pad OFF (the planner flies it); oncoming lanes green again (no "yellow zone"); ring segments clipped at the
+    near plane (rings flickered flying inside a tube); resting Assisted start lead 3 hull lengths (1 km straight
+    along the nose from a pad among buildings - the dock route never planned); an in-city leg reaches its lane no
+    faster than its own 40 m/s cap (infeasible at every speed, 2 min of retries); cargo lift shafts on roof / stilts
+    pads (+ hit volumes). OPEN: in-city routes are long and slow (40 m/s cap on whole legs, free-leg turn radius at the
+    hub speed) - waiting for the author's hub speed rule (30 m/s where?); a 75 m cross-track spike in the series.
+  * Pads concept (author 2026-11-22): roof pads only on every third tall premium building (Earth hub: 41 roof, 86
+    stilts, 342 garages, 1 repair hangar); base berths reached at the street-lane level (no climb over the city);
+    REPAIR HANGAR hubl_repair_hangar (90x50x22 m, 80x18 m door, 3 bays: scissor lifts, gantry cranes, benches +
+    lockers, wrecked parts; shell-only hit volumes) placed in repair / rig / port blocks on a 55 m free plot; the pad
+    service flies to its door front, down to 9 m, in through the door, down onto the bay lift. LIVE hg1: F2-01 LANDED
+    inside. ELITE_DEV_PAD_CENSUS=<hub> prints the pads by kind.
+  NEXT (agreed): berth tariffs (hourly; lower = cheaper, higher = priority), dead-end lanes (traffic only where
+    construction is planned), traffic routes through junctions, monorail (one loop / zigzag line), comic pedestrians,
+    the RING HUB 40 km ahead on the same orbit (one storey on the inner side, growth in width, rotating ~1 g, 4 spin
+    engines; strip plan = the 2D map; built as the flat strip + one bend mapping), 30 m/s in built-up areas.
+  * 2026-11-22 (berths, autonomous): the wide 2-place repair hangar (ships to ~40 m) in repair / rig / port / logistics /
+    storage blocks (21 at Earth); tariffs hubBerthPricePerHour (garage 40 .. roof 160 Cr/h, lower x0.75, zone factor),
+    dock 250 Cr/h (docking panel ТАРИФ); the DISPATCHER: every place under it (PadLanding.bay, refusal + wait when full,
+    ObjectSnapshot.occupiedBerths "addr#bay@ship[!]" wire 70, HubBerthOccupancy client registry); capture zones white /
+    red with "A|M · price · free n/N"; card buttons per place; map markers per place (kind colour, red when full);
+    BERTH ENGINE RULE (landed: no engines, Ctrl+L launches on the manoeuvre thrusters until out of the zone); hangar
+    QUEUE (waiting point 90 m before the doors, first come first in) and the HUD tunnel to the assigned bay.
+    DEV: ELITE_DEV_OCCUPY_BERTHS=addr[#bay]@serverSeconds, DevScriptRunner launch / hub: / panel:hub.
+    OPEN: a queued ship waits with its nose anywhere (should face the doors).
+  * 2026-11-22 (city life, autonomous): AIR TRAFFIC ROUTES through the junctions (in from open sky, turns on the
+    connectors at their limit with 3 m/s2 ramps, on into a dock's blue lane / out to open sky; lanes ending among
+    buildings never flown to their dead end; hulls > a connector's 55 m only on straight routes): Earth 35 routes,
+    96 ships. MONORAIL = one closed loop round the outermost avenues (17.8 km, 8 stations, hubb_mono_station; trains
+    one per ~3 km, 28 m/s, 25 s stops). COMIC PEDESTRIANS (hubt_person_a/b/c near 140 m, hubt_person_dot to 450 m) on
+    the sidewalks and platforms; frame A/B (ELITE_DEV_HUB_PEDESTRIANS=0, street view, no vsync, relwithdebinfo):
+    p50 21.6-22.0 vs 21.4-21.5 ms (+0.3-0.5 ms), p95 26-28 ms both (noise).
+    OPEN: the loop's z=-2468 side crosses the partial rim row (a stretch of beam without blocks under it).
+  * 2026-11-23 ZONES as world objects: the lanes / red zones / capture boxes drawn depth-tested (DepthLineBatch) - hidden
+    behind and inside buildings per pixel (ELITE_DEV_ZONE_DEPTH=0 = the old glass overlay).
+  * 2026-11-23 RING HUB «Кольцо» (earth_ring_hub, tools/models/units/hub_ring.py + hub_ring_world.py): the strip 8 x 2
+    blocks bent round the axis, R 1209.6 m, 1 g at a 69.8 s spin (the hub's self rotation about its Y, the city's axis on
+    it), 40 km ahead of «Высокий» on its orbit. The plan stays the STRIP + "ring"; src/game/navigation/HubRingBend.h bends
+    plan points: the pad nodes (HubExpansion applyHubPads), the pad service (works in strip metres, CityStrip; the
+    released ship's velocity carries omega x r on every hub now), the client's pad approach point, the HUD capture zones
+    + service tunnel, the street traffic, laneTubeCeilingMeters (height over the deck). Ring lanes = closed circles,
+    flown as loops by the air traffic. LIVE: garage A1-03 LANDED on the ring (planner -> service), ring seen from the
+    axis with lanes, ships, cars on the deck.
+    OPEN (ring): the planner fails at random from the axis (1 of 2 runs, "continuous optimizer did not reach a feasible
+    path") - the rotating frame; only 3 air ships (2 loop lanes); no dock (an axis dock to add); no monorail on the ring;
+    launch / Ctrl+L on the ring not checked; the 3D hub map boxes are flat.
+  * 2026-11-23 AUDIO: the WinMM PlaySound backend had ONE channel (every new sound cut the one playing - the author's
+    "the sound breaks off" on the terminal text; not the CPU) -> miniaudio 0.11.21 mixer (third_party/miniaudio,
+    public domain / MIT-0), voice pools per effect; effects still off unless ELITE_SOUND_EFFECTS=1 (author 2026-11-08).
+    COCKPIT RADIO (src/audio/CockpitRadio): the player's playlist (mp3 / flac / wav under radio.json "music_dir",
+    default the user's Music; shuffled, streamed) and free internet radio (radio-browser.info catalogue, no key: 25 RU +
+    60 top-voted working MP3 streams, cached radio_stations.json; WinHTTP -> MP3 decoder thread -> 4 s PCM ring buffer
+    -> the mixer, a network gap = silence, reconnect after 5 s). Keys: Ctrl+B power, Ctrl+Shift+B playlist <-> radio,
+    Ctrl+[ / ] previous / next, Ctrl+Shift+[ / ] volume; display line bottom left; settings
+    %LOCALAPPDATA%/EliteGame/client/radio.json; DEV verb radio:<power|source|next|prev|vol+|vol->. LIVE: 74 stations,
+    streams decoding at 48 kHz, station switch; playlist with a Cyrillic file name.
+    Measured (street view in «Высокий», Quadro RTX 3000): client+server process 2.6 GB working set / 3.7 GB private,
+    GPU memory in use ~0.8 GB; frame p50 21-22 ms.
+  * 2026-11-23 EVASION NET (agreed order: the evasion first, teacher = a sampling optimizer):
+    src/game/navigation/avoidance/MultiThreatEvasion.h (the TEACHER: several straight-moving threats at once, one
+    constant acceleration held 6 s from 96 directions x 3 thrusts + nothing, main drive after its turn or RCS, scored by
+    the smallest separation margin over 30 s, then the least thrust), EvasionNet.h (MLP 36-64-64-3 tanh on a canonical
+    frame: nose +Z, the most dangerous threat on +X; GATE: the net's answer kept only when safe on its own and at least
+    as good as a 16-direction quick check, else the full teacher), tools/navigation_runtime/EvasionLab.cpp
+    (EliteEvasionLab dataset|eval), evasion_train.py (numpy, Adam), weights assets/data/navigation/evasion_net.json.
+    RESULT (5000 fresh crowded scenes x 2 seeds): teacher 0.16 ms per scene, safe 62.9 / 63.8 % (the rest unavoidable
+    by design); the net alone safe 49.6 / 50.2 % (val MSE 0.063 vs variance 0.162 - the best direction is often
+    ambiguous); the gate = the teacher's safety (0 scenes worse; a first gate was worse in 2 - fixed) but NO speed gain
+    (0.160 ms). CONCLUSION: for evasion the teacher itself is the runtime answer (cheap enough); the net pipeline
+    (dataset -> train -> JSON -> C++ inference -> safety gate) is ready for the draft-route seed, where the teacher
+    (the continuous optimizer) costs seconds. NOT yet wired into the autopilot (navigator step 3: dodging radar contacts).
+  * 2026-11-23 EVASION NET v2 + THE REFLEX (navigator step 3). Author: «может пересмотреть количество узлов и связей?»,
+    «я бы штрафовал за столкновение». Measured (EliteEvasionLab eval, 5000 scenes, gate top 12):
+    - regression 128x128 on 200k scenes: the net alone 51.5 % safe (64x64: 49.6 %) - size is not the problem; a
+      regression net averages the equally good dodges (left / right) into the bad middle;
+    - CLASSIFIER (the teacher's 289 manoeuvres in the canonical frame, cross-entropy on the teacher's class), 128x128:
+      alone 58.8 %, gate 63.3 % vs the teacher 62.9 % (0 scenes worse), 0.12-0.14 ms vs 0.16-0.19 ms; 256x256 the same
+      accuracy, slower. SHIPPED (assets/data/navigation/evasion_net.json, proposeEvasionTopK);
+    - RISK training (evasion_train.py mode risk on EliteEvasionLab costs: every manoeuvre's outcome, loss = the expected
+      cost of the net's choice, 1 per collision + its depth): alone 58.1 %, gate 63.4 %; a safe manoeuvre exists in
+      62.7 % of scenes, the risk net's top 1 is safe in 90 % of those, its top 12 in 97 %. Same ceiling as the
+      classifier; kept for the draft-route net (no teacher to imitate there).
+    THE REFLEX (src/game/navigation/avoidance/EvasionReflex.h, SpaceState::applyEvasionReflex over the route
+    autopilot's controls): 4 Hz from the RADAR scan only (ships / debris, not structures), "hold the course" judged over
+    12 s; inside the safe sphere -> the manoeuvre (net gate, else the teacher), RCS only (strafe / lift / forward, per-axis
+    authority; the Assisted law yields a manually translated axis), released 1 s after the course is clear; clear cap
+    30 m (with the 200 m cap a dodge swerved 196 m off the route; now 72 m). ELITE_DEV_EVASION_REFLEX=0 off.
+    LIVE (navsuite reflex / reflex2): 0 collisions in all 4 scenarios, dodges logged [net] and [teacher]; the 122 s
+    first plan to H2-03 in pad_series is the old planner issue (v8: 125 s), not the reflex.
+    NEXT (author): the net's output = the PILOT'S CONTROLS (control programs), the outcome judged by the real ship
+    physics, trained with the collision penalty and the ship's response as input - engine layout is the physics
+    layer's business.
+  * 2026-11-23 GLANCING BLOW when contact is unavoidable (author: «если столкновение неизбежно - минимизировать ущерб ...
+    максимальный рикошет»): scoreEvasion finds the first touch (hulls, no safety margin), its contact normal and the
+    closing speed along it; any miss beats any touch, among touches the softest along the normal wins
+    (EvasionScene::glancingWhenUnavoidable, default on). EliteEvasionLab impact (5000 scenes): contact unavoidable in
+    1212 (the depth-only teacher touched in 1246 - it traded a touch for less thrust); normal impact speed: doing nothing
+    34.1 m/s, depth-only 25.0, glancing 20.0 (-20 %, energy -36 %); no extra cost (0.199 ms). The reflex gets it through
+    the teacher (the net gate only keeps safe answers). The side of the hull presented / the turn to present it - in the
+    control-program version (real physics, a box hull).
+    PLANNED TEST (author 2026-11-23: «попробовать на движущихся препятствиях - самые вероятные кандидаты»): a DEV
+    scenario that aims traffic ships AT the player (head-on, crossing, from behind, from above / below, 2-3 at once, a
+    fast one that cannot be dodged - the glancing blow), each with the reflex on / off; metrics: the smallest hull gap,
+    touch + normal impact speed, the swerve off the route and the return. Compare: no reflex, the current reflex, the
+    control-program reflex on the real physics.
+  * 2026-11-23 CONTROL-PROGRAM EVASION on the REAL physics (author: «надо задавать сети на выход - ручное управление
+    кораблем ... проблема физического слоя»): tools/navigation_runtime/ControlEvasionLab.cpp (EliteControlEvasionLab,
+    the game's SharedShipPhysics -> DynamicMotionSystem chain compiled in): 41 pilot-control programs (27 RCS
+    translations, 4 turns x 3 speed commands, 2 speed commands) held 4 s, flown 12 s. COST: 0.38 us per physics step,
+    all 41 programs 3.7 ms (dt 0.05). The flights depend on the ship only - fly once per reflex tick, judge any threats.
+    COMPARE (3000 scenes, threats AIMED at the ship, 1-3, 10-150 m/s, 3-12 s out; the nominal test hull):
+    Assisted - hands off 0 % safe, the game's current reflex (point-mass teacher -> RCS inputs) 69.6 %, the best program
+    on the real physics 94.8 % (touches 517 vs 39); Newtonian - the current reflex 3.8 % (RCS 2.1 m/s2 only; the main
+    drive needs the nose), the best program 91.9 % (touches 2408 vs 75; unavoidable normal impact 13.9 -> 10.0 m/s).
+    => the reflex moves to the control programs judged on the real physics; the net's job becomes picking the few
+    programs worth flying (3.7 ms -> well under 1 ms).
+  * 2026-11-23 THE CONTROL-PROGRAM REFLEX IN THE GAME + THE AIMED-RAM TEST. EvasionReflex::updatePrograms
+    (src/game/navigation/avoidance/ControlProgramEvasion.h: 41 pilot-control programs flown on the player's own physics
+    - effective params, law, body velocity, target speed, rates - from now, judged against the radar tracks; hands off
+    first, all programs only when that is unsafe; the program holds the whole stick incl. turn and speed; hysteresis
+    5 points). ELITE_DEV_EVASION_REFLEX=0 off / =pm the old point-mass reflex. DEV straight ram
+    (GameSimulationCombat.cpp): ELITE_DEV_TARGET_FIGHTS=ram + ELITE_DEV_RAM_STRAIGHT=1 - the target leads the player and
+    LOCKS a collision course ELITE_DEV_RAM_LOCK_S (5) s out, then flies straight; ELITE_DEV_TARGET_BEARING / _ELEVATION
+    place it; "[RamStraight] closest approach". Scratchpad ramtest.sh / ramgap.py.
+    LIVE (ramtest v4: autopilot to pad B4-11, a rammer at 120 m/s closing locked 600 m out): head-on - no reflex passed
+    42 m (centres), the OLD point-mass reflex COLLIDED (159 m/s), the program reflex passed 260 m; from the right - 76 /
+    141 / 177 m. Programs cost 2.9-3.2 ms per reflex tick (only while a threat is real). Earlier runs v1-v3 invalid
+    (a lock at 1500 m missed by the route's turns; a stale exe; a lead with the hub-orbit world velocity).
+  * 2026-11-23 HUB CITY LOD + FAR LIGHTS (author: the LOD pop «был куб, раз - дом с горящими окнами», mostly the lights;
+    «огни видны очень далеко ... на 30 км»; then «сначала исправляем LOD по всем моделям и огням, потом модели кораблей»):
+    - FAR LIGHTS (src/model_asset/ModelAssetLights, src/render/geometry/FarLightsRenderer, shaders mesh/far_lights.*):
+      every asset's light sources read from its own LOD0 geometry at load (emissive materials - windows, beacons,
+      floods, flares, nav - binned in 12 m cells; window facades in 24 m cells at their lit share), drawn as points with
+      a physical brightness power / d^2 (min 1.5 px), depth-tested and pulled towards the camera by the depth quantum,
+      beacons blink, a point steps aside once its own glowing geometry is 2-5 px. Any asset (cities, stations, ships).
+      Earth city: 204 972 lights. ELITE_FAR_LIGHTS=0 / _GAIN.
+    - PER-BUILDING PROXIES (HubCityAssembly): one box per module folder in its own frame, one proxy node per building -
+      the facade shader draws the same window grid / seed as on the building (the merged group box in asset space
+      changed every window at the switch). ELITE_CITY_PROXY_MERGED=1 the old.
+    - LOD CROSS-FADE (ModelAssetPresentation select + large_object_fill shaders): a component LOD switch and a group
+      collapse / refine draw both representations as complementary 4x4 ordered dithers - by TIME (0.4 s, default) or
+      by a screen-error BAND (ELITE_LOD_FADE=band, the edges' way); =0 instant. Outgoing LODs skip the edge pass.
+    - INTERMEDIATE LODs (tools/models/lod_prune.py in build_equipment_models.py, hub modules): LOD1 keeps at most 50 %
+      of LOD0's small pieces (< 12 % of the asset diagonal), LOD2 at most 25 %, glowing pieces never pruned; the city
+      takes all 4 module LODs (was 0/2/3). hubb_works 170 -> 131 -> 93 -> 56 KB. All 255 previously packaged hub
+      modules repackaged (36 Earth + 219).
+    MEASURED (no vsync, relwithdebinfo, autopilot into the Earth city to B4-11, 2 runs each): approach p50 8.9-11.8 ms
+    old vs 9.1-11.1 new; in the city at the pad 23.4-25.5 vs 23.9-26.8 ms (~+1 ms); loading 2.7-3.3 s both (one
+    183 s loading stall in a run during background packaging did not repeat). LIVE frames: the old city dark at
+    distance, the new one with street-lamp chains, roof lights and beacons. The time vs band fade could not be told
+    apart by frame bursts (camera motion dominates the frame difference; captures drop to ~half rate) - the author
+    to look live; time is the default.
+    PLANNED (author 2026-11-23: «попробовать систему уклонения и расчета маршрута при отказах»): navigator step 7 test
+    set - failures (no main drive, half the RCS, one side's thrusters = asymmetric push, slow attitude) x when (before the
+    request, in flight on the route, during an aimed ram) x the reflex and the planner; DEV ELITE_DEV_DESTROY_MODULES_AT
+    + the straight ram + the pad scenarios. The control-program reflex flies the damaged physics as the mother computer
+    reports it, so it should adapt without special cases - to be shown.
+  * 2026-11-23 REFLEX FIX (found by the planner start checks): in the city the program reflex dodged lane traffic with
+    the FIRST equally safe program - full RCS back + left + down for 4 s (no effort cost; the test hull's RCS ~20 m/s2)
+    - ~1 km off the route into a residential block, 118 touches (the reflex sees no structures). Now: an effort cost
+    (the gentlest of the equally safe), a departure cost beyond 40 m from the hands-off flight (the route's corridor is
+    collision-proven), gentle 0.4 pushes per axis in the set, 2 s holds. planstart v2: 0 collisions in all four runs
+    (rest / after HOME toward / sideways / away), cross-track mean 6-21 m. NOTE: a ship entering the hub frame from
+    free flight starts at rest relative to the hub - the "with a velocity" case is a request in flight (planmove.sh).
+  * 2026-11-23 PLANNER FROM REST vs WITH A VELOCITY (author: «проверь работу планировщика когда корабль в покое
+    относительно хаба и когда у него есть вектор скорости»). From rest (pad B4-11 from 10 km, four starts): 2.6-3.3 s,
+    1 plan, 0 failures. NOTE: a ship entering the hub frame from free flight is at rest relative to the hub - a
+    "velocity" case is a request in flight: planmove.sh (cruising the B4-11 route through the city at ~120 m/s, a new
+    request at 110 s): A2-03 ahead 3.0 s / 14.9 km, H2-03 across (a turn back) 3.3 s / 10.2 km, H4-01 aside 3.1 s /
+    9.3 km - the plan starts at the live speed (120-125 m/s) from the live place, the ship coasting while it is computed
+    (zero command, the start projected only by the late-entry rebind); the route opens with a 1 km straight along the
+    velocity then turns smoothly (no reversal); cross-track mean 5-7 m, 0 replans / failures / collisions, all landed.
+    SPEED CAP: removing the 150 m/s hub-zone cap (author: no cap in free space, 30 in built-up) BROKE planning - the
+    free legs' turn geometry is sized for the max speed (500 m/s -> 8.8 km lane-join approach, 14 km turn radius, no
+    lane entry fits, 13 plans of 21 s, none feasible). The cap stays ON (ELITE_HUB_ZONE_SPEED_CAP=0 off) until the turn
+    geometry is decoupled from the max speed (fast on straights, braking for turns).
+    TURNS: Assisted turns are planned on the RCS lateral authority (the law keeps the nose on the velocity); Newtonian
+    on the main drive. FREE ROTATION (Backspace) now fires the main drive from the speed keys (W / S, the autopilot's
+    speed command) along / against the nose with its real authority (DynamicMotionSystem; ELITE_FREE_ROTATION_MAIN=0
+    off) - "almost Newtonian" (author); EliteControlEvasionLab freerot: 0 -> 294 m/s in 4 s (73.5 m/s2).
+    NEXT (navigator): Assisted thrust-vector turns (free rotation, nose into the arc, main drive) -> plan Assisted turns
+    on the main drive; decouple turn geometry from the max speed and drop the free-space cap; the failures test set;
+    then route tracking by control programs on the damaged physics with a net proposing them (author: the autopilot on
+    a net with the engine groups' state as input).
+  * 2026-11-23 EXPERIMENT "the route in the Newtonian law" (ELITE_AUTOPILOT_NEWTONIAN_ROUTES=1, off by default): an
+    Assisted ship switched to Newtonian (Ctrl+F10 path) for its automatic route, back to Assisted after. lawab v1:
+    Assisted 232 / 169 / 139 s to the pad service (rest / in-flight A2-03 / in-flight H2-03); Newtonian - the FIRST
+    request right after entering the hub frame never moved (target accel 58 m/s2, speed 0; the watchdog after 93 s,
+    cause NOT found), the in-flight H2-03 one took 252 s (1.8 x Assisted: flip-and-burn braking, conservative).
+    => no gain from reusing the Newtonian autopilot; Assisted thrust-vector turns need their own law.
+  * 2026-11-23 REAL CONDITIONS (author: «в песочнице у тебя все работает, а у меня - все ломается»; the author plays a
+    dedicated server + client: preferences last_server_endpoint 127.0.0.1:27351, account pilot-a). SESSION LOG: the
+    client and EliteServer now always write their whole log (cerr + cout through the async buffer) to
+    %LOCALAPPDATA%/EliteGame/logs/<client|server>_<date>_<time>.log, the last 10 per kind (ELITE_SESSION_LOG=0 off; the
+    automated runs set it off so they never evict the author's sessions). ELITE_DEV_REMOTE_REGISTER=1: a --connect
+    client registers its --profile on a (test) server without the form. scratchpad run_remote.sh: EliteServer on a test
+    port (--reset-auth-state, ELITE_DEV_COMMANDS=1, ELITE_DEV_START) + a visible, vsync client over TCP.
+  * 2026-11-23 THE DEDICATED SERVER + REMOTE CLIENT WAS BROKEN (found by running in the author's conditions; the local
+    game never encodes snapshots, so every local check passed). Three faults, all fixed:
+    1. the late-join BOOTSTRAP snapshot was 68.8 MB > the 16 MB wire limit -> "failed to encode/send TCP protocol
+       message", every remote client dropped right after its welcome ("TCP peer closed connection"; the built-in
+       --self-test-remote-client FAILED). 66 MB = ~300 hub cities' hit volumes (12-17 thousand boxes, up to 2 MB per
+       city). Now a layout city's hit volumes are NOT replicated: the client assembles them itself from the frozen
+       layout + its own stage clock (game/scene/LayoutCityHitVolumes: background thread, re-assembled when the
+       construction stage key changes; the shared collisionToHitVolumes is the server's conversion too).
+       ELITE_REPLICATE_CITY_HIT_VOLUMES=1 the old way. Known gap: players' construction-contract overrides are not
+       replicated (the renderer already shares it).
+    2. a pad request failed while the city's geometry was still assembling (ObstacleGeometryUnavailable treated as
+       final) - now the request waits up to 60 s.
+    3. while the client preloads station assemblies it COLLAPSED queued snapshots to the newest - a sparse one replaced
+       the bootstrap, the only one with the heavy payload: the hub dock had no hit volumes for good. Now merged
+       (materializeCanonicalReplicationSnapshot), not replaced.
+    Diagnostics kept: the server logs why each connection ends, the wire encoder names a message that fails and the
+    biggest parts of an oversized snapshot, [Bootstrap] counts per late join.
+    LIVE (run_remote.sh, a dedicated EliteServer + a TCP client, hidden window): self-test PASS; pad B4-11 from 10 km -
+    plan 3.5 s, the pad service after 240.5 s (local 232 s), 0 collisions, cross-track mean 16 m / max 162 (local 7 /
+    116).
+  * 2026-11-23 "REMOTE DESYNC" WAS THE REFLEX (author: «найти рассинхрон - думаю очень важно»): same exe, same B4-11
+    route, local vs dedicated server: the tracks match to a metre until the city entry; the whole gap was one spike there,
+    and every run with the spike (remote 162 m, local lawab 116 m, planstart rest 170 m) had 4-11 [Evasion] dodges of the
+    city's lane traffic at 120 m/s; the runs without dodges stayed at ~12 m. The program reflex judged straight
+    extrapolations over its whole 12 s horizon (1.4 km at 120 m/s; lane traffic turns at the connectors).
+    FIX EvasionReflex::urgencyFor: the reflex acts only when the touch / the margin's minimum is within the time the dodge
+    takes - sqrt(2 x miss / (0.4 x lateral accel)) + 1 s, clamped 3..8 s (x1.5 while dodging); farther threats are the
+    planner's. ELITE_EVASION_URGENCY=0 = the old trigger. Network measured ([NetQueue] logs every 250 ticks, server +
+    client): the server's control queue holds 2-3 inputs (40-60 ms), client unacked 2-5, no resyncs, no clock drift.
+    LIVE: remote B4-11 0 dodges, cross 4.5 / 9.8 m, landed; local 0 dodges, 5.3 / 11.6 m; ramtest (programs, 120 m/s)
+    head-on 60 m centres, right 110 m, 0 collisions (was 260 / 177: the old trigger dodged from 5 s out; the margin now
+    is the reflex's own 30 m clear cap). Open: client prediction is constant-velocity dead reckoning (no acceleration).
+  * 2026-11-23 IN-FLIGHT REPLANS OVER THE DEDICATED SERVER (scratchpad planmove_remote.sh = planmove.sh on run_remote.sh):
+    a new pad request at ~125 m/s on the B4-11 route - ahead A2-03 / far H2-03 / side H4-01: plans 3.5-3.7 s from the live
+    state, a 1 km straight along the velocity first, all adopted, all three taken by the pad service; cross-track mean
+    4.9-5.7 m, max 10.5-16.2 m; 0 collisions, 0 dodges.
+  * 2026-11-23 FREE-SPACE SPEED (author: no cap in free space, 30 m/s in the built-up part) - EXPERIMENT
+    ELITE_HUB_FREE_SPEED=1 (off by default): RoutePlanRequest::geometrySpeedMps - the hub zone limit (150) sizes only the
+    GEOMETRY (free legs' turn radius, lane join approach, obstacle search margin, the optimizer's design speed - never
+    below the ship's speed now), the curves keep the ship's max so the profile runs fast on straights and brakes for turns.
+    LIVE B4-11 from 10 km: 177 s (capped 234-239), vmax 324 m/s, same 19.9 km route, entered the lanes at 30, cross 7/16 m.
+    In-flight replans (remote): all landed, 0 collisions, but from the run start ahead 398 s / far 328 / side 220 against
+    capped 277 / 249 / 251 - at 340 m/s the ship is far past when the pad changes; stays off until that is answered.
+    START LEAD now covers the planning time (OrdinaryRoutePolicy::planningFlightSeconds = 1.5 x the last measured plan
+    time, 8..30 s): a 1000 m prefix at 149 m/s with a 6.7 s plan was behind the ship -> late-entry connector failures,
+    17-21 s re-solves; now no replans. FPS (no vsync, hidden window): unchanged by speed; the city at 30 m/s ~37 fps in
+    both - render 8-12 ms + the embedded server 10-12 ms a frame (snapshot build ~3 ms a tick): a local-mode target.
+  * 2026-11-23 ROUTE-DRAFT NET started (author: «сделать нейронку ... оптимум по времени ... штрафы за столкновения и
+    размашистые обходы ... лабиринт ... физическое состояние корабля»): RouteDraftNet.h (canonical chord frame, 112
+    inputs incl. the ship's authority and an obstacle grid -> the optimizer's 11 shape variables), optimizer draft seeds
+    + fast path (refine only the feasible draft), timeOptimalWeights (time + 0.05 length), RouteDraftIo.h + game dump
+    ELITE_ROUTE_DRAFT_DUMP, EliteRouteDraftLab dataset|eval (real dumped scenes + generated mazes, sampled ship states),
+    route_draft_train.py. Pipeline smoke-tested; training next.
+  * 2026-11-24 ROUTE-DRAFT NET v1 IN THE GAME (default ON; ELITE_ROUTE_DRAFT=0 / ELITE_ROUTE_TIME_OBJECTIVE=0 = old):
+    - OBSTACLE GRID (src/world/navigation/NavigationObstacleGrid.h, built per optimize() call): a candidate's ~200
+      segments were each tested against every obstacle (~3000 in a city: ~12 ms an evaluation); gridcheck: 116 000
+      random segments, 0 mismatches with the full scan, 0.0003 vs 0.015 ms a segment; dataset rate x22.
+    - DATA: 15 000 scenes from 9 dumped real optimizer requests (Earth hub, perturbed start / goal / ship state) +
+      10 000 generated MAZES (walls, floor, ceiling; pairs with <= 2 corridor turns - one free leg); teacher = the
+      optimizer with timeOptimalWeights, 480 iterations; 19 600 valid rows. Net 112-256-256-11 (route_draft_train.py,
+      60 epochs; val mse 0.65 standardized - shapes are not unique, judged by the outcome instead).
+    - FAST PATH: the draft refined 40 iterations (also an infeasible one - the pattern search pushes it clear first);
+      feasible -> no 13-seed / 4-branch search. LAB (unseen scenes): hub fast path 83 %, 415 vs 1042 ms, time / teacher
+      1.004 (game 1.013), valid 85.3 % (game 85.0); maze fast path 53 %, 518 vs 788 ms, time 1.095 (game 1.062 - the
+      maze is the net's weak spot), detour 1.36 (game 1.43).
+    - LIVE: B4-11 from 10 km plan 0.55 s (3.1 s before the grid, 1.12 s grid only), eta 132 s (137.8), landed 230 s;
+      remote in-flight replans: plans 0.55-0.78 s (3.5-3.7), all landed, 0 collisions; ahead 166 s (167), side 153 (141),
+      far 255 (139) - the far one is the LANE CHAIN choice (5.5 km of 30 m/s lanes; the chain cost is metres with lanes
+      cheaper, not time) - open, the author's balance rule («не лететь вниз в зелёную зону») to be weighed.
+    - the in-city free-leg 40 m/s cap only AMONG the buildings (an obstacle within 300 m of the start, was 1.5 km: a ship
+      over the roofs after a pad change crawled 9 km at 40 m/s, eta 225 s).
+  * 2026-11-24 LANE CHAIN BY TIME (author: «все выбираем по времени - минимальное время»): HubLaneNetwork::chooseRoute
+    costs seconds - free legs at the route cruise, lanes / connectors at their own limits, the join approach at the mean,
+    the pad service by its 150 m/s / 8 m/s2 law (ELITE_LANE_CHAIN_COST=metres = the old weighted metres); hard rules kept
+    (joins from open sky, no cut through a tube); the lane search's segment checks on NavigationObstacleGrid.
+    LIVE remote in-flight replans: ahead 167 s (167), far 106 (139 / 255 with metres), side 88 (141); plans 0.28-0.84 s,
+    0 collisions, cross 5 / 12-16 m. OPEN: search_ms 0.5-1.0 s (was 0.35) - to profile.
+  * 2026-11-24 COLLISION ASSIST IN MANUAL FLIGHT (author: «уклонение - третий вариант» = by the difficulty): settings
+    DIFFICULTY: COLLISION ASSIST = assist (default) / warn / off (ClientModeState::collisionAssistMode, prefs key
+    difficulty_collision_assist, main menu select, 5 locales); SpaceState::applyManualCollisionAssist over the pilot's
+    own controls: the same radar control-program reflex with the urgency window; warn = HUD warning only; assist = the
+    program holds the stick for the manoeuvre (HUD notice), a sharp pilot input (full deflection / translation) hands
+    it back for 3 s. DEV ELITE_DEV_COLLISION_ASSIST. LIVE (pilot took over, head-on rammer 120 m/s): off 32 m centres,
+    warn 2 warnings 32 m, assist 72 m. DEV rammer: no radar track -> the enemy's world velocity (free flight).
+    FORMATION re-checked (fm2): joined a lane ship 1.9 km out, round behind it, held the wedge slot at 3 m, 0 collisions.
+  * 2026-11-24 START SCHEME CHECKED (author: «делай свою схему старта»): DEV ELITE_DEV_PLAN_DELAY_S (+ _REQUEST, the first
+    plan of that request only) makes an in-flight plan slower than its start straight. Live at ~125 m/s, pad H2-03:
+    15 s late -> the start piece re-solved in 79 ms (backbone kept), landed 110 s; 30 s late (2.8 km past the straight)
+    -> a fresh plan from the live state in 0.5 s, landed 139 s; 60 s late (6.3 km past) -> 0.56 s, landed 194 s;
+    0 collisions, cross <= 12-17 m. Note: one slow plan makes the NEXT start straight long (lead = 1.5 x the last plan
+    time, up to 3.7 km once) - a median over recent plans would smooth it.
+    ROUTE-DRAFT NET v2 installed (all data: hub 15k + ring 5k + mazes 30k): unseen hub time/teacher 1.001 (v1 1.004),
+    fast path 82 %, 431 ms; maze 1.079 (v1 1.096, game 1.063), detour 1.35 (game 1.44), 495 ms (game 758).
+  * 2026-11-24 the planning-time lead now takes the LOWER MEDIAN of the last 5 plan times (OrdinaryRoutePolicy):
+    after a 30 s plan the next start straight stays 1000 m (was 3.7 km); delay-30 test landed in 108 s (139).
+  * 2026-11-24 the lane chain search back on the full obstacle scan: with the grid it was slower (351 -> 443 ms - its
+    km-long segments cross hundreds of cells, the per-call build costs more); time cost vs metres: 472 vs 443 ms (noise).
+  * 2026-11-24 FAILURES TEST SET (navigator step 7, scratchpad failsuite.sh; Cobra Assisted-I, 4 gimballed engines):
+    aft R lost in flight -> "motors degraded" recovery, replanned on the damaged physics, landed 190 s, cross max 26 m;
+    fore L lost -> landed 200 s (12 m); aft R lost before the request -> 189 s (25 m); BOTH aft lost -> the planner
+    refuses honestly ("motor basis insufficient: working_forward=0", reverse 73.5 m/s2 left) - flying on the fore
+    engines turned round is the job of the planned engine-state autopilot (net); 0 collisions everywhere.
+    GAP FOUND + FIXED: the reflex ran only while the route executed - in the recovery stop after a loss a head-on
+    rammer passed 39 m off (centres) with no dodge. Now every virtual-pilot phase gets the reflex
+    (applyManualCollisionAssist(..., autopilotPhase) from submitAutopilotControl unless the route's own reflex ran);
+    a dodge drops the pilot's velocity / acceleration targets (they outranked the stick: 5 dodges, miss unchanged);
+    its physics = the mother computer's damaged envelope (the module list predicted a healthy 120 m dodge). LIVE: 5
+    phase dodges, 43 m, 0 collisions - the damaged ship's authority limit (the last programs judged a full miss
+    impossible -> the glancing choice). Plain B4-11 with the phase reflex: 0 dodges, 177 s, cross 14 m.
+  * 2026-11-24 RING HUB TO THE HUB STANDARD + MAPS (author: «кольцо ... картонной дурилкой», «3Д - кольцо, 2Д - развёрнутое
+    кольцо ... реально плоский план на монотонном фоне»):
+    - 3D map: the plan's blocks / boxes go through HubRingBend (centre toFrame, axes basisAt) - the ring shows as a ring.
+    - 2D plan: LocalMapPlanWarp in the hub camera snapshot (MapCameraSnapshot.h) for a bent city: every projected
+      point -> city frame -> HubRingBend::toStrip -> one flat sheet at the city origin; the plan's own items are given as
+      REAL (bent) points (block / building hit polygons, labels), the GPU sheet is drawn flat - lanes, ships, the player
+      land on the same unrolled strip. Fitted on the strip's bounds. Flat cities: warp off (no change).
+    - the 2D plan background: an even dark slate, no stars / planet (all hubs).
+    - the ring's DOCK: a HexDock on the spin axis in the ring's centre + its service block (hub_ring_world.py
+      add_axial_dock, applied to initial_world_state.json without re-running the generators); DockTraffic starts there.
+    - hub card for a hub with no world-site record: owner, operator, role (world record), population and landing places
+      (plan), docks (attached modules); composition from the plan's zones when no economy record.
+    LIVE (captures D:/tmp/ringmap2..5): ring on 3D, unrolled strip on 2D with lanes / ships on it, card complete.
+    NOT YET: docking to the axial dock flown live; the auto map switch hub-to-hub; all objects on the 3D map (neighbour
+    hubs); the landing-legs tunnel-frames glitch (reproduced: frames scattered at legs-out, D:/tmp/legcam).
+  * 2026-11-24 also (SOURCE + BUILD, not live-verified by the author yet): radio widget hit test in the TextRenderer pixel
+    space (clicks missed the drawn buttons) + [RadioUI] press log, volume bar click / drag, the playlist CONTAINER (24
+    tracks, radio.json "playlist", drop files / folders onto the window, x removes the current one); city far proxies:
+    a SILHOUETTE proxy (octagonal slices from the coarsest LOD) for towers / masts / flared tops instead of the box;
+    DEV verb "hubplan".
+  * 2026-11-24 COLLISION / EVASION: CONTINUOUS TRAJECTORY CONFLICT (audit 8e3c49007 NAV-1 / NAV-2 / NAV-3; the reviewer's
+    pass «avoidance должен оценивать continuous trajectories реальных физических объектов»). STATUS: SOURCE + BUILD +
+    AUTOMATED (new ctest) + LAB + LIVE.
+    - TrajectoryConflict.h (new): every interval between two stored states of our predicted flight is CONTINUOUS
+      motion - the other body linear, ours on the chord within chordBound = a_max dt^2 / 8 (a_max the largest
+      acceleration the integration saw inside the interval), closest approach and the first touch analytically
+      (no sampling of the touch: correct at m/s and at fractions of c). ConflictResult: closest approach + time +
+      relative speed, physical and safety clearance, first contact + normal impact speed. SafetyEnvelopePolicy: the one
+      place of the "too close" numbers - base hull-to-hull gap 15 m + the sensor's position uncertainty + velocity
+      uncertainty x (scan age + t). judgeControlFlight uses it (ControlFlight::chordBound, sampleSeconds).
+    - REAL SIZES: RadarTrackReport::boundingRadiusMeters (wire schema 71) from the target's real geometry
+      (damage/HitVolumeBounds.h: max |centre| + |half size| over the live hit volumes - a torn-off part shrinks it;
+      descriptor half-diagonal for traffic shells / passport hulls; debris / strays from their size); our own hull
+      from our replicated hit volumes (SpaceState::ownBoundingRadiusMeters) instead of max(10, length / 2).
+    - SCAN AGE + ROTATION: EvasionReflex::sceneFrom turns the scan from the body frame at the measurement into the body
+      frame now by our rotation over the age (SharedShipPhysics::propagateOrientation - the physics' own integrator, no
+      second radar-axes definition); uncertainties and age go into the safety envelope.
+    - TEST evasion_trajectory_conflict (tests/navigation_runtime, ctest) against an INDEPENDENT fine-stepping oracle:
+      216 touches placed between the old 0.5 s samples at 100 .. 1000 m/s and 0.1 c (head-on / perpendicular /
+      oblique, exact / glancing / near miss, debris 1.7 m .. transport 114.6 m): the old judge missed 180, the new 0;
+      4000 random encounters 10 m/s .. 100 km/s: 1515 touches, 0 missed; dodge programs on the real physics vs a 1 ms
+      oracle: 0 missed; geometry (wide hull 16.4 m vs length/2 11 m, transport 115.8 m, the track's size used); scan
+      rotation 0.3 rad/s x 0.58 s at 310 m: error 0.003 m (54 m without); uncertainty: the same nominal pass exact =
+      safe, uncertain = safety conflict. 5092 checks, 0 failures.
+    - LAB EliteControlEvasionLab oracle (41 programs x 300 scenes, threats to 500 / 2000 m/s, both laws): against the
+      SAMPLING oracle (the predicted flight's own steps, 1 ms inside): old judge missed 320 / 774 (Assisted),
+      1605 / 5145 (Newtonian) touches, the new 0 everywhere, 8-31 extra cautious touches; against a 2 ms PHYSICS oracle
+      the new one still misses 0.1-1.3 % - the prediction's 0.1 s integration step vs finer physics (a model error, OPEN:
+      integrate at the server step or bound it). Judge cost 0.6 vs 0.4 us a flight.
+    - LIVE: ramtest head-on 59 m (was 60), right 98 m with no dodge (the real radii need ~50 m, the pass is 98 - the
+      old 30 m spheres dodged it needlessly), 0 collisions; B4-11 through the city 181 s, 1 dodge, cross 11 m.
+    - NOT DONE (explicit): the narrow phase (target hit volumes - the client has none for other ships; the sphere is
+      conservative: no misses, extra caution for long hulls); known intent (lane / connector paths of traffic instead
+      of the straight extrapolation - the boundary: radar = observed motion, a known path can feed its own states
+      through accumulateConflictInterval); NAV-4/5/6/7/9 untouched. J-SPEED CONTRACT (found): the J keep-out (20 km
+      hubs, 5 km ships, GameSimulationFreeFlight jKeepOut) drops the J ACCELERATION, not the speed - a ship entering at
+      0.5 c crosses it ballistically; debris / other statics are not in the keep-out. The predictor is speed-agnostic
+      now; a speed guarantee near objects is OPEN as a J-flight contract task.
+    - radar scope: 5 km step added (5 / 20 / 50 / 150 km, R cycles; author 2026-11-24).
+    - SUITE tests/navigation_runtime: 65 tests, 55 pass incl. the new one; the 10 reds (traffic_route_graph,
+      client_route_autopilot, navigation_v2_tunnel_proving_ground, assisted_authority_contract,
+      newtonian_execution_authority, assisted_layout_flight_matrix, ship_physical_corridor_matrix, ordinary_route_policy,
+      assisted_safe_course_recovery, ship_state) fail IDENTICALLY at a1e28cad2 (built in a worktree) - pre-existing
+      baseline reds, not from this work; add them to the baseline list.
+
+### Server capacity 2026-11-24 - LOAD TEST REGRESSION FOUND AND PARTLY FIXED
+- Author's question "сколько игроков сервер реально может обрабатывать?". EliteServer --load-test 2-3 (153 player bots,
+  61 systems, every bot a real session with its own wire encoding), build-relwithdebinfo:
+  HEAD before the fix: tick avg 62 ms / p95 82 (budget 20 ms; 2026-11-08: 14.8 / 22.8), physics 16.4 ms, AI / controls
+  11.7, snapshot build 7.4, wire 539 KiB/s per player (11-08: 165), 1253 MB. About 50 players fit one core at 50 Hz.
+- CAUSE 1 (fixed): the activation diagnostics CSV (RuntimeFeatureFlags ActivationShadowDiagnosticsEnabled, on since
+  e35c804bd) re-opened simulation_activation_shadow.csv from every system pass: 10.7 of the physics stage's 13 ms (the
+  activation shadow itself 0.04 ms a call); the file had grown to 273 MB. Now written only with
+  ELITE_DEV_ACTIVATION_CSV=1. After: physics 5.6 ms, tick 48 ms avg / p95 67.
+- CAUSE 2 (fixed, audit SRV-2 made general): every player joining Sol got ~3 MB of debug hit volumes of the hub
+  prototypes (district 17 226 boxes = 1.96 MB, mega 1.07 MB) - the layout-city rule did not cover kit modules. Now every
+  hub kit module (hubKitPackagePath: kit blocks, district / mega prototypes, belt ring / drum / hotel) derives its
+  volumes on the client from the same package with the same collisionToHitVolumes as the server spawn (one type ->
+  package table for both); the load test's "[Wire] snapshot over the limit" lines (153 per run) are gone; a remote
+  bootstrap connects. NOT flown: a route planned next to a prototype (no pads at the prototype hubs).
+- Load test now prints the physics stage split and a sampled wire breakdown (every 40th snapshot of every bot).
+- REMAINING (open): (a) wire 530 KiB/s per player = 33.7 KB a snapshot x 16.7/s: ships 14.4 KB (3.1 ships, ~4.7 KB
+  each - own ship 5.3 KB, known since 11-08), OBJECTS 13.1 KB (21 objects ~620 B each, sent in EVERY snapshot - objects /
+  hubs are full-cadence by design, Stage M7 decimates ships only), hubs 2.4, session 2.3. Objects at a lower cadence
+  needs the client's history interpolation checked for rotating / orbiting hubs first. (b) AI / controls 10.6 ms for
+  1919 simulated ships (153 players + hub dock traffic: with ELITE_DOCK_TRAFFIC=0 there are 155 ships) - content growth,
+  not a regression; dock pilots 3.1 ms. (c) replication ~20 ms per tick for 153 in-process sessions (selection 5.5,
+  snapshot build 6.3, copies 2.8, encode 3.6). (d) the tick is single-threaded; system passes are independent.
+- Bisect against 5b7d83f21 could not run: the old code loads ship meshes under names no longer on disk (ignored assets).
+
+### Audit 8e3c49007 follow-up 2026-11-24: NAV-4..NAV-9 + SRV-3 - BUILT, CTEST, LIVE
+- NAV-7 phantom dodge: EvasionReflex::bindEpisode(key, now) - the reflex serves one episode (the route run of a docking
+  request: serial + tag; a virtual-pilot phase: serial + ClientDockingPhase + pilot tag; the pilot's own flight); a new
+  episode or the clock going back resets it (no stale dodge / hysteresis / widened window by the pad).
+- NAV-6: ShipControlState::cancelVelocityAlignment (wire protocol 50): while the reflex flies, the persistent alignment
+  (the recovery stop's BrakeToStop, ForwardToVelocity) is cancelled in SharedShipPhysics - the dodge predicted with
+  alignment None is the one flown. Set by the route reflex and the manual / phase assist.
+- NAV-4: the manual / phase reflex physics is a member cache keyed by ship instance + control model + law, refreshed
+  every 5 server ticks (was a function static shared by everything, 1 s, a failed read cached zero capabilities).
+- NAV-5: the urgency window takes the caller's lateral figure, else the programs' own physics' strafeAccel (a
+  Newtonian route / the manual and phase assist got a fixed 5 s; 2 m/s2 now gives 8 s).
+- NAV-8: SpaceState::submitVirtualPilotControl - the one submission of a virtual pilot's control with the phase reflex
+  over it in hub-local flight (formation, body autopilot, route-run legs, the docking recovery / authority-lost coasts;
+  a global / J command is left alone - not what the programs model); updateUnsampledCollisionAssist - a frame whose
+  input returned before the controls were sampled still runs the manual assist over the pilot's last control (and
+  restores it after a dodge). NOT exercised live: the DEV "detail" map does not skip the sampling.
+- NAV-9: flyControlProgram goes through ShipControlExecutionGateway (integrateAttitude + evaluateTranslationControl)
+  with the flags the command is flown with (per-axis RCS, cancel alignment, the consumer's rcsKeepsTranslationDeltaV via
+  ControlShipState): a Newtonian route's dodge keeps 40 m/s lateral after a 2 s hold - predicted 0 before.
+- NAV-10 (part): m_manualAssistActive cleared when a virtual pilot takes over.
+- SRV-3: GameServer::copySparseSnapshotForSession - a session ENTERING a system gets its objects from the canonical
+  replication snapshot (complete static payload); A/B over a dedicated server, Sol -> Tau Ceti -> Sol: old entry
+  (ELITE_DEV_OLD_SYSTEM_ENTRY=1) 200+ objects arrived with no modules / hit volumes (already on the FIRST entry into
+  Tau Ceti, not only on the return), new 0. Client diagnostic "[Replication] object ... arrived WITHOUT its static
+  payload".
+- Tests: evasion_trajectory_conflict 5102 checks (+ episode, urgency from physics, alignment cancel, gateway flags).
+- Live: route ramtest head-on 51-57 m / right 103 m (no dodge), 0 collisions; engine lost + recovery stop + ram: phase
+  dodges, miss 83 m (was 72), landed 197-204 s; city B4-11 185 s, 0 dodges.
+- SRV-4: a city's construction-stage volume replacement (GameSimulation::setStaticObjectPackageHitVolumes) keeps
+  `destroyed` by collision id (a destroyed building no longer turns solid again); the weapon ray's city bounding sphere
+  is cached per m_staticObjectsGeneration (the first stage's sphere missed new buildings); the previous stage's package
+  volumes are dropped from the packageHitVolumes cache ("drop:" key); the server no longer builds debug hit-volume
+  snapshots of objects the client derives itself (never sent). Remote landing B4-11 after: 175 s, 0 collisions.
+- SRV-2: a snapshot the TCP server cannot encode (over the wire limit) sends SessionReject SNAPSHOT_TOO_LARGE (new reason
+  9, wire protocol 51) before closing; checked with ELITE_REPLICATE_CITY_HIT_VOLUMES=1 over a dedicated server: the
+  client reports "Session synchronization failed: SNAPSHOT_TOO_LARGE" (was a bare "peer closed"). Still no chunking /
+  compression / budget - the limit is now explicit, not silent.
+- SRV-1: (a) SessionWelcome::hubContentFingerprint (wire protocol 52; elite::model_asset::hubContentFingerprint: the
+  bytes of every hub city layout + construction plan, path + size of every hub module package) - the client refuses
+  "HUB_CONTENT_MISMATCH: server=.. client=.." instead of flying into walls it does not see; (b) construction overrides
+  copy-on-write (a new plan replaces the old, the old kept alive for readers - the halts were rewritten in place under
+  the mutex while the assembly / traffic read without it); (c) session.constructionOverrides (snapshot wire schema 72;
+  GameServer::constructionOverridesSnapshot, rebuilt on the override generation) applied by GameClient (a no-op when
+  already in force); (d) the construction clock on the client = the server's universe time from each snapshot (the
+  renderer wrote its own, the process uptime without a celestial snapshot). Remote run: fingerprints equal, Высокий
+  assembled on the client; the contract sign itself not reached (the docking below failed first).
+- FOUND, OPEN (regression, important): automatic docking hub_hex_dock_a from earth_orbital_hub@40 after the official
+  route flies INTO station object 11's habitat box ('station_habitat_s1/s2', ~10 m above its top face, 33 m/s; the
+  planner keeps 80 m clearance from that box - the obstacle is in the dump). A/B: local draft net on 2/2 collide,
+  draft off 2/2 dock (one with the old objective too); remote draft off still collides (128 contacts). The route-draft
+  fast path is now OPT-IN (ELITE_ROUTE_DRAFT=1; plans slower again: 1.8 s a leg remote) until PLAN-4 has a guarantee.
+  Not the reflex (off: same), not SRV-3 (old entry: same). Hypotheses to check next: a mandatory lane / transit stage
+  that is not obstacle-checked passing over the ring; the station's habitat boxes are crude (one box per third of the
+  ring, half 1678 x 952 x 199 m, template cached per type at the first build angle - the ring's rotation never reaches
+  the hit volumes).
+- RESOLVED (same day): the hub_hex_dock_a docking into Высокий. CAUSE: the station's habitat ring rotates (0.05 rad/s);
+  the server turns its hit volumes with the module at collision time (GameSimulation: "rotation needs no rebuild, only
+  the transform"), the client planner saw them frozen at the replicated angle - and the ring was ONE box per third of
+  the ring (half 1678 x 952 x 199 m): turning, their corners swept a 3 km disc (the dock sits at 3.01 km). The planned
+  route was clear (RouteCheck) and tracked to 1-4 m; the ring had moved. FIX: (1) ObjectRuntimeHitBuilder
+  appendRotatingPartSectorVolumes - a part > 400 m of a rotating assembly module becomes up to 24 angular sectors of its
+  vertices about the rotation axis, each box in (radial, tangent, axis) (Высокий's ring: 54 boxes) - the ring sweeps a
+  torus as thick as the real one, on the server's collisions too; (2) ClientNavigationPlanningSnapshotFactory plans
+  every volume of a rotating module as its swept ring (copies about the module's axis through its pivot, enough copies
+  for a 10-20 m gap, grown by it). Docking local: draft off and ON both docked, 0 station contacts; remote (dedicated
+  server): docked, 0 contacts, the construction contract signed and the client re-assembled the city with the new stage
+  (SRV-1 replication verified). The route-draft fast path is ON by default again. Obstacle dump (ELITE_ROUTE_DUMP)
+  now carries the boxes' bases ("B" lines) for offline route-vs-box checks.
+- ECO-2: the ship-loss event id = ship + UNIVERSE time in ms ("loss:<key>:u<ms>"; was the server tick, restarting at 0
+  each run); a ship whole again leaves the in-process reported set. Live: two runs on one state file, the same DEV
+  destroy timer: two losses recorded (loss:1:u881330604002, loss:1:u881330695628) - the old id would have collided.
+- ECO-3: the loss scan covers EVERY ship with a manifest aboard or flown by a player (parked ships, the one left after
+  a ship change, bots' ships were never recorded). Not exercised live (same condition path).
+- ECO-5: (a) the state writer keeps a failed write and retries it every 2 s until written or superseded (it dropped it
+  after ~3 s: a confirmed deal lost with the next crash); (b) restored runtime ships get their manifest's mass
+  (applyCargoLoad on restore - they flew empty after a restart). Still open: one transaction for economy +
+  ships.json (next_instance lives only in ships.json), durable-before-reply (the JSONL journal of TRADE_DESIGN §7.6).
+  EliteEconomyCheck 257 / 0.
+- ECO-4: the server runs a request id once per player session (the last 64 ids; a reconnect starts clean); a request
+  dropped on a full queue answers "busy" (was silent - the client waited for ever); the client does not send the same
+  economy command twice within 0.6 s (the F8 cargo insurance / government buttons had no double-click guard). Built,
+  EliteEconomyCheck 257 / 0; not exercised live (no retransmission path exists yet; the double click not scripted).
+- ECO-1: a lost lot that the cargo insurance paid is recorded subrogated - claim "paid", rightsHolder "insurer:<bank>",
+  LostCargo::insurer / payoutCr (saved as "insurer" / "payout") - a future recovery cannot give the owner the goods AND the
+  payout; an unpaid lot stays the owner's. EconomyCheck +1 (258 / 0).
+- ECO-6 (part): wreck records are "W<n>" (the lots of a manifest are "L<n>" and restart after a loss - the record L1
+  clashed with a live lot L1). Still open (design, author): container identity, holder modules per lot, the manifest
+  ignoring a torn-off holder (cargo sold that drifted away), the salvage state machine; CARGO_SALVAGE_DESIGN.md is
+  stale (says no code exists).
+- NET-1: RouteDraftNet::load enforces the model contract - schema elite.route_draft_net.v1, feature_version ==
+  RouteDraftFeatureVersion (2, new; written into the model and by route_draft_train.py), inputs / outputs, every layer's
+  rows == bias, uniform rows, widths chained 112 -> .. -> 11, stats' sizes, finite values, positive stds; refused =
+  no model (the generic search) with the reason logged ("[RouteDraft] net REFUSED / absent: ..."); forward() / draft()
+  refuse a wrong-size vector. ctest route_draft_net_contract: 11 corruptions refused, the shipped model loads, 15 / 0.
+- TST-2: tests/architecture_contracts/check_navigation_route_boundaries.py GREEN (was red before the audited range, so
+  new violations were invisible): (a) RouteDraftNet.h / RouteDraftIo.h declared planner internals in the check (only
+  RoutePlanner.cpp, the orchestration's RoutePlannerSetup.h and the lab may include them - checked); (b) the pure
+  RoutePlanner no longer reads env / files / std::cerr: RoutePlannerOptions (time objective, draft net, log sink, dump
+  path, budget clock) set by game::navigation::configureRoutePlannerFromEnvironment() (RoutePlannerSetup.h) in the
+  SpaceState and GameServer constructors; tests / labs get the defaults (time objective, no net, silent); (c) the
+  optimizer has no std::chrono: Request::budgetClockSeconds (given by the orchestration) else an evaluation-count
+  budget (1500 polish / 12000 infeasible) - deterministic in the labs and the net's teacher (PLAN-4: labels depended on
+  the CPU). ordinary_route_policy fixed: the stale 1 km resting-start expectation -> 3 hull lengths (author change
+  3ef6c6d00) + the 30 m floor + the moving 1 km minimum. Navigation ctest 66: 57 pass, 9 baseline reds (was 10).
+  Live: B4-11 through the city 180 s, net loaded, fast path, 0 collisions.
+- PLAN-6 (part): [RouteCheck] on a NavigationObstacleGrid (one build, a segment tests its cells' obstacles; the
+  obstacle named only for a failing segment) instead of a one-obstacle vector copy per gate pair x every obstacle; a
+  failing check now REFUSES the plan (NeedsRefinement / NoCollisionFreeCandidate - it stayed Ready and was flown).
+  Open: chooseRoute still on the frame thread (351-443 ms a request).
+- PLAN-5: the grid footprint covers the inflated box corner (|h| + inflation x sqrt 3; was |h| + inflation - 1688 of
+  200k segments missed a corner case). RouteDraftLab gridcheck 80 000 segments, 0 mismatches. Docking hub_hex_dock_a
+  after both: route clear of 3477 obstacles, captured by the station at P2, 0 contacts.
+- PLAN-1 (execution side): a lane chain piece no longer flies at its slowest part - every volume section carries its
+  own limit (CompiledNavigationVolumeSection::maxSpeedMps: its lane's / its junction's), the composer gives each curve
+  piece the limit of the sections at its ends, the gates follow, the handoff into a stage takes its FIRST section's
+  limit; the stage limit = its fastest part. So the chain cost (lane / junction metres at their own speeds) and the flight
+  agree on the speeds (accel / decel and the 0.8 x max cruise cap still not in the cost). DEV A/B
+  ELITE_DEV_LANE_PIECE_MIN=1 (the old rule). navsuite A/B: the first legs 179-181 vs 184-190 s (within this scenario's
+  175-185 s spread - its chains have no 30 m/s junction; no gain shown here), 0 collisions either way.
+- PLAN-3: (a) the planning-time history takes FULL adopted plans only (not a rebind, a failure, a cancel); (b) the start
+  lead's "flight while planning" term applies to the ship's own start leg only (coversPlanningFlight: false for the legs
+  after a lane exit, the final leg, chooseRoute's exitMinimumMeters). Navigation ctest 66: 57 / 9 baseline reds;
+  check_navigation_route_boundaries + check_automatic_docking green; B4-11 184 s, 0 collisions.
+- FOUND, OPEN (pre-existing): pad-to-pad flights in the hub (navsuite pad_series req 2-4) fail - old rule: emergency stop
+  "no proven safe course"; new: "continuous optimizer did not reach a feasible path" x5; navsuite_reflex2 (before today)
+  had them NOT REACHED too.
+- PLAN-2: NOT CHANGED - the author's decision (does "everything by time" of 2026-11-24 replace the 2026-11-22 rule that
+  green lanes win over free space in a hub for safety? In seconds mode FreeInHubFactor applies nowhere).
+- Correction (same day): configureRoutePlannerFromEnvironment() is called by the CLIENT only (SpaceState) - calling it
+  from GameServer broke check_automatic_docking ("GameServer regained client-navigation ownership: RoutePlanner"); the
+  server keeps the planner's defaults. check_automatic_docking green again.
+
+## Baseline reds - architecture contracts, re-measured 2026-11-24 (TST-2)
+- tests/architecture_contracts/check_*.py, HEAD vs a1e28cad2 (worktree, python only): HEAD 183 pass / 15 fail, base
+  182 / 16; NO new red; fixed since the base: check_navigation_route_boundaries (TST-2 above), check_entity_lifetime
+  (m_landingGear / m_padNotices / m_manoeuvreOnly were never erased in forgetShip - fixed here).
+- The remaining 14 reds, ALL red at a1e28cad2 too: check_client_galaxy_map_catalog (source.description),
+  check_flight_law_hard_isolation, check_function_key_presentation_route (F4 reserved), check_model_asset_*
+  (dependency_ownership, extraction_proof, function_purity, localization_complete [a cp1251 encode of the console],
+  module_ownership, physical_modules, wizard_decomposition), check_navigation_foundation_lock
+  (updateDockingGuidance 'renderTransform'), check_server_runtime_ownership, check_ui_platform_fonts (mesh_editor page),
+  check_wire_data_schema (top-level codec knows value.ships).
+- Navigation ctest (tests/navigation_runtime, 66): 9 baseline reds (traffic_route_graph, client_route_autopilot,
+  navigation_v2_tunnel_proving_ground, assisted_authority_contract, newtonian_execution_authority,
+  assisted_layout_flight_matrix, ship_physical_corridor_matrix, assisted_safe_course_recovery, ship_state), all red at
+  a1e28cad2; ordinary_route_policy fixed (stale expectation).
+- NAV-10 (part): the urgency window uses the EARLIEST violating threat (EvasionChoice::earliestViolationSeconds: the
+  first time any one threat's safety clearance is < 0), not the global minimum's time (a deep late miss of one threat
+  hid another's shallow early one). Test: two threats, global min at 10 s / -35 m, earliest violation 2 s - 5104 / 0.
+  Live: ramtest 53 / 107 m, 0 collisions; B4-11 184 s, 0 dodges. NOT changed (the author's rule "if the count is
+  limited - the nearest", 2026-11-22): the hub radar contacts are the nearest 128 by distance. Still open: EvasionNet
+  unused in programs mode; the manual-assist key hand-back cycle.
+- PLAN-6 (rest): the hub lane-chain search (applyHubLanes / chooseRoute, 351-559 ms) runs on a background task with a
+  copy of the request (SpaceState::m_laneSearch, per request serial); the planner's launch waits for it; its result
+  (RED zones, the hub speed limit, via points, mandatory straights) is carried into that frame's request. Live B4-11:
+  183 s, 0 collisions; the 656 ms frame gap at the request is gone (worst gap after the request 471 ms vs 656).
+  FOUND, OPEN: ~10 recurring 420-470 ms frame gaps during that flight in both runs (offscreen dev run; cause not
+  traced - not the lane search, not the planner).
+- SRV-5 (part): the TCP server's inbound queues (hellos, client messages, map / time-sync requests) are bounded at 4096
+  - a flooding client is disconnected with the reason (they grew without limit); a failed client-side geometry assembly
+  (layout city / kit package) is logged with its reason (it was "ready" with 0 volumes in silence; the planner treats no
+  volumes as no proven geometry). Remote B4-11 after: 179 s, 0 collisions. Still open: FixedStepControlQueue unbounded,
+  the detached assembly thread at process exit, the sparse-base merge marked FullAuthoritativeSet (needs runtime).
+- DOC-2: a "Current invariants" section at the top of this file (status CONTRACT / EXPERIMENT / REVOKED / AUTHOR, the
+  green base of the gates); the header updated (2026-11-24, the layout: invariants first, chronology below).
+- DOC-1 (part): stale comments fixed - OrdinaryRoutePolicy priority (time now, preferCandidate is the old order) and the
+  planning-lead rule (lower median of 5 full plans, the ship's start leg only); LayoutCityHitVolumes (staged cities are
+  client-assembled too); ConstructionClock (the client from every snapshot); HubLaneNetwork FreeInHubFactor (metres mode
+  only, PLAN-2 author); ClientModeState collision assist (acts on a safety violation, not only an unavoidable touch).
+  Still stale: NAVIGATION_V2_EXECUTION_ARCHITECTURE.md (no reflex / lanes / net / time objective), the economy journal
+  comments, the HUD collision-assist strings (Russian only), CARGO_SALVAGE_DESIGN.md.
+- RADAR SIGNAL MAP (the author: «радар ... на более дешёвую карту сигналов»): GameServer::radarSignalMap(system) - the
+  ships, traffic shells and structures of a system gathered once per server tick for every radar in it (each scan
+  walked every ship / shell / static of the server and re-measured every city's thousands of hit volumes); a
+  structure's size cached per static-object generation; a radar drops only its own row; the hub contacts stay per
+  observer (the nearest 128 - the author's rule). Load test 153 players: sensors 1.05 -> 0.18 ms a tick; live radar
+  the same 379 ships / structures + 128 hub contacts; ramtest 59 / 116 m, 0 collisions.
+- HUB MAP FOLLOWS THE SHIP (pre-audit leftover, author: the hub map did not switch): SystemMapRenderer::followPlayerHub -
+  when the hub the ship is AT changes (the nearest hub of its system within 25 km; motion.hubId is the frame's / dock
+  owner's hub - 5 km off the ring it still said Высокий), the hub / detail map select it; a pick inside the same hub
+  stays. Live: start at earth_ring_hub@5 -> "[HubMap] following the ship into hub earth_ring_hub"; at earth_orbital_hub
+  -> earth_orbital_hub.
+
+### Audit 2 (author's paste 2026-11-24) + the author's live session + the duplicated-truth pass - BUILT, TESTS, LIVE where noted
+- MEDIUM async lane search: a running search of an older request is moved to LaneSearchJob::retired (a std::async future
+  blocks in its destructor - replacing it would have brought the frame hitch back) and dropped when done.
+- MEDIUM FixedStepControlQueue bounded at 256 (5 s at 50 Hz): the NEWEST sample refused (EnqueueResult::Overflow) - dropping
+  the oldest would acknowledge steps the server never ran.
+- LOW-MEDIUM the client geometry workers are joinable: joinClientGeometryWorkers() at the application's shutdown.
+- MEDIUM the evasion scene corrects an old scan for OUR acceleration since it (RadarScanReport::observerWorldVelocityMps,
+  snapshot schema 73; ControlShipState::deltaVSinceScanBody) and the prefilter adds our drive's reach 0.5 a h^2. Tests +5.
+- HIGH/tests the conflict oracle is a numerical search (coarse scan + golden section, bounded at any speed): the test ran
+  111 s -> 0.22 s; 5109 checks / 0.
+- HIGH J / free flight: the J danger checks SWEEP the next tick (jKeepOut / jEngineBlocked: the least distance of the
+  straight relative motion over dt to every keep-out sphere and body J floor) instead of the current point. Built; not
+  exercised live at 0.5 c yet. The J speed governor (braking before a keep-out) stays the author's decision.
+- Author's session: (a) the cockpit radio clicks missed on a non-16:9 monitor - the game renders letterboxed and the
+  widget never removed the viewport offset; now window -> framebuffer -> minus the viewport offset (as the system map).
+  NOT verified on a non-16:9 window here (my window is 16:9). (b) Ctrl+Alt+R did nothing on a wreck - the server dropped
+  every command of a destroyed ship, the restore included; it passes now, and the restore resets capsuleState too; DEV
+  script verb "restore". (c) no "pilot lost" screen after a ram - the crew lost with the cockpit is now a replicated
+  fact (capsuleState PilotKilled); log line "[PilotLost] ...". Live: destroy at 40 s -> the screen up -> "restore" ->
+  fully restored.
+- Author's session, the ring hub crash: the ring spins (period 69.8 s, 1 g at r 1210 m, the rim at 108 m/s); a pad on
+  the rim was planned against the frozen boxes - the ship skimmed what had moved on and broke up at 101 m/s (object 201
+  's15'); from 10 km out the optimizer found no path at all (41 replans). AUTHOR DECISION 2026-11-24: landing on the rim
+  WITH matching the rotation (next task: plan / fly in the rotating frame, tangential approach, 108 m/s + 1 g held).
+- Duplicated truth (D:/tmp/DUPLICATE_TRUTH_INVENTORY_2026-11-24.md): the cockpit speed bar / needle read
+  ShipTransform::forwardVelocity (never written: always 0), the wrong-way lane colour and the descent ray read
+  relativeVelocityMetersPerSecond (never written) - now ShipTransform::relativeVelocityMps() / forwardSpeedMps() /
+  commandedForwardSpeedMps() derived from motion; the repair-dock owner velocity = motion.worldVelocityMps; a mine load
+  updates the ship's cargo mass at once; dead classes deleted on the author's go (IPowerConsumer-.h, IEquipmentModule.h,
+  EquipmentSlot.h, ShipModuleState.h, ShipModuleSnapshot.h). Navigation ctest 57 / 9 baseline reds.
+- Audit 2 (rest): (a) HIGH the predicted trajectory's own error: EliteControlEvasionLab "deviation" (ELITE_LAB_DT) - the
+  dt-step flight drifts from 2 ms physics by ~73 dt metres a second (dt 0.1: 11-16 m at 2 s, 38-42 m at 12 s); the
+  reflex integrates at 0.05 s now and the judge widens each interval by 80 dt t (ControlFlight::chordBound,
+  PredictionDriftPerSecondPerStep): vs the physics oracle 0 missed touches (was 0.1-2.3 %), extra cautious touches ~8 %
+  of the lab flights; live: ramtest 60 / 104 m, 0 collisions; B4-11 185 s, 0 dodges; program cost 5.5-7 ms an update.
+  (b) MEDIUM the manual assist sees STRUCTURES: every hit volume of a nearby object (its bounding sphere) closing faster
+  than 15 m/s (slower = a landing / docking) joins the scene (EvasionReflex::updatePrograms extraThreats). Live, '+' held
+  40 s into Высокий: 21 dodges, the hit at 31 m/s instead of 63 (energy 82 vs 340 MJ) - the DEV script keeps pushing.
+  (c) MEDIUM a sparse deferred snapshot (an assembly preload mid-session) stays sparse with its removals accumulated (the
+  merge marked it a full set - every entity the sparse packets lacked was erased). (d) MEDIUM the lane chain cost takes
+  the execution's 0.8 x cruise cap and the speed changes at junctions ((v_hi - v_lo)^2 / (2 a v_hi), a = 8 m/s2).
+  B4-11 186 s. (e) MEDIUM/future a repeated economy request id gets its ORIGINAL result again
+  (EconomyServer::replayResult, the last 64 per player). EliteEconomyCheck 258 / 0; evasion ctest 5109 / 0.
+- 2026-11-24 author session follow-ups: (a) the evasion reflex sees STRUCTURES under the autopilot too (author: «почему не
+  сработала система уклонения?» - the reflex trusted the planner for structures "that do not move"; the ring hub's rim
+  moves 108 m/s): every hit volume closing faster than 15 m/s, its velocity with the object's spin; long boxes as a chain
+  of spheres as thick as the box (author: «компромисс, чтобы он не шарахался от каждого крупного объекта»); the 128 with
+  the earliest contact. B4-11 181 s, 0 dodges; ring H1-02 from 13 km 115 s, 0 collisions (4 dodges near the rim - to look
+  at). (b) The hub map shows the NEIGHBOUR hubs within 100 km (Высокий from the ring hub; Context role, not fitted) and
+  follows a new hub only when it is clearly nearer (2 km and 25 %; it flipped back and forth). (c) [HudCorridor] log on a
+  change; [RouteCheck]/[RouteSummary]/[RadioUI] through std::cerr (fprintf never reached the session log). (d) Ship data:
+  a COCKPIT-CAPSULE category (the cockpit is a small ship) next to escape_capsule (a capsule you board); the Cobrett EC-2
+  is the cockpit-capsule (escape_thrust_mn 0.13, escape_dv_mps 3000); code + generators know it. The ring crash in the
+  author's session predates the swept-ring planning (79fae762f). Next: the capsule (memory cockpit-capsule-rescue) and the
+  onboard computer journal (memory onboard-computer-journal), then the UI component pass (author's brief).
+- Capsule step 2 (the loss outcome, author 2026-11-24): the cockpit DESTROYED (no health / Destroyed) -> capsule
+  Destroyed / PilotKilled -> the pilot-lost screen; the cockpit whole (even torn off) on a cockpit-capsule ship -> the
+  pilot ALIVE in it (a cockpit still on a lost hull is ejected); a crushed hull does not kill a capsule already off it.
+  The pilot's deceleration in a collision (CapsuleRules: dv^2 / (2 x 6 m) against 50 g) kills him whatever is left of
+  the ship: 495 m/s ram 2125 g -> pilot-lost screen; 63 m/s ram: reactors lost, the crew escapes in the EC-2.
+- Onboard computer journal, step 1 (author 2026-11-24, memory onboard-computer-journal): navigation/rules/OnboardJournal.h
+  (records: hub / zone / safe / danger / signal / anomaly / sump exit / wreck / beacon; store-merge by key + time;
+  radiation degradation above a hardening dose rate: reliability, blurred position, description lost < 0.25, record
+  lost < 0.05; '|'-text). Kept and written on the CLIENT (author: «всё, что можно хранить на клиенте - хранить и делать
+  на клиенте»): SpaceStateJournal.cpp records every 2 s the hubs of the system within comms reach (30 ls) relative to
+  their parent body, with a МЧС dock / pads from the city plan; %LOCALAPPDATA%/EliteGame/journal/ship_<instance>.txt;
+  no records with a failed computer. Live: 77 hubs at Earth in 40 s. ctest onboard_journal 14/0. Next: the map layer,
+  the other record kinds, radiation dose from the environment.
+- Author's question on hub objects: their poses follow from the hub orbit + spin + the module offset - to move to the
+  client (bootstrap once, the client computes the pose; the server sends only damage / construction / berth changes by
+  version); ~13 KB of the 33.7 KB a snapshot. Planned right after the capsule.
+- Capsule step 3 (the cockpit-capsule flies, memory cockpit-capsule-rescue): CapsuleRules.h capsuleFlying /
+  capsuleParams (6.5 t, 0.13 MN -> 20 m/s2, jets 2 m/s2 + 0.6 rad/s2, 3000 m/s reaction mass); ShipCore applies them in
+  effectivePhysics / controlAuthorityTelemetry / updateMotionControl / updateTranslationControl (the reaction mass pays the
+  EXECUTED engine acceleration x dt - the local velocity is folded into the travel frame in normal flight);
+  motion.capsuleDeltaVLeftMps (wire 74). Server: the pilot alive -> the ship BECOMES the capsule
+  (ShipCore::becomeCockpitCapsule: the cockpit fragment's pose / velocity / tumble, the cockpit a free root
+  (ObjectModuleState::freeRoot), a whole hull left behind as fragments holding formation); the wreck's fragments get the
+  capsule's own thrust taken out (gravity shared), dropped beyond 20 km (GameSimulationCapsule.cpp); a capsule's controls
+  and ship commands are accepted. Live (63 m/s ram): take-over, tumble 0.39 -> 0 rad/s in < 5 s, 30 wreck fragments,
+  yaw 0.15 rad/s and damped, thrust 20 m/s2 (speed +13 m/s per s at 48 deg), reaction mass -100 m/s per 5 s. NOT yet:
+  the capsule's own target choice + automatic docking (client), the J-law cost (asked the author), beacons, the map layer.
+- Capsule step 4 (IN PROGRESS, live): the client's rescue autopilot SpaceStateCapsule.cpp - the target by the capsule's own
+  knowledge (hubs heard within comms reach or in the onboard journal, within reach = half the reaction mass x 4 days; a
+  hub with a МЧС rescue dock first -> the pad on its roof; a failed landing -> the next hub); far: a rendezvous on the
+  global main-engine command in normal flight (frame request), economy profile (closing <= distance / 10 min), the motor
+  along the nose only + the jets (any direction, 2 m/s2) for corrections < 20 m/s (server: GameSimulationFreeFlight capsule
+  branch, paid from the reaction mass, the wreck keeps its own motion); near: clear of structures (> 500 m, backs away at
+  15 m/s from the nearest), stopped against the hub (< 5 m/s) -> the ordinary pad landing (SystemMapRenderer::
+  requestPadLanding). MotherComputerClientAdapter gives the capsule's envelope to the client planner. WorldLaws.h holds
+  the universe's constants (see invariants). Live so far: cruise Высокий -> Кольцо 60 km OK (the old profile wasted 1500
+  m/s); the clearance OK; the pad landing at Высокий: the planner found no path with the capsule envelope (violation 1.0
+  everywhere) - braking by the jets added (reverse 2 m/s2), re-testing.
+- PLAN (next after the capsule): static hub objects off the wire (author: «зачем пересылать объекты хабов, если можно
+  хранить те же данные на клиенте»). Audit (read-only): an attached object's pose / velocity / orientation are pure
+  functions of the hub row + the fixed attachment + universe time (GameSimulation.cpp:1503-1633 duplicated in
+  GameSimulationReferenceFrames.cpp:455-551); assemblyModules are sent every tick for every module and their angle
+  accumulates from server start (ObjectAssemblyRuntime.cpp:54-71 - not reproducible on the client); hasDetachedFragments
+  is true every tick; session.constructionOverrides serialized every snapshot. Design: (1) per-object staticPayload /
+  state revisions on the server; a "derivable" row = attached + inheritHubOrientation, no lab gap offset, no fragments,
+  no rotating assembly (or the angle made time-derived: angle = speed x universeTime); (2) ReplicationPublicationState
+  keeps per-session sent revisions; copySparseSnapshotForSession sends a derivable row only on a revision change / system
+  entry; (3) ONE shared pose law src/game/navigation/HubAttachedPose.h used by the server AND by the client's sparse merge
+  (materializeCanonicalReplicationSnapshot re-poses retained derivable rows from that snapshot's hub row) and the live
+  ClientWorldState (needs hub angularVelocity in ClientHubState); hubs keep flowing every snapshot; full-set packets must
+  keep carrying every object (else the client erases them). Also: missing braces GameSimulationReplication.cpp:555-557
+  (harmless). Expected: ~13 of 33.7 KB a snapshot. Risks: pose drift vs the server (float hub orientation ~1 mm at
+  10 km; universe time must match), ELITE_DEV_HUB_POSE_TRACE re-check.
+- Capsule step 4/5 (live, 2026-11-25): the rescue autopilot reaches the staging point over Высокий and the ordinary pad
+  landing flies it to A2-03 (the МЧС rescue dock's roof): the lane search got a craft speed cap (HubLaneRouting: no faster
+  than the craft turns / stops within 1.5 km - the capsule's 2 m/s2 jets made a 11.7 km turn radius at 150 m/s, no lane
+  entry fitted), the staging point's own velocity (it turns with the orbit), the landing-alive check reads the pad
+  service (ShipSnapshot::padService; "phase:3" = on the pad -> КАПСУЛА СПАСЕНА) and a hand-over gap is not a failure (15 s
+  of nothing); the pad service does not wait for the legs of a capsule (they stayed on the hull). Capsule beacons
+  (assets/data/navigation/capsule_beacons.json, CapsuleBeacons.h; 3 on the Earth-Moon lane): heard -> the journal, its
+  rescue service becomes known; no hub in reach -> fly to the beacon and wait. Journal: a moving place (orbit, Lagrange)
+  is the same record within 2 % of its distance.
+- Hub objects off the wire, step 1: ONE pose law src/game/navigation/HubAttachedPose.h (server formulas, the frame from the
+  replicated hub row); ClientHubState carries the hub's spin. ELITE_DEV_HUB_POSE_CHECK=1 proves it live: 203 attached
+  objects of Sol, worst 1 mm / 0.04 deg against the server's poses.
+- Capsule rescue - LIVE, END TO END (2026-11-25): 63 m/s ram at Высокий -> the pilot alive in the EC-2 -> backs away
+  from the station -> the staging point 8 km over the hub -> the planner + autopilot along the hub lanes (craft speed cap
+  21 m/s, cross-track 3-6 m) -> the pad service (no legs wait) -> LANDED on A2-03 (the МЧС rescue dock's roof) in 76 s,
+  "КАПСУЛА СПАСЕНА", 1892 m/s of reaction mass left. Open: soft touches (0.3-5 m/s, < 0.07 MJ) on a city storage block
+  on the lane approach - the weak jets track the corners loosely; the cruise burns more than needed (clearance).
+- Hub objects off the wire, step 2 - BUILT, LOAD TEST, LIVE: the server sends a DERIVABLE hub-attached object (attached
+  with the hub's orientation, no turning assembly part, no fragments, no dirty static payload, not a lab gap) only when its
+  non-pose content changes (GameServer objectContentFingerprint), on the system entry, or every 10 s; the client re-poses
+  the rest from the snapshot's hub rows - in the canonical sparse merge (history / render interpolation / maps / planner)
+  and in the live ClientWorldState. ELITE_DEV_SEND_ALL_OBJECTS=1 = the old way. Load test (153 bots): objects 13 142 ->
+  3 489 B a snapshot (21 -> 5 rows), wire 534 -> 379 KiB/s per player (-29 %), tick unchanged. Live: B4-11 landing, 0
+  collisions. Next on the wire: hubs every snapshot (2.4 KB), session (2.3 KB: constructionOverrides by generation),
+  ships (14.6 KB, own ship 5.3 KB).
+- Onboard journal step 2: the map layer of the computer's own marks (B on the System map; DEV verb journalmarks): every
+  record at its place relative to its body, coloured by kind (hub blue, beacon green, danger red), faded by reliability,
+  its card with the record / reliability / error. Live: 13 of 13 records drawn. ELITE_JOURNAL_DIR keeps test journals
+  apart from the player's (run_dev sets it). The tests before it wrote into %LOCALAPPDATA%/EliteGame/journal/ship_1.txt
+  (only real sightings; listed in docs/CLEANUP_CANDIDATES.md). Next for the journal: the Detail / Hub maps, the other
+  record kinds (danger at an impact, signals, sump exits), the radiation dose from the environment.
+- UI component pass, the vertical slice (author's brief 2026-11-24; docs/UI_COMPONENT_ARCHITECTURE.md) - BUILT, TESTED:
+  UIComponent with ONE resolved ui::UIRect (draw / hit / child layout / debug), hit-testing + pointer events; ui::
+  UIInputRouter (deepest interactive child front-to-back, pointer capture owned by the router, windowToUi = the one
+  window -> framebuffer -> letterboxed viewport -> UI conversion); src/ui/input/GlfwPointerSource.cpp = the only UI GLFW
+  read; UILabel / UIButton / UISlider; UIText on the shared layout; the dead game::UIAnchor removed. CockpitRadioWidget is
+  a composite UIComponent (caption, power, source, prev, display, next, remove, header, signal, vol-, slider, vol+) fed a
+  RadioPresentation, emitting RadioActions applied by SpaceState::updateCockpitRadioUi (layout + routed input + actions,
+  then the pure draw); EngineGroupAnchor = the explicit transitional adapter to the engine group's frame.
+  ELITE_DEV_UI_BOUNDS=1 shows the rects. ctest ui_radio_widget 83 / 0 (4 resolutions / scales, the playlist mode, the
+  slider capture outside its rect, a 21:9 letterbox and a HiDPI + bottom letterbox mapping); check_ui_input_boundary.py
+  PASS (in run_mingw64.sh). Live: the radio draws as before, every frame on its button. NOT verified: a real mouse click
+  in the author's window (offscreen runs cannot click). Next: the service panels and the map panel (class B) onto the
+  router (their cursor conversion skips the framebuffer scale and the GL flip).
+- FIXED the render stalls of the author's session (1.5 - 7.7 s, every one right after "[Radio] station ..."): a station
+  switch joined the old stream's thread on the render thread while it sat in a blocking WinHTTP connect / read (10 s
+  timeout). Now each station has its own StreamSession (stop flag, ring buffer, the abortable HttpGet); a switch aborts
+  the old connection (closing its handles ends the blocking call) and retires its thread - joined once done, all of
+  them at the radio's end (~CockpitRadio waits); only the current station's thread writes the radio's state (a
+  generation). Live: 7 switches, 0 frame gaps after them.
+- Pad-to-pad (a pre-existing failure) - LIVE OK: B4-11 landed, then A2-03 asked from the pad: the route, the pad service,
+  the descent (21 s). The construction overrides go to a session only on a generation change / system entry / 10 s
+  (the client keeps them in its expansion store). Remaining frame gaps in the author's log: the first map open (the
+  procedural bodies, 360 ms) and one unexplained 300 ms; the big ones were the radio (fixed).
+- Ring hub finding (for the author): the ring city's plan has a spin (period 69.8 s, r 1210 m) but at runtime the city
+  module is attached WITHOUT a spin - only the hubv_ring_wheel turns; its pads do not move, landings work. Should the
+  city turn with the ring (1 g at the rim)? Then the co-rotating landing (memory ring-rim-landing) applies. ASK.
+- Ring approach from 10 km above: the optimizer finds no path (violation ~0.63, a curvature / dynamic limit, not an
+  obstacle); 5 / 13 / 20 km work - a geometric corner case, open.
+- WIRE COMPRESSION (2026-11-25): the wire had NO compression (WireCompressionMethod::None was the only method - an EMPTY
+  ship row cost 4185 B). LZ4 for the data plane (WireCompressionLz4.h/.cpp, static liblz4 - no DLL; method byte 1 in the
+  envelope, the decoder takes 0 or 1), used by the TCP transport both ways and the load test. Load test (153 bots):
+  24.2 -> 5.5 KB a snapshot, 379 -> 88.7 KiB/s per player (with the objects off the wire: 534 -> 89, x6), the tick
+  unchanged (244 % of one core); an empty ship row 201 B. Live: B4-11 approach over the compressed wire OK.
+  tcp_wire_transport_contract_tests does not link ("vtable for TcpClientTransport") - it was never built in this tree
+  (no exe): pre-existing, open.
+- Duplicated truth, step: (a) ShipTransform's dead mirrors removed - targetSpeed, forwardVelocity, localVelocity,
+  relativeVelocityMetersPerSecond (written by no physics; readers moved to motion in c9e5b8e5b) - wire schema 75;
+  referenceVelocityMetersPerSecond stays (it is still read: GameSimulationDevScenarios). (b) ONE writer of the motion's
+  copies of the ship's facts: GameSimulation::syncReplicatedShipFacts (mass, jump core rating, the computer's state)
+  at the spawn, in free flight and at EVERY publication (in a hub frame the copy went stale after a cargo load). LZ4 is
+  linked to every target of the root and the architecture-contract projects (link_libraries). Economy 258 / 0, ship
+  catalog PASS, live B4-11 approach OK. wire_data_plane_contract_tests / tcp_wire_transport_contract_tests do not link
+  in this tree (.refptr std::cerr, vtables) - never built here, pre-existing.
+- Duplicated truth, steps 4-5 (the inventory's order): CargoBay removed (an unread mirror of the cargo mass / volume;
+  freeCargoMass / Volume called by nothing). The old radar pipeline removed: the disabled RadarSimulationEnabled block,
+  Ship / ShipCore::updatePerception, RadarModule::update / getContacts / m_detected, RadarContact.h,
+  RadarContactInput.h, appendHubRadarContacts, ShipSnapshot::radarContacts + its client copy - wire schema 76.
+  RadarModule stays the DEVICE (descriptor, power consumer, operational). NOTE: the NPC awareness update
+  (m_npcAwareness.update) lived only in that never-run path - NPCs have no awareness feed today (unchanged behaviour).
+  Economy 258 / 0, catalog PASS, ramtest 60 / 143 m 0 collisions, the radar sees 379 + 128 contacts.
+- Duplicated truth, step 6: MathTransform's legacy float `position` mirror removed (worldPosition the one owner; the
+  two legacy owner-local hit helpers read worldPosition.localMeters - exactly what the mirror held); wire schema 77. No
+  other reader existed (the compiler found none). Economy 258 / 0, the collision + capsule path live OK.
+- Duplicated truth, step 7: ShipTransform::referenceVelocityMetersPerSecond removed - motion.referenceVelocityMps is the
+  one owner (22 sites rewritten in place: the copies became self-assignments, the writes of their own value now write the
+  owner); wire schema 78. Live B4-11: the route held 3-10 m, the pad service, the descent.
+- AUTHOR DECISION 2026-11-25 (memory ring-rim-landing): the ring hub's CITY TURNS WITH THE WHEEL - the spin is the 1 g
+  of the city; gravity needing modules on the rim, zero-g industry (a smelter) on the axis. MEASURED: the ring hub turns
+  only with its orbit (0.00113 rad/s, as Высокий) - its self_rotation_period 69.769 s is applied nowhere; the city and
+  its pads are still. PLAN (the next big task):
+  1. the spin: the ring city + the axial dock / service block get the attachment spin 360 / 69.769 deg/s about the ring
+     axis (behind ELITE_DEV_RING_SPIN=1 until the steps below work; then on). The pose law (HubAttachedPose.h), the
+     render, the hit volumes, the client re-pose already take an attachment spin.
+  2. the pad service and the lanes are city-frame: check they co-rotate (the ship held in the city frame gets the
+     frame's velocity ω x r - 108 m/s at the rim).
+  3. the planner: a route to a rim pad planned in the CITY'S ROTATING frame (its obstacles static there; the start's
+     velocity minus ω x r), executed with the frame's Coriolis / centrifugal terms (the guidance converts the rotating
+     targets each tick) - the co-rotating landing; the swept rings stay only for the approach outside the city.
+  4. the NPC traffic on the ring lanes; the dock dispatcher of the axial dock (on the axis: only a roll to match).
+  5. the hub generator: zero-g modules on the axis, gravity modules on the rim.
+- Ring city spin, step 1 (behind ELITE_DEV_RING_SPIN=1): the ring city + its axial dock / service block get 360 /
+  period deg/s about the ring axis (the period from the city plan's ring.period_s, HubRingBend::periodSeconds; NOT the
+  hub's self_rotation_period - every hub has one, Высокий would turn too). Live @13 km: the route to H1-02 plans (the
+  live port with the spin), the pad service takes the ship at 910 m and flies it across and down in the city frame -
+  it co-rotates by construction; 0 collisions. FOUND: the pad service carries the ship by POSE - its velocity stays the
+  hub frame's (1 - 30 m/s while the pad moves ~108 m/s) -> (a) the carried ship must get the city frame's velocity
+  (hub v + omega x r) so a hand-over / a hand-flown pad keeps it with the pad; (b) hand flight over a turning deck:
+  the ship's own frame must be the turning one with its fictitious terms (hovering over the rim = thrusting 1 g toward
+  the axis, as over a planet) - next.
+- RING CITY TURNS (2026-11-25, author decision) - ON by default (ELITE_DEV_RING_SPIN=0 keeps it still):
+  (1) the ring city + its axial dock / service block turn 5.16 deg/s (period 69.8 s from the plan) about the ring axis;
+  (2) the pad service carries a ship with the city's OWN spin (CityStrip omega = the object's angular velocity, not the
+  hub frame's orbital turn) - the carried ship moves with the deck (103 m/s at its radius), its touchdown judged in the
+  city frame; (3) THE DECK (DeckFrame.h): a ship flown by its PILOT (ShipControlState::deckRelative, wire protocol
+  53; the client sets it on its own samples only - an autopilot route / the pad service / the reflex fly the hub frame)
+  over a turning deck: the law holds the velocity relative to the deck, the physics adds the following acceleration
+  (omega x v, through the stabilization's authority - the honest ~1 g of hovering over the rim). Live: H1-02 from 13 km
+  - route, the pad service, the hand-over at the hand-flown pad, then held over the deck 0.12 m/s relative, 1130 m from
+  the axis, 9.2 m/s2 to follow; A1-03 from 20 km - the service flew it over the pad and holds it 522 m up waiting for
+  the legs (G - the author's rule; the DEV run does not put them out); 0 collisions (ship and traffic).
+  Next: the hub generator (zero-g modules on the axis, gravity ones on the rim); the client's prediction of a deck
+  follower (cm-level, not needed yet); the Newtonian law over a deck (only Assisted uses the stabilization channel).
+- RING AXIS INDUSTRY (2026-11-25, author: «плавильню ставим в центр кольца, а всё, что требует гравитации - на ободе»):
+  units/hub_ring.py AXIS_ZONES - the zero-g zones (earth_ring_hub: industry - works x3, gas batteries, fuel spheres,
+  refinery, warehouse, mast) are built as a spine ON THE SPIN AXIS, city +Z 900..3240 m (past the dock's service block
+  at 510; the dock's approach is from the other side); the rim keeps the people and what needs weight. Regenerated
+  (hub_ring_world.py): 2246 nodes; live: assembled (31 modules), the pad landing route unchanged, 0 collisions.
+  Not yet: the economy's module catalog has no gravity tag - the axis zone list is per hub in the generator.
+- THE RING'S DISPATCHER (2026-11-25, author: «эта информация должна выдаваться игроку через диспетчера»):
+  RingDeckRules.h (one rule, client + server, from the hub plan: radius, period): a rim pad's weight omega^2 r, the
+  deck's speed omega r, the ship's lift (the stabilization authority with damage, as SurfaceLandingPilot) against x1.2.
+  The client's dispatcher answers AT THE REQUEST, before the route (HUD: «ДИСПЕТЧЕР КОЛЬЦА: H1-02 - посадка разрешена.
+  Кольцо вращается 5.2 град/с: у площадки тяжесть 1.00 g к ободу, палуба идёт 109 м/с. Заход носом по вращению...»), too
+  little lift -> refused there, the axial dock; the server decides the same at the hand-over (refused:rim / pad:rim).
+  Live: the clearance line at the request (Cobra lift 7.5 g vs 1.2). The refusal path is not live-tested (no weak ship
+  in the DEV start). The deck exists only over a RING plan's city (a belt hub's spinning bodies are not decks).
+  Regression (navsuite_deck, Высокий): pad_outside / pad_series / tower_pad / dock_hub as before, 0 collisions.
+- EQUIPMENT DAMAGE % (2026-11-25, author: «повреждение пишем там где у нас собраны данные корабля игрока»): the ship
+  data panel (webui ship_core.html, HTML UI on :8090) got the EQUIPMENT block - every installed module: group, name,
+  state (на месте / отключено / разрушено / оторвано / висит на креплении), damage % = max(structure lost, function
+  lost), the causes (лазер / удар / перегрев / радиация / износ / внутренний отказ); sorted worst first, a summary line.
+  The numbers are the F7 repair page's (buildRepairRefitPresentation) - one source. Live (ws probe): intact Cobra 104
+  modules 0 %; both laser mounts broken via structure_debug set_link_health -> the two lasers «оторвано» (failed, red).
+  Not yet: a module damaged but attached (> 0 %) not seen live; names are module ids and 73 of 104 fall into «Прочее»
+  (the catalog has no product names for them) - the same as in F7.
+- RING DATA IS THE PLAN'S, NOT THE CODE'S (2026-11-25, author: «проверь, что бы данные кольца не были захардкоджены ...
+  хабы могут быть разного размера»): audit of every ring use. Already from the plan: radius, length, period (scene spin,
+  the dispatcher, the deck, the pad service, the maps). Fixed: (1) the deck's space was radius + 600 m / |z| <= 2000 m ->
+  now inside the rim (r <= R) and across the plan's strip bounds (z0..z1); (2) the deck's rate threshold 0.01 rad/s
+  (would miss a big ring: 1 g at R 100 km is 0.0099 rad/s) -> the plan says whether it turns (period > 0); (3) the scene
+  picked the turning modules by id (".cty_dock") -> the world data's dock_modules[].turns_with_ring; (4) the generator's
+  1 g -> per hub RING_RIM_G (plan ring.rim_g), its g = world::laws (9.80665, was 9.81: period 69.769 -> 69.781 s); the
+  axis spine start = the shared DOCK_SERVICE_BLOCK_AXIAL_M + clearance (hub_ring_world.py uses the same constant).
+  Also: every 9.81 literal in src (35 in 13 files: HUD g readouts, J drive, capsule, autopilots, planet relief) ->
+  world::laws::StandardGravityMps2. Live: the three modules turn by the flag (5.159 deg/s), the dispatcher 1.00 g /
+  108.9 m/s, the deck holds 0.12 m/s relative after the hand-over.
+- LANDED = COUPLED TO THE PAD (2026-11-25, author: «когда корабль садится на площадку он не движется ... имеет сцепку с
+  площадкой ... двигатели - не нужны ... получал дальнейшее вращение с кольцом от самого кольца и стоял ровно без
+  дрожи»). Server: a landed ship (pad service phase 3) gets its attitude from the pad - the pad's axes x the level
+  attitude taken at the touchdown (was: turned toward it by a rate-limited slerp - "thrusters", lagging a turning ring);
+  its body rates = the city's spin (were 0); before the landing the frame's turn carries the attitude too (the service's
+  turn is only relative to the city). No engines while landed (filterBerthControl, the pad ships skip the physics).
+  The JITTER was the client's: the own ship is predicted ~0.2 s AHEAD of the drawn (interpolated) city - on a still
+  city the offset is 0, on a turning ring ~20 m off the pad and ~0.2 m steps a frame. Fix: DynamicMotionState
+  attachedObjectId + attachedLocalPosition/Up/Back (the pose in the city's frame, schema 79) while the pad service holds
+  the ship; the client draws it from the city's pose AS DRAWN x that pose interpolated between the same two snapshots
+  (ClientWorldState::update, after the objects). Also replicated: deckActive / deckAxisPointLocal / deckOmegaLocal - the
+  client's prediction of a ship over a turning deck goes round the axis (ClientHubTacticalPrediction.h), not straight.
+  Live, [PadHold] probe (SpaceState: the landed ship as drawn against the city as drawn, per frame), A1-03 on the
+  turning ring: before 120-190 mm and 0.05 deg a frame, 20 m off the pad; after 0.6-1.8 mm and 6e-6 deg a frame, on the
+  pad's spot (= the still-ring run). The first 4 frames of the touchdown move 0.15-0.19 m a frame: the designed sag of
+  the legs at 2 m/s (the same on a still ring).
+  Regression (navsuite_couple vs navsuite_deck, Высокий): pad_outside / pad_series / tower_pad / dock_hub - plans,
+  failures 0, collisions 0, cross / speed errors as before. dock_hub render_epoch_max 1.84 (was 0.21): the free-flight
+  start before the hub frame (not touched), under 30 frame hitches of 400+ ms (5 before); the rerun 0.94 (one hitch),
+  the rest of the steps 0.16-0.26 m as before - not this change.
+- RING PAD AUTOPILOT, STEP 1 - THE SYNC GATE (2026-11-26, the author's split: «доводит корабль до какой-то точки уже
+  внутри кольца, выравнивает ... вращение вместе с кольцом, а потом ... строит маршрут относительно неподвижной
+  платформы»). DATA: the ring plan's ring.sync_gate_m (units/hub_ring.py SYNC_GATE_CLEARANCE_M 600 past the strip's -Z
+  edge - the open end, the axis spine takes +Z): earth_ring_hub (0,0,-1450) city frame; HubRingBend hasSyncGate /
+  syncGate. CLIENT: a pad on a TURNING ring (period > 0, a gate in the plan) - the route's goal is the gate (axis
+  forward, arrival into the ring, entry 2 m/s); the existing spinning-dock machinery (the live port re-resolved with
+  the city's attachment spin -> the tunnel / terminal roll rate) rolls the hull with the ring - no new control law.
+  "At the gate" = within 15 m of the AXIS and 150 m of the gate (every axis point is still; the docking-style final
+  ends ~80 m short of its point); synchronized = at rest and the hull's roll IN THE CITY FRAME drifting < 3 deg over
+  3 s (the instant rate wobbles +-0.6-1.5 deg/s round 5.16 with the roll loop). Then (interim, until step 2) the pad
+  service flies on from the gate. LIVE (A1-03 from 13 km, the spine side): route 37.4 km (out past the gate, a 950 m
+  turn, an 8.85 km final along the axis), 0 collisions; at the gate 1.6 m off the axis, at rest, roll drift 0.13 deg
+  in 3 s -> "synchronized"; the service: climb to 525 m, across 2.3 km, over the pad, descending (run ended 49 m up).
+  Outbound (nose away from the ring) the hull rolls AGAINST the ring - the tunnel roll is about the nose; on the final
+  (nose into the ring) it matches. Not yet: the 10 km overshoot of the docking-style final (a shorter final for a gate).
+  STEP 2 DESIGN (next): the route gate -> over the pad planned in the CITY frame (static, un-swept obstacles); executed
+  with a server CO-ROTATION mode for the autopilot ship: the physics adds the full rotating-frame cost omega x (omega x
+  r) + 2 omega x u (paid by the ship's thrust, within its authority) and the hull keeps the ring's turn - the autopilot
+  sees the city as a still world (the pilot's deck mode adds only omega x v: the hub-axes deck velocity).
+- RING PAD AUTOPILOT, STEP 2 - THE CO-ROTATING LEG (2026-11-26): from the synchronized gate the way to over the pad is
+  a NEW route planned against the city FROZEN at the planning epoch t0 and flown with the ship's state carried into that
+  map (CityCoRotationMap.h: the city's turn since t0 undone about its attachment pivot - position, velocity relative to
+  the turning city, hull axes, body rates minus the city's turn; SpaceStateDocking binds `transform` to that copy for
+  settling, planning, the route pilot and its checks). The route's port uses the attachment frozen at t0 (no live
+  re-resolution, no tunnel roll). SERVER (ShipControlState::deckCoRotating, wire protocol 54): the deck works for the
+  autopilot, the physics charges the FULL turning-frame cost (the pilot's deck omega x v + omega x u = centripetal +
+  Coriolis, through the stabilization authority) and the neutral attitude damps to the city's turn in body axes (the
+  hull keeps turning with the ring; at the gate the relative turn holds 0.003 deg/s). THE LEG'S ROUTE (each found live):
+  (a) speed = min(turns within R/8, Coriolis 2 omega u <= 30 % of the authority over the rim weight, the pad's entry
+  speed 30) - at 150 m/s the speed-sized final straight ran 8.8 km along the rim's tangent through 'c5_0_logistics'
+  (crash); at 51-73 m/s no feasible path; (b) no air lanes (they run along the rim, 380 legs blocked); (c) the
+  guidance tunnel's frames every R pi / 48 (79 m) - the radius floor is spacing / 30 deg (500 m -> 955 m: nothing fits
+  inside a 1.2 km ring; THE reason of the infeasible plans). LIVE A1-03 from 13 km: gate synchronized (1.2 m off the
+  axis, roll drift 0.14 deg / 3 s) -> leg planned 1.67 km (lower bound 1.45, final 700 m) -> flown at 30 m/s relative
+  to the city, cross-track mean 2.9 m / max 5.6 m, held 686 m from the axis (goal 684), the turning frame costing 5.6
+  m/s2 -> the pad service 250 m before the approach point: across, down, LANDED (phase 3); 0 collisions.
+  Open: the service still flies the last 250 m across (rule: script = the descent only) - hand over at the route's
+  end; the HUD tunnel of the leg is drawn in the frozen map (turns away with the city); the gate route is 37 km (the
+  docking-style 8.85 km final; once it ran through the ring's inside and met lane traffic - ship 1586, 87 m/s);
+  regression on Высокий not yet run.
+- RING PAD AUTOPILOT, STEP 3-4 (2026-11-26): (a) the co-rotating leg hands the ship to the pad service at its ROUTE'S
+  END (or < 100 m; was 250 m) - live 120 m before the approach point (the route ends 2 hull lengths short, as on the
+  flat hubs), across + down, LANDED (104 s); (b) the leg's HUD tunnel turns with the city (the presentation frame
+  carries the frozen map's turn back: world = origin + B (p + M^T (x - p))) - live: its nearest frame 0-22 m from the
+  ship over the whole leg (unfixed it would turn 155 deg off in 30 s). Regression navsuite_ring2 (Высокий): pad_outside
+  / pad_series / tower_pad / dock_hub - plans, 0 failed, 0 collisions, cross / speed errors as before (cross_max 13 /
+  17.7 / 13.2 / 21.2). Two full ring landings (runs ringco7, ringco8): 0 collisions.
+  Open (ring): the gate route's 37 km docking-style final; a gate route through the ring's inside can meet the lane
+  traffic; NPC ring traffic does not use the gate / co-rotation yet; the axial dock dispatcher; Newtonian ships (the
+  deck charge is the Assisted stabilization channel).
+- RING GATE ROUTE SHORTENED (2026-11-26): the route to the sync gate is planned at the hub's own speed limit (its lanes'
+  data speed_limit_mps, 150 - the speed it was flown at anyway) and enters the gate at the pad's 30 m/s (still ending
+  at rest): the speed-sized final along the axis 8.85 km -> 0.76 km, the route from 13 km (the spine side) 37.4 km ->
+  20.9 km (lower bound 16.1: round the ring). Live: gate synchronized (0.4 m off the axis, roll drift 0.03 deg / 3 s),
+  leg 1.7 km, LANDED on A1-03, 0 collisions.
+- Co-rotation and the Newtonian law - SOURCE-AUDITED ONLY (no Newtonian ship in the DEV start): the deck charge goes
+  through motion.assistedStabilizationAccelerationMps2, clamped by assistedLateralStabilizationAccelerationLimitMps2 =
+  min(max(manoeuvre, strafe), main) - law-independent, and updateLocalFrameMotion adds it whenever the installed main
+  plant executed (real plants: both laws); the neutral attitude damping (now to the city's turn) runs for both laws.
+  So a Newtonian ship pays the turning frame within its thrusters' authority too (no gas accounting for that share).
+  A live Newtonian ring landing is still to be flown.
+- AUDIT 2026-11-26 (author's pasted list) - the ring / co-rotation findings, CODE + TESTS (live checks below):
+  (1) HIGH reflex vs co-rotation: the route reflex fed the evasion predictor the agent's FROZEN-MAP state (velocity
+  relative to the turning city, rates minus its turn) against radar tracks that move straight in the hub frame (~60 m/s
+  off at the rim), and the predictor flew no deck charge (~1 g over the rim). Now: ControlShipState carries the deck
+  (axis point, omega, co-rotating; setControlShipDeck), flyControlProgram propagates through
+  ShipControlExecutionGateway::propagateHubTacticalTranslation (the server's own deck charges); the co-rotating leg gives
+  the reflex the TRUE inertial velocity / rates; the manual + phase assist pass the replicated deck too. Structures of a
+  turning object (the ring city) are judged turning about its axis (EvasionThreatTrack::turning, chord + sagitta) - a
+  straight track left its circle by w^2 r t^2 / 2. Test evasion_trajectory_conflict testTurningDeck: own drift 0.06 m on
+  the deck, a co-turning piece 40 m away keeps 15 m margin; the straight model predicts a false contact. 5112 checks PASS.
+  (2) MEDIUM gate sync on glfwGetTime: the 3 s hold window now counts universe time (a rewound timeline restarts it).
+  (3) MEDIUM-HIGH Newtonian deck charge without gas: the charge (omega x v, co-rotating + omega x u) is now NOZZLE WORK
+  in ShipCorePropulsion (joins the 24-nozzle demand: gas, watts, geometry); the gateway skips it when the installed RCS
+  plant executed. Found on the way: the manual RCS release doctrine (newtonianManualManoeuvreDeltaVelocityMps) cancelled
+  the deck share the next tick (2 m/s2 short) - the executed deck share (motion.deckChargeByNozzlesMps2, server-only) is
+  kept out of that ledger. DEV check EliteDeckNewtonianCheck (production ShipCore, stick released, at rest on a deck):
+  1.0 / 6.3 m/s2 decks held to 0.2 / 0.6 m with gas paid. The ring dispatcher's lift for a Newtonian ship is its real
+  body-up nozzle authority (rules::rimLiftMps2), not the Assisted stabilization budget.
+  (4) MEDIUM async lane search: at most two searches alive (a new one waits while a retired one runs).
+  DOC: the J keep-out today (JDrive.h): inside a hub / station / beacon (20 km) or ship (5 km) keep-out the J field is
+  limited to the gentle push (GentleAccelMps2 = 1 g, GentleSpeedMps) - the slice cc-1 text "drops out on entering a
+  keep-out" is history.
+  Not done from that list: the evasion predictor vs the autopilot's real control (HIGH, architectural), the radio UI
+  input from the render phase, DynamicMotionState split, legacy positions, the UI event bubbling contract.
+- NEWTONIAN RCS NOZZLE 0.5 MN / 20 MW -> 1.0 MN / 40 MW (author: «мощность ньютоновских RCS можно подкорректировать,
+  учтя новую мощность в реакторе»): the bank's 480 MW was a tenth of the ER-5's 5 GW; the Newtonian Cobra's four lift
+  nozzles gave 7.7 m/s2 - under a ring rim's 1 g (with the deck as nozzle work it slid off the rim, 440 m in 20 s). Same
+  25 kN/MW; emitter 0.39 -> 0.60 m (sustained share 60 -> 70 %), thermal capacity 2 -> 3 MJ/K (the same ~15-20 s to the
+  band); gas tank passport unchanged (150 s of full draw). EliteDeckNewtonianCheck on the Earth ring (9.81 m/s2): held
+  to 1.96 m over 20 s, nozzles 9.83 m/s2. newtonian_rcs_physical_tests PASS (two test pins sized to the passport).
+  Newtonian matrix (scenario_matrix.sh, build-relwithdebinfo via ELITE_NEWTONIAN_BUILD - build/headless_server's -O0
+  GameServer.cpp no longer links, unresolved std::deque / nlohmann templates): 2/126 PASS new nozzles, 0/126 with the
+  OLD passport - the matrix is broken independently of this change (stepI baseline 96/126): the accepted case
+  newtonian-I replays to remaining 0 m but never settles (creeps ~1.5 m/s at zero RCS command). OPEN, not diagnosed.
+  LIVE (ring A1-03 from 13 km): ringco11 (Assisted, the reflex fix) LANDED, 0 collisions, 3 reflex dodges at the
+  co-rotating leg's start (ringco8 before the fix had 4 on the gate route); ringco12 (Assisted, ELITE_DEV_EVASION_TRACE
+  =1 - names the threat that made a course urgent) LANDED, 0 dodges, 0 collisions. ringnewt1 (Newtonian-I via
+  ELITE_SHIP_PHYSICAL_TEST_MODEL, the new nozzles): dispatcher cleared (lift 1.56 g, needs 1.2), gate synchronized
+  (2.6 m off the axis, roll drift 1.0 deg / 3 s), the co-rotating leg flown ~90 s (HUD tunnel 2-8 m from the ship), the
+  pad service descending at 6 m/s - the 900 s run budget ended 90 m above the pad (rerun ringnewt2 with 1200 s).
+  Matrix breakage lead (replay of cases/newtonian-I.case, I d3, build-relwithdebinfo): the route reaches its end, the
+  terminal enters POSITION_HOLD at 8.4 m / 1.96 m/s and then drifts AWAY at a steady 1.55 m/s (20 -> 71 m) with the
+  hold's own demand 0 (decision demand_acc 0.000, monitor 0, attitude error 180 deg, roll 74 deg) - the hold law returns
+  no trim (not the nozzles, not the safety monitor). To bisect from 93d969b6e (step I, 96/126).
+  ringnewt2 (Newtonian-I, 1200 s): gate synchronized (5 m off the axis), the leg planned at 30 m/s; at +117 s a
+  capability change (angular 1.88 -> 1.66 rad/s2: the nozzles share their work with the deck's charge) -> replan ->
+  the Newtonian SAFETY COURSE picked an escape ray 45 km long in the city's frozen map and burned to 70 -> 100 m/s
+  among the buildings (the reflex dodged real contacts, 39 traced: turning structures 300-500 m ahead), then the ship
+  left the ring (160 km off, 14 km/s relative to the turning map at the 1200 s end). FIX: inside the co-rotating leg a
+  replan has no escape course - the ship stops relative to the city first (manualStopControl; the law holds the
+  velocity relative to the deck), then plans from rest. Source + build only (the Newtonian rim landing is now refused,
+  below).
+- NEWTONIAN SHIPS AND CITY PADS (author 2026-11-26: «у нас есть специальные порты для ньютона ... ньютону тяжеловато
+  маневрировать в городе»; picked: refusal + outskirts docks; «только тогда наружные площадки должны быть заправочные,
+  ремонтные, складские, заводские и т.д.»). The 2026-11-17/18 rule (Newtonian / larger ships never enter the city, the
+  frontiers' docks on the rim by the stores) had no code: the lanes' "law": "assisted" (5922) is read by nobody, the
+  rim piers (role "dock", 26 in Tikhiy / plane_demo) take no ships, DockKind::TrackTerminal ("railway station" for
+  Newtonian ships) exists only in DockFacilityDescriptor.h. NOW: rules/PadLawRules.h - every city pad is closed to the
+  Newtonian control family; the client's dispatcher refuses at the click (before any route), the server at the
+  request ("refused:newtonian:<addr>:<ring>"); the line sends a ring's Newtonian ship to the axial dock, a planar
+  city's to the frontier docks "on the outskirts (not taking ships yet)". LIVE newtpad1 (Newtonian-I, A1-03): refused
+  at the click with that line; asspad1 (Assisted): cleared as before, the gate route started.
+  NEXT (agreed): outskirts SERVICE docks - the ring's axial dock dispatcher with refuel / repair / storage-market /
+  factory services; the planar cities' rim piers as TrackTerminal docks with the services of their blocks.
+- RING AXIAL DOCK = THE RING'S NEWTONIAN (OUTSKIRTS) DOCK: earth_ring_hub.cty_dock (hex drum on the spin axis, turns
+  with the ring) had no navigation anchors / port state - a docking request failed "dock state unavailable" (live
+  ringdock1). tools/models/hub_ring_world.py register_axial_dock_anchors: the anchors + port copied from hub_hex_dock_a
+  (as hub_belt_world.py does for a planar city's dock); regenerated - only hub_semantic_anchors.json (+63 lines) and
+  hub_docking_runtime_test.json (+7) changed. LIVE ringdock2 (Newtonian-I, from 13 km): request accepted, direct entry
+  cleared to pad P4, DOCKED after 240 s, turning with the drum (10.3 m/s at 114 m = 5.16 deg/s), docking fee 384 Cr
+  charged (the docked event - refuel / trade / contracts / refit key on the hub id, GameSimulation::serviceStationOf);
+  0 dodges, 0 collisions. Services of the ring are thus all reachable from the axial dock.
+  Open: the planar cities' rim piers (role "dock") as TrackTerminal service docks; services are per hub, not per dock
+  (a dock's purposes / DockKind are read by nobody).
+  LIVE tikdock1 (Newtonian-I, Tikhiy from 13 km): the planar city's own dock (moved to a rim block 2026-11-17, its slot
+  facing open space) - accepted, cleared to P4, station hand-off through the chamber, DOCKED after 267 s, fee 384 Cr;
+  0 dodges, 0 collisions. So both hub kinds already have an outskirts dock a Newtonian ship can use: the planar city's
+  refusal line now sends it to the city's dock (was "frontier docks - not taking ships yet").
+- NEWTONIAN MATRIX 0/126 - ROOT CAUSE: not the autopilot. 6b386f6c1 (audit items 2-3) INSERTED ShipParams
+  jumpCoreRatingT / jumpChargeCapacityT after massKg; the replay cases store ShipParams as raw bytes (prefix read,
+  "accept only appended fields") - every case read its physics 16 bytes off since then (the hold's RCS authority
+  garbage: POSITION_HOLD with zero trim, the ship creeping away). FIX: the two fields moved to the end of ShipParams.
+  cases/newtonian-I replays to settled 224.4 s, 0.02 m/s. Matrix (build-relwithdebinfo, new 1.0 MN nozzles in the
+  ShipCore): 97/126 PASS vs stepI baseline 96/126; both: every failure is micro-brake only (30 / 29, the set shuffles
+  between runs), no corridor / keep-inside / collision / no-DONE. The new nozzle passport causes no regression.
+  (build/headless_server's -O0 link failure of GameServer.cpp stays open - the scripts take ELITE_NEWTONIAN_BUILD.)
+- REGRESSION navsuite_day26 (Высокий, after today's audit / nozzle / pad-rule / ShipParams changes): pad_outside,
+  pad_series, tower_pad, dock_hub - 0 failed, 0 collisions (cross_max 13.0 / 78.0 / 31.1 / 18.8). pad_series differs
+  from the older suites only because those stalled over A2-03 on "выпустите опоры" (the script has no gear verb) and
+  never asked the next pads; this run asked all four - the 4th (H4-01) had 13 infeasible inbound-leg plans
+  ("continuous Assisted optimizer did not reach a feasible path", speed x0.2-0.55) before one executed. Planner
+  observation, not caused by today's changes (none touch the inbound-leg optimizer); open.
+- RING NPC TRAFFIC (plan item: NPC ring traffic through the gate): the ring's scheduled visits (hub_schedules/
+  earth_ring_hub.json, 25 pads, presentation poses in the CITY frame - they turn with the ring by construction) came
+  down from 900 m over a pad and LEFT "away from the centre" along the city's x / z: 3 km straight through the rim.
+  HubTrafficSchedule::pose for a ring pad (plan ring valid + sync gate, data only): in along the spin axis from the open
+  end (3 km out), the sync gate, over the pad at min(900 m, R / 2) - inside the ring -, down; the departure the same way
+  back (accelerating). The nose along each leg, the parked heading on the descent / climb; the server's attack check
+  (castScheduledVisits) uses the same pose. Source + build; not yet seen on screen (no DEV screenshot verb).
+  The dock traffic of the axial dock (EAR, 4 cobretts) is the hex-dock dispatcher's own (on the axis - no co-rotation
+  issue). Real (promoted) NPC ships on the ring's lanes: 0 lanes on the ring today.
+- AUDIT HIGH "the evasion predictor does not model the real control during the autopilot" - PARTLY: the course the
+  reflex judges is now the command flown NOW held for the program's hold (ControlShipState::courseProgram: the route's
+  command of the frame / the pilot's sampled stick), not a hands-off coast; with a course of its own, hands off is one
+  of the dodges and "keep the course" is the no-dodge answer. Still not modelled: the route's FUTURE commands (its turns
+  beyond the hold) - open. Tests: evasion_trajectory_conflict 5112 PASS. Live ramcheck1 (failsuite aftR_ram: a 120 m/s
+  straight ram locked at 600 m): closest approach 78.8 m (failsuite_v1 39.3 m), 0 collisions.
+- AUDIT UI items: (LOW) the event contract promised bubbling ("Ignored: the router may offer it to a parent"), the
+  router never did - UIInputRouter now bubbles press / release / scroll from the target up its ancestors until one
+  answers; the one that answers HandledCapture owns the pointer; a capture's moves stay the captor's alone. Test
+  ui_radio_widget 90 checks PASS (9 new: a child's ignored press reaches the parent, its capture, a handled press stops
+  at the child). (MEDIUM) the magnitola's input ran inside the render pass: now layoutCockpitRadioUi (render: the panel
+  hangs on the engine group's frame, known there; keeps the viewport) + routeCockpitRadioUi (SpaceState::update: the
+  pointer through the last drawn layout, the actions applied there); the render only draws. Smoke run + HUD capture
+  (D:/tmp/smoke_radio/hud.png): the panel drawn, no errors. Still open from the audit: DynamicMotionState ownership
+  split, the legacy positions in ObjectSnapshot / WorldObject / Planet.
+- build/headless_server (-O0) link failure of the Newtonian tools: GameServer.cpp outgrew the regular COFF section
+  limit (undefined std::deque / nlohmann COMDAT templates at link) - added to the MinGW -Wa,-mbig-obj list beside
+  SpaceState.cpp / TcpTransport.cpp; EliteNewtonianReplay / EliteNewtonianScenarios link again in build/headless_server
+  (the scripts' default; ELITE_NEWTONIAN_BUILD still overrides).
+- PRE-PLANNING SAFETY: a ship stopped 1..15 m outside a wall's plain inflation (the DEV pad series interrupts the A2-03
+  descent at street level) had EVERY course's delta-spot tube (15 m) clip that wall: no course, no stop corridor, an
+  emergency stop forever, and the full check (snapshot + scene ray, ~90 ms on the main thread) EVERY FRAME - the visible
+  freezes the author saw (250 ms gaps twice a second). PreplanningSafetyCourse: the contact zone now includes the spot
+  radius (such a wall is a contact: the course leads away from it - DockLiftClear rose 62 m off two walls, then planned);
+  SpaceStateDocking: in the emergency stop the check repeats once a second, not every frame. Test
+  preplanning_safety_course PASS (new case: a wall inside the tube). Live padser4 (on screen): 4/4 pads, 0 collisions,
+  0 emergency stops, H4-01 planned at the first attempt, 6 gaps > 300 ms in 13 min (47 in the freezing run).
+  Tried and REVERTED: turning an Assisted ship at rest in place to face a goal behind it (for the H4-01 13 failures) -
+  in a city the nose then looks across the buildings and no launch course is clear.
+  Pre-existing failure (not touched): ctest assisted_safe_course_recovery "wall-clock latency invented Assisted
+  maneuver progress" (its sources were not changed).
+- DEV runs are on screen (author 2026-11-26, «пока не попрошу спрятать»): run_dev.sh ELITE_DEV_OFFSCREEN_WINDOW=0.
+- AUDIT LOW-MEDIUM "WorldPosition + a legacy float position": the float mirrors are GONE from Planet, ObjectSnapshot
+  and ClientObjectState (all were written only, read nowhere - the build found no reader); ObjectSnapshot's left the
+  wire schema - WIRE PROTOCOL 55. WorldObject (src/world/WorldObject.h) is included nowhere -> docs/CLEANUP_CANDIDATES.md.
+  Other float mirrors (DamageEvent, ObjectDetachedFragmentSnapshot, SignalTransmitter, InterferenceSource,
+  StaticObject) were not in the audit's list and stay. The wire contract tests had rotted (ShipTransform::position /
+  referenceVelocityMetersPerSecond long gone; the data-plane unit lost COMDATs without big-obj): fixed, MinGW big-obj for
+  wire_data_plane / tcp_wire_transport; wire_data_plane, wire_protocol, tcp_wire_transport PASS. Live legacypos1:
+  B4-11 landed, 0 collisions, epoch checks clean.
+- REPLICATION AUDIT of DynamicMotionState (2026-11-26, author's request: "check the premise before a mechanical split";
+  NO code changed yet, proposal waits for the author). Measured with the real codec (scratchpad wire_sizes.cpp): one
+  ShipSnapshot row 4333 B raw (graph empty), of it motion 2659 B (144 of 161 fields on the wire), EngineLiveTelemetry
+  1162 B (16 fixed slots of 9 arrays), referenceFrame 313 B, refit 491 B, shipCoreStatus 340 B; a minimal observer
+  kinematic set ~150 B. Cadence: fixed 0.02 s, snapshot every 3 ticks (16.7 Hz); per session the SAME full row for every
+  audience (ServerRunner -> copySparseSnapshotForSession: ships selected by ReplicationInterestPolicy, Controlled /
+  Tactical every snapshot, Nearby 0.2 s, Coarse 1 s, motion-fidelity floors 0.1 / 0.2 / 0.5 s); LZ4 on the whole buffer.
+  Single player (LocalGameHost -> LocalLoopbackTransport) passes structs in memory - no encoding: bytes matter for TCP
+  (RemoteGameSession / EliteServer) only. DUPLICATE TRUTH: ShipReferenceFrameSnapshot is a projection of
+  motion.travelFrame + motion.localPosition / localVelocity (GameSimulationReplication.cpp:130-175), and the client
+  OVERWRITES motion.travelFrame / local* / referenceVelocityMps / worldPosition / systemId / hubId from it
+  (ClientWorldState.cpp applyReferenceFrameState) - those motion copies ride the wire unused. Client prediction is
+  kinematic only (ClientHubTacticalPrediction advanceReplicatedHubKinematics: pose, rates, local velocity, frame, deck);
+  remote observers read motion.mode, deck*, attached*, engineTelemetry.thrust01 per slot (SceneRenderer nozzle glow);
+  ShipTransform input axes are read by no client code (cruiseActive: own cockpit only). Pre-existing failure:
+  check_wire_data_schema.py "top-level codec manually knows nested world fields: value.ships" (the oversize
+  diagnostics in WireDataCodec.h).
+- REPLICATION STEPS 1-2 (author 2026-11-26: «отделяем replication contract от runtime state», steps 1-2 first):
+  (1) TCP snapshot meter (TcpTransport.cpp SnapshotTrafficMeter, server side, remote sessions only - the local
+  loopback encodes nothing): every 10 s [NetBytes] snapshots/s, ships/snapshot, raw + LZ4 bytes/s, the own row and the
+  average other row split into motion / engine telemetry / referenceFrame / refit / core. BASELINE (run_remote.sh,
+  EliteServer + TCP client, earth hub, B4-11 approach, 26 steady windows): 16.7 snapshots/s, 23.6 ships/snapshot,
+  raw 2833 KiB/s, wire 593 KiB/s (LZ4 x4.8); own row 5692 B (motion 2700, engine telemetry 1162, referenceFrame 343,
+  refit 504, shipCoreStatus 1468); other rows 4487 B (motion 2630, telemetry 1162 = 26 %).
+  (2) 32 fields with NO client reader left the snapshot (proof: scratchpad wire_readers.py - every read site, server
+  vs client-reachable code; the client evasion builds its own ShipTransform from explicit fields; the client sparse
+  dead-reckoning reads only worldVelocity / engine + gravity acceleration): ShipTransform pitch/yaw/roll/strafe/lift/
+  forwardInput, targetSpeedRate, jumpActive; motion desiredRelative/TacticalVelocityMps, lift/strafeSpeedMps,
+  lockedToFramePosition, mainTrimLoad01 / UsableScale01, orbitalAssist* (3), orbitalCorridorId / State, orbital
+  Altitude / AltitudeError / TargetSpeed / Tangential / Radial / SpeedError / PhaseRadians, planeOffsetMeters,
+  pendingReferenceVelocityMatch, primaryGravityAcceleration / Altitude / Distance. Kept although unread:
+  manoeuvreGasDepleted (pinned by check_wire_data_schema.py). Wire protocol 56, snapshot schema 81; the data-plane
+  test now asserts they decode as defaults. AFTER (same scenario, 23.6 ships/snapshot): raw 2740 KiB/s (-3.3 %), wire
+  585 KiB/s (-1.3 %); own row 5443 B (motion 2480), other rows 4279 B (motion 2433). NOT removed (by design, the
+  author's order): motion.travelFrame / local* / worldPosition / worldVelocity - the client takes them from
+  referenceFrame ONLY in HubTactical (full ships: referenceFrame.valid only there; shells: whenever travelFrame valid);
+  in free flight / J the client lives on the motion copy -> a single Kinematic contract first.
+  Pad runs (local and remote) stop OVER the pad at phase 2 waiting for the legs (G): the DEV scripts never sent "gear".
+  CORRECTION (step 3): free flight and J are HubTactical with a DETACHED frame (GameSimulationFreeFlight.cpp:572), so
+  full ships already had referenceFrame.valid in free flight / J - the "motion copy only" statement above was wrong.
+* 2026-11-26 REPLICATION STEP 3 - ONE SPATIAL REPRESENTATION ON THE WIRE:
+  - Server: projectShipReferenceFrame(motion, time) (ShipReferenceFrameSnapshot.h) is THE projection for full ships and
+    shells alike, every mode, valid <=> travelFrame.valid (shells now also carry hubId / bodyId / matched).
+  - Wire: motion.travelFrame, referenceVelocityMps, localPositionMeters, localVelocityMps removed (protocol 57, snapshot
+    schema 82); the referenceFrame is their one representation. TCP client: restoreMotionFromReferenceFrame on every
+    decoded row (TcpTransport.cpp), before any reader (same referenceVelocity formula as applyReferenceFrameState).
+    LocalLoopback encodes nothing - unchanged. Data-plane test: the fields do not ride + the restore reproduces them.
+  - Bytes (run_remote.sh, same B4-11 scenario, 27 windows): raw 2716 -> 2609 KiB/s (-3.9 %), wire 582 -> 569 KiB/s
+    (-2.2 %); own row 5448 -> 5047 B (motion 2480 -> 2192), other rows 4279 -> 3941 B (motion 2433 -> 2156). Since the
+    baseline (netbase1): raw -7.9 %, wire -4.0 %, other row -12 %.
+  - LIVE over TCP: the pad approach identical to the metre (holds at (-2240,317,80) waiting for gear); free flight
+    (frame ship_free_204, local speed 1.47 m/s under HOME) and J (30 km: field up to 21920 g, the client's restored
+    frame speed 8368 km/s) read correctly by the client's jstate from the restored motion.travelFrame.
+  - Contract tree: LocalPredictedPresentationContractTests lacked require() (did not compile) - added. Still failing,
+    unrelated to replication: presentation_coordinator (directTargetForFunctionKey(4)), local_flight_control ("surviving
+    fore main was not promoted"), localization (Chinese hub catalog / English fallback).
+  - Still duplicated (small): motion.systemId / hubId / parentBodyId / matchedToReferenceFrame beside the referenceFrame.
+    Biggest remaining levers: engineTelemetry 1162 B in every row (observers need thrust01 per slot), shipCoreStatus
+    1468 B (owner only), refit 504 B, and ~24 ships at full cadence.
+* 2026-11-26 A SHIP KEEPS ITS STATE AS A SHELL (author: "attacked, became real, took damage, withdrew as a shell,
+  came back new and whole" must not happen). ROOT CAUSE: dematerializeShip destroyed the full Ship and kept 4 coarse
+  aggregates (mean module integrity, main thrust / vectoring / manoeuvre authority); materializeShipShell built a NEW
+  ship from the descriptor and applied only the engine authorities to engine modules - the integrity aggregate was
+  computed but never applied; hull / cockpit / other modules, torn-off fragments, repair jobs, cargo, fuel, gas, heat,
+  reactors came back new.
+  FIX (GameSimulation.cpp/.h): m_parkedShellShips - dematerialize PARKS the whole Ship (one owner of its state, no
+  translation); materialize takes it back (transform = where the shell moved, controls cleared, runtime refreshed);
+  forgetShip erases it (the id leaves the simulation). Shells never materialized still allocate nothing (the rule in
+  GameSimulation.h). The coarse aggregates stay - only the shell's own coarse motion reads them.
+  CHECK (ELITE_SHIP_TIER_TRANSITION_TEST + ELITE_DEV_STDOUT=1, D:/tmp/shellkeep): the probe's module damaged to 37 %
+  (ship_cockpit 96.2) -> derelict -> wreck shell -> rematerialized: health 96.2, "STATE_KEPT PASS" (stage 4, new).
+  OPEN: (1) the parked state is frozen while a shell (heat / reactor / repair clocks do not advance) - a coarse
+  continuation if it matters; (2) memory only: not persisted across a server restart (with the versioned ship DTO);
+  (3) shells take no damage of their own (no writer of shell.damage) - fights only happen materialized.
+* 2026-11-26 SHIP CONDITION TABLE (author: store compressed condition of EVERY ship on the server, per section, direct
+  access by id - a cell table read at base + slot*size; otherwise every NPC ship has perfect health; simulate repair
+  ability, lack of resources / spare parts: corporate = steady understood wear (garages, scheduled maintenance),
+  private = the owner and his wealth, war = everyone short of parts, pirates always short except large mafia-like
+  organisations). Memory: ship-condition-doctrine.
+  - src/game/simulation/ShipConditionTable.h (header-only): ShipConditionCell (~530 B: header + 64 sections x 8 B =
+    integrity + laser / impact / thermal / radiation / wear / internalFailure + module state), one contiguous vector,
+    free list; slot = ShipSimulationLifecycleState::conditionSlot (rides shell <-> full ship). sectionCount 0 = uniform
+    (never materialized): spread per module deterministically (splitmix hash) on materialize.
+  - REPLACES the parked full ship of 82f05fe9b (two owners avoided): ShipCore is the truth while materialized
+    (liveInShipCore), the cell while a shell; dematerialize = captureCondition, materialize = applyCondition (legacy
+    engine-authority expansion only without a cell); forgetShip / removeTrafficShell release the cell.
+  - Every NPC ship enters the universe with a lived condition (generateStartingCondition by regime: corporate / state /
+    private (wealth) / syndicate / pirate - ONE table upkeepProfile); full NPC spawns (spawnShip, not the player) too.
+  - Upkeep pass every 10 s (updateShipUpkeep): wear grows, parts restock x m_sparePartsSupplyFactor (the war knob),
+    damage repaired within the parts; lost / destroyed modules need a yard; wrecks (abandoned) get nothing; dithered
+    byte rounding so slow rates accumulate. Shell coarse damage follows the cell. [ShipCondition] log every 60 s.
+  - Regime from ShipRoleType (no NPC owner actors exist): almost every NPC was Civilian -> all "private" in the first
+    live log (206 ships, 134 KiB). Set: dock traffic OFU shuttles Transport (corporate), hub traffic Trader (mixed),
+    scheduled lines Passenger (corporate); city air traffic stays Civilian (private). No pirate NPCs exist yet.
+  - CHECK (ELITE_SHIP_TIER_TRANSITION_TEST, D:/tmp/shellcell): cockpit damaged to 96.2 -> wreck shell -> back 95.84
+    (1/255 of max), STATE_KEPT PASS; 0 modules destroyed by the generated conditions. The role edits: compiled pending
+    (the author's game instance was open - no link while it runs).
+  - OPEN: NPC owner actors (regime from ActorKind), per-system war supply, persistence across restart, cargo / fuel in
+    the cell, shells taking damage.
+* 2026-11-26 AUTHOR'S LIVE REPORT (BACKLOG - after the architecture work, by the author's order):
+  (1) ring hub docking: the ship just hangs, does nothing; the pad marker is detached from the real hub (screenshot
+  D:/tmp/"Знімок екрана 2026-11-26 231906.png": "В ПУТИ", hubp_container_yard label beside the hub); (2) the ring's 2D
+  unrolled plan is full of artifacts, coordinates inconsistent - AGREED: the 2D plan does NOT imitate the 3D situation,
+  just a convenient visualisation of the ring's layout; (3) in the ring hub the map still opens the FLAT hub;
+  (4) astronauts on roads are simplified figures (not our astronauts) and GIANT vs the cars (screenshot "1 Знімок
+  екрана 2026-11-26 230906.png"); (5) round towers' LOD: a visible hexagonal prism, then a smooth torus - unacceptable;
+  (6) many city modules' simplified models look nothing like the main model; (7) hub-to-hub autopilot feels scripted:
+  never above 150 m/s (elite_docking_planner.log: max_speed_mps=150 even for a 40.6 km route) and keeps pulsing the
+  engines instead of accelerate - coast straight - brake; no route frames; (8) hub movement feels scripted; (9) could
+  not land on a pad in the flat hub - the ship did not even get over the pad vertically; autopilot does not try to
+  finish the landing; a noticeable regression in everything autopilot / landing.
+  (10) mojibake in HUD and radio texts - bring all texts to one encoding (UTF-8).
+* 2026-11-26 NIGHT AUDIT (author's list: ownership / shell / audience / replication boundaries) - batch 1:
+  - P0 shell eligibility, VERIFIED in source: the automatic tier planner (GameSimulation.cpp ~735-800) never collapsed
+    a damaged ship (module health / structural links / fragments / repair jobs pin it). So 82f05fe9b's parked full Ship
+    won only for PRISTINE ships' fluid state (gas, heat, cargo) and the DEV test - the damaged case was blocked anyway.
+    The parked Ship is GONE (replaced by the ShipConditionTable, the author's "compressed per-section data"): MEASURED
+    a full Ship = 185-248 KiB private memory (100 Cobras, ELITE_SHELL_ROUNDTRIP_TEST) vs a cell 552 B -> 500 parked
+    ships would have been ~90-120 MiB, 500 cells 0.27 MiB. Process private memory does not drop after dematerialize
+    (allocator) and grew ~3 MiB over 5 x 100 cycles - allocator vs leak not separated yet.
+  - With the cell, module health / equipment damage no longer pin a ship that HAS a cell (the cell keeps them, the
+    comment there waited for "a future compressed damage signature"); links / fragments / repair jobs still pin.
+    Without this every NPC with a generated condition would have stayed materialized forever.
+  - NEW explicit rule shellBlockingDomain(id): no collapse while combat (either side), jump / pending jump, free flight,
+    pad landing, refuel / hub service, manoeuvre-only or gear != in is live. The audit found an ex-traffic NPC could be
+    collapsed mid-fight (m_combatHostility silently dropped by the combat loop) once cells unpinned module damage.
+  - The cell now also keeps the LOAD (cargo t, containers, persons, fluids, consumables): cargo was lost on a round trip.
+  - Shell round-trip matrix (forced dematerialize -> materialize, D:/tmp/shellrt2): SURVIVES rcs gas, J charge, cargo,
+    module health, equipment damage (1/255), module detached state; RESET by decision: service coolant temperature
+    (the shell has no thermal model; it comes back at the descriptor's initial state); repair job: could not be started
+    on a fresh Cobra in the test (startRepairJobForModule false) - repair jobs, fragments and structural-link damage
+    block the automatic collapse (source) and are not in the cell. Lost and NOT yet decided: reactor / containment
+    state, refit productOverrides, inventory, equipment operating state (only shellEligible traffic is affected today).
+  - Lifetime: check_entity_lifetime.py was RED at HEAD (m_capsuleTakeoverPending, m_capsuleWake added after the test,
+    nobody ran it). forgetShip now erases them + m_lastPublishedShipModuleRevision (exception dropped) + the nested
+    m_hubSecurity[].violators; the check fails on stale NOT_PER_SHIP exceptions and on nested per-ship tables;
+    m_playerControlledShipIds' exception reason re-verified (setPlayerControlled(false) on ship switch / last-session
+    disconnect, markShipDerelict). despawnPromotedAirShip: collapse -> remove -> forget (was forget first: a wasted cell).
+  - 205 python architecture checks have NO runner / ctest registration: scratchpad run_checks.py ran all on a HEAD
+    export and the working tree - HEAD 19 red, now 17 red, no new red (fixed: entity_lifetime, wire_data_schema; new:
+    ship_params_record). ctest: the same 3 baseline reds (presentation_coordinator, local_flight_control, localization).
+  - check_wire_data_schema red FIXED properly: the oversize size report was instrumentation inside the top-level codec;
+    moved to src/game/network/WireSnapshotDiagnostics.h (also snapshotPartSizes for [NetBytes]).
+  - manoeuvreGasDepleted LEFT the wire (no client reader; the check pinned dead data - token removed; data-plane test
+    asserts it does not ride): wire protocol 58, snapshot schema 83.
+  - restore contract: ClientWorldState::applyReferenceFrameState uses restoreMotionFromReferenceFrame (one inverse);
+    it no longer DERIVES matchedReferenceFrameId = hubId (the server writes it in TravelFrameSystem::matchToReference -
+    the reference hub, not necessarily motion.hubId - and the row carries it); the double referenceVelocity store gone.
+  - [NetBytes] is opt-in (ELITE_DEV_NET_BYTES=1): without it no envelope parse / stats / log; adds the top-level parts
+    (ships / objects / hubs / signals / session raw bytes).
+  - ShipParams replay: AutopilotCaseFile wrote sizeof(ShipParams) raw bytes. NOW physics_v2 = ShipParams by field NAME
+    (src/game/ship/core/ShipParamsRecord.h, 50 fields, hex floats exact; unknown names skipped, missing keep defaults;
+    legacy "physics <n> <hex>" still read as a prefix). The 5 Newtonian cases converted (scratchpad case_convert.cpp:
+    legacy read 304 B of the current 384 B layout, values plausible: 260 t, I/X/Y main 36.8/147.1/110.3 m/s2; v2 round
+    trip 50/50 fields identical). check_ship_params_record.py: every ShipParams field listed, no raw dump.
+* 2026-11-27 NIGHT AUDIT batch 2 (findings; code only where marked):
+  - AUDIENCE (source, subagent audit + LIVE two-session run, scratchpad run_remote2.sh, D:/tmp/twosess, new DEV verb
+    "peers"): every ship of the system reaches every session (Coarse has no outer radius; ReplicationInterestPolicy.h
+    197-202 / ReplicationPublicationPolicy.h 195-249), rows copied WHOLE (GameServer.cpp ~3880); nothing zeroed per
+    audience - per-SHIP gates only (refit for owned ships, graph for detailed/owned, padService/dockDispatcher for any
+    player-controlled ship). LIVE: client B holds A's ship 204: refit owned 1, ownerActor 1, registration PL-0001, name,
+    full ShipCoreStatus, full engine telemetry.
+  - AUTHORITY (P0, NOT fixed - needs the per-player ownership model): every player ship has ownerActor =
+    ActorIds::Player() (GameSceneSetup.cpp 501/1208); the F7 fleet filter (SpaceStateServices.cpp 22-35) and the
+    SERVER refit authority sameOwner() (GameSimulationRefit.cpp 9-13) compare ownerActor -> two players with
+    Player-actor ships share a "fleet": player A may preview/apply refit on B's ship (charged to A). The second session's
+    ship in the run had ownerActor 0 (not owned at all). Fix direction: an owner identity per player (account / player
+    actor), the server compares it with the commanding session's player; the wire carries an "owned by this session's
+    player" bit instead of ownerActor.
+  - SPATIAL TRUTH: referenceFrame is NOT valid for every row: dock / air traffic shells write only worldPosition
+    (GameSimulationDockTraffic.cpp ~400, GameSimulationHubSecurity.cpp ~449; spawnTrafficShell sets no travel frame) ->
+    worldPosition is the truth for them. Rule today: frame valid -> frame + local; invalid -> worldPosition (+
+    worldVelocity for sparse dead reckoning). worldPosition stays on the wire until traffic carries its city frame.
+  - REPLICATION BOOKKEEPING (m_initializedShipGraphIds, ...PayloadPublicationsRemaining, m_lastPublished...,
+    m_shipsWith*Payload): outside GameSimulationReplication.cpp only markShipGraphDirty and forgetShip touch them - no
+    gameplay reader; owner should become a server ReplicationProjectionState (not moved tonight).
+  - NETWORK (run_remote.sh, B4-11 + gear, 27 windows, D:/tmp/netnight1): raw 2787 KiB/s, wire 624 KiB/s at 33.1
+    ships/snapshot (the earlier 2609 / 569 were at 28.6 ships: traffic composition differs - tonight's only wire change,
+    manoeuvreGasDepleted, 1 B/row, is below that noise). TOP-LEVEL PARTS (new): a steady snapshot = ships ~27 KB,
+    SESSION ~35-39 KB (wallet / trade / board / ... every snapshot = ~600 KiB/s raw alone), objects 16.5 KB, hubs 13.4 KB,
+    signals <1 KB; hydration snapshots carry ships 174-565 KB (full graphs). The next bandwidth lever is the session
+    block's cadence / deltas, then engineTelemetry (1162 B/row) for observers.
+  - LIVE: with "gear" the pad landing proceeds (B4-11 phase 2 descending at 6 m/s, 137 m to go at the 300 s cut) - the
+    earlier "hang" was the missing legs; J over TCP: client restored frame speed 8388 km/s. Condition table live: 237
+    ships (153 corporate integrity 0.999 parts 0.91, 84 private integrity 0.977 parts 0.35), 138 KiB.
+* 2026-11-27 SHIP OWNERSHIP / AUTHORITY / AUDIENCE (author's decision: ShipOwnershipRegistry is the ONLY owner truth,
+  ShipInstanceId -> ShipOwnerRef::player(PlayerId) / organization, saved and restored; PlayerId from the authenticated
+  session, the same after a reconnect AND a restart; ControlRegistry = who flies; ownerActor in NO check) - SOURCE + LIVE:
+  - SOURCE findings fixed (all confirmed by the author's own read): refit authority compared ownerActor of two ships (one
+    shared Player actor -> any player could refit another's ship) and chargeRefit ran BEFORE the check (a refused apply could
+    charge); transferPlayerControl allowed boarding by ownerActor and wrote the pilot the OWNER (assign overwrote, before the
+    control change, a refusal rolled back control only); buyShip copied ownerActor from the flown ship (an employer's on a
+    hire) and registered no owner; the ship save had no owner record; F7 / the bot list matched ownerActor; every session got
+    every ship row whole (normal, hydration, full copy) and the refit answer was per TARGET, not per asker; accounts lived in
+    memory only (a restart lost every handle -> PlayerId binding).
+  - NOW: GameServer::refitAuthority (the commanding player OWNS the target, ownerPlayerOf = m_shipOwnership) runs before the
+    preview and before chargeRefit; a refused foreign request leaves the target's publication untouched and answers the asker
+    through its trade refusal log; GameSimulation executes only (sameOwner gone). Boarding checks the owner (or the hire's
+    employer ship) and never writes it. buyShip: assignShipOwner(buyer); the social ownerActor is the buyer's. Bot hire: the
+    bot ship must be the player's own. The simulation's owned set (refit block + module graph publication) is pushed from the
+    registry (setPlayerOwnedShipInstances); DEV catalog lineup ships are granted through it. Wire 59 / schema 84: refit
+    ownerActor left the wire; refit.owned = "owned by the RECEIVING player" (GameServer::projectShipRowsForSession, applied
+    in copySnapshotForSession, copyHydratedSnapshotForSession - the full graphs too - and copySparseSnapshotForSession);
+    the preview / apply answer (and its serials) only to the session that asked; a foreign row keeps only the visible
+    configuration (productOverrides). For a ship neither owned nor flown by the viewer the owner / pilot domains are blanked
+    before serialization (blankPrivateShipDomains: core status, control authority, receptions, damage events, navigation
+    execution, dock dispatcher, pad service, engine telemetry, gas, J charge, mass / core rating, jump target / exit details,
+    lanes, data carriers, nav computer, refuel, zone / security fines and debt). PUBLIC by the client reader audit (subagent,
+    every reader file:line checked for a controlled / owned guard): the module graph (visible damage, assembly poses,
+    fragments, repair drones), combat beams / missiles / impacts, productOverrides, traffic, kinematics + frame,
+    securityLevel (hub turrets), jumpState / jumpSerial / jumpExitSerial, capsuleState, landingGear. DEV A/B:
+    ELITE_DEV_NO_AUDIENCE_PROJECTION=1.
+  - SAVE: runtime_ships/2 writes owner_player (or owner_organization) and keeps owner_unresolved rows. LEGACY runtime_ships/1
+    (owner_actor = the shared actor, names nobody): only unambiguous evidence assigns - a hire's own ship (hires), the ship a
+    player flew that is not an employer's (the old boarding wrote the pilot the owner), or a universe with ONE player
+    identity; anything else stays unowned, logged "[Ownership] ... NOT assigned" and kept as owner_unresolved
+    {legacy_owner_actor, reason} - never handed out automatically.
+  - ACCOUNTS durable: "<ELITE_ECONOMY_STATE_FILE>.accounts.json" (handle, SHA-256 credential digest, AccountId, PlayerId;
+    never a raw token), enabled by the dedicated server after an optional --reset-auth-state (which empties it); a binding
+    to a player the universe lacks is kept and refused, never rebound. No state file = in memory, as before. PlayerIds are
+    the bootstrap identities in order: stable while the slot count does not shrink.
+  - One connected session per player (ServerSessionRegistry::create refuses a second): "two sessions of one player" cannot
+    happen today; the per-asker binding still covers a reconnect (a new session does not inherit the old answer).
+  - LIVE (scratchpad run_own.sh, D:/tmp/ownlive; first attempt D:/tmp/ownlive_try1): phase 1 fresh server, A (player 1)
+    buys a C-120 (DEV: bought off a berth - the dock autopilot did NOT dock: DockClientTrack at remaining 0 m, cross-track
+    65 m, the docking regression of the author's list), F7 A = [204 1587], B = [1383]; A's refit of its OWN non-flown
+    C-120 "APPLIED" (C-120-A1A1.1 = ofu.drive.u33); B's preview and apply of that ship "REFUSED: чужой корабль" before any
+    charge (no "paid" line; the refusal reached B's trade log), its overrides unchanged; B decoded: 207 other ships, 0 with
+    owner / pilot data (A: 1 = its own C-120). Phase 2 the server restarted WITHOUT the reset, B connected FIRST: "[Accounts]
+    restored 2 account(s)", B = [1383], A = [204 1558] (the C-120 restored "owner player 1"). Legacy file (D:/tmp/ownlegacy,
+    2 player identities): the hire's own ship -> "owner player 2 (legacy evidence)", the other "NOT assigned ... no pilot /
+    hire evidence, 2 players", re-saved as runtime_ships/2 with owner_unresolved.
+  - LIVE pad landing to the END (D:/tmp/netown1, gear first): B4-11 phase 2 descent at 6 -> 2 m/s, "LANDED (122 s)", the
+    client holds it against the city (~1 mm / frame). The earlier 137 m was the 300 s cut, not a hang.
+  - NETWORK A/B of the projection (MEASURED, same start / script / 150 s, D:/tmp/netab_on vs netab_off with
+    ELITE_DEV_NO_AUDIENCE_PROJECTION=1, 11 windows each, 16.9 / 16.8 ships per snapshot): a foreign row 3838 vs 4451 B raw
+    (-14 %), but the stream only raw 2151 vs 2181 KiB/s, wire 538 vs 545 KiB/s (-1.3 %): the fixed-layout codec keeps
+    engine telemetry 1162 B / row zeroed, and a snapshot is dominated by session ~35.7 KB + objects 16.5 KB + hubs 13.4 KB
+    (the sparse ship part is the smaller share). The projection closes the LEAK; the bandwidth lever stays the session
+    block's cadence / deltas. (The longer D:/tmp/netown1 run: 644 KiB/s wire at 32.5 ships - not comparable to netnight1's
+    windows at 24 ships, so no before/after from it.)
+  - check_ship_ownership_authority.py (new): no ownerActor in refit / F7, authority before preview + charge, boarding never
+    writes the owner, the purchase records the buyer, the save carries owner_player / owner_unresolved, every session copy
+    path projects, accounts persisted. Python checks: the same 17 reds as before, no new.
+  - Evidence for backlog item (10) mojibake: the bought ship's name is saved as "C-120 В«Р’Р°С…Р°РєВ»" - UTF-8 read as
+    cp1251 and encoded again (buyShip's designation + « name »).
+    CORRECTED 2026-11-27 (same day): WRONG - a reading artifact of the shell, not of the file. The bytes on disk are
+    valid UTF-8 ("C-120 " C2 AB D0 92 D0 B0 ... = «Вахак»), the client shows «Вахак». No evidence for item (10) here.
+* 2026-11-27 OWNERSHIP REVIEW FOLLOW-UP (author's 4 points: instance registration, symmetric owner save, independent
+  owner / pilot / asker rights, publication history out of the simulation) - SOURCE + LIVE:
+  - (1) A bought ship had no ShipInstanceRegistry record until its first boarding, and ownedNavigationAssetsForSession
+    skips an owned ship without one: F7 listed it, navigation did not. NOW GameServer::registerShipInstance (idempotent)
+    runs where a ship APPEARS: purchase, hire (employer ship), restore, DEV lineup grants; boarding only reuses it. A sale
+    completes only after spawn + registration + owner record (assignShipOwner's result is checked; else refund).
+    FOUND LIVE on the way: after a hire F7 listed the employer ship (the client added the controlled ship
+    unconditionally) while navigation did not -> F7 lists owned ships only (SpaceStateServices).
+  - (2) restore had no owner_organization branch (the save writes it) -> ShipOwnerRef::organization restored; a KNOWN
+    owner_player absent from the loaded slots was degraded to a reason string -> kept typed (absentOwnerPlayer), written
+    back as owner_player + owner_unresolved, assigned again when the identity exists; a known owner is not "unresolved" by
+    an old reason. saveRuntimeShips cleared m_shipsDirty / stamped the save tick BEFORE the write -> only after a
+    successful write; a failed one retries after ~5 s (m_shipsSaveRetryTick), not at the hourly save.
+  - (3) projectShipRowsForSession blanked the pilot domains only inside !owns: every OWNED ship (a parked one too) kept
+    them. NOW three independent facts: owns (F7 / registration / refit block), flies (the session's controlled entity:
+    pilot domains), asked (the refit answer). DEV verb "audience" prints the concrete fields per row class.
+  - (4) the publication history (graph published, owed full-graph resends, last published module revision, fragment /
+    repair-job payload flags) moved from GameSimulation to ShipGraphPublicationLedger, owned by GameServer and passed to
+    buildReplicationSnapshot; the simulation keeps the facts only (module revision; a structural graph revision bumped by
+    markShipGraphDirty). The ledger prunes entities with neither a ship nor a shell (retainOnly) - not the simulation's
+    forgetShip. Kept: a demotion publishes one explicit empty graph; 2 full-graph publications per structural change
+    (also for a ship dirtied before its first publication); late joiners are served by the hydration path.
+    check_replication_snapshot_boundary.py updated to this boundary (normative change asked by the author).
+  - DEV: ELITE_DEV_PLAYER_SLOTS=<n> (ServerRuntime) for the slot-count check; hireJob off a berth with DEV commands (as the
+    purchase; the hex dock autopilot still stalls - see the docking item).
+  - LIVE (scratchpad run_aud.sh, D:/tmp/aud): phase 1 fresh, 2 slots: A buys a C-120 and STAYS in its seat ->
+    "instances F7 [1 970001] navigation [1 970001] SAME"; B buys -> [900001 970002] SAME. Rows: OWN-FLOWN 204 owned 1,
+    reg PL-0001, 2 reactors 70 MW, telemetry 4 slots, mass 260 t, J 3 t, nav 1; OWN-PARKED 1587 owned 1, reg + name, all
+    pilot fields 0; after "job:hire:0" FLOWN-NOT-OWNED 1589 (employer) owned 0, no reg, pilot fields present (265.5 t);
+    FOREIGN 207-226 rows: 0 with owner data, 0 with pilot data. Phase 2 same files, ONE slot: "ship 970002 NOT assigned:
+    owner player 2 does not exist", B's account kept unbound, the re-save keeps owner_player 2 + the reason. Phase 3 two
+    slots: "[Accounts] restored 2", "ship 970002 owner player 2"; B [900001 970002] SAME, A (back in the employer seat)
+    [1 970001] SAME. Regression with the ledger (D:/tmp/ownlive2, run_own phase 1): A's own refit APPLIED and the client
+    module row shows ofu.drive.u33 (graph republished), B's preview / apply REFUSED, overrides unchanged.
+  - Python checks: the same 17 reds (check_ship_ownership_authority.py extended: registration before the owner, hire
+    registers, organization / absent owner restore, dirty cleared after the write, pilot blanking independent of owns).
+* 2026-11-27 NAVIGATION DIVERGENCES (author's 4 questions; PAUSED by the author: "stop fixing flights, there are
+  coordinate discrepancies" - the coordinate path goes first). Commit 9dcb8ba0c. Default settings assumed ("Загнанный"
+  is in no code / locale / preference - ask which save or profile it is).
+  - (3) straight-line hunting, Assisted, SOURCE + LIVE: the first divergence is the plan's NOMINAL profile - a route
+    curve's speed limit (40 m/s dock lane) was carried only at samples ~250 m apart; between them +-8 m/s^2 ramps to
+    55-58 m/s; the follower clamped the target to 40 ("curve-max") but kept feeding the reference acceleration -> 36-52
+    m/s hunting with a STABLE target. Fix: every sample capped to its curve's limit, runtime profile rebuilt. Hex-dock
+    approach (54 km), 40 m/s section: rms speed error 4.35 -> 0.27 m/s (nav3c -> nav3d). New trace fields limiter= /
+    profile_mps= / turn_*. Newtonian (nav3n, ELITE_SHIP_PHYSICAL_TEST_MODEL=Newtonian-I): docked, but cruise rms 8.68 m/s,
+    overshoot to +99.8 m/s - NOT fixed, not analysed (paused).
+  - (4) dock stall 65 m off the axis (D:/tmp/ownlive_try1), SOURCE + LOG: the pilot, still "queued" (2 ahead), flew its
+    client route to the gate ON the axis (z ~ -500, 3-5 m off) and waited there - the client route ignores the queue
+    state, the off-axis holds (H1-H6, r 450 m, z -2600) are not used for a pilot. Arrivals with clearance come down that
+    axis: the route evasion reflex dodged them for real (10 contacts, a main-engine program, 25 m/s) -> 65 m off; the
+    route had ended (remaining 0, terminal hold) and nothing re-plans to the axis; the station captures only within 60 m
+    of the axis -> stall. NOT fixed (paused): route a queued pilot to its hold; re-plan to the axis after a dodge.
+  - Collision assist fought the STATION: from the station handoff to "docked" it "dodged" the dock's own walls every
+    1-2 s (56 times) - FIXED (quiet while dockDispatcher.stationControlled), nav3d 0. This was the author's "freezes
+    every 2-3 s" on the final approach.
+  - Freezes (author, live): focused window (nav3d) 0 frames > 80 ms after loading; unfocused with another app in front
+    (nav3b / nav3c) bursts of 10-20 frames of 80-130 ms every ~2 s, hud 35-70 ms + prepare 20-55 ms, sim per tick x2.
+    core::optOutOfPowerThrottling (client + server) did not remove the unfocused bursts; hitch marks now split the HUD
+    and prepareFrame (D:/tmp/elite_hitches.log) for the next unfocused case. Unresolved.
+  - (2) corridors, SOURCE (subagent audit, one claim verified): the server sends no corridor; only a docking / pad
+    request (client plan) and the pad service draw a tunnel; system routes, jumps, transfers, manual targets have none.
+    Verified: the execution corridor (executionGates) can never draw - every frame stamped with the render time, the HUD
+    drops frames < 0.75 s ahead (DockingCorridorPresentation.cpp:115). Not fixed. (1) HUD vs geometry: not started.
+* 2026-11-27 SPATIAL INTEGRITY (author's task, external audit at 9dcb8ba0c), STAGE A in progress - SOURCE + UNIT + LIVE:
+  - ONE city space owner: src/game/navigation/HubCitySpace.h (plan <-> module <-> world through HubRingBend + the city
+    pose; surface axes; point / relative velocity with the spin; periodic alongDelta / planDelta / unwrapNear). The pad
+    service's CityStrip IS that type (math unchanged). Client builders with an explicit epoch:
+    src/game/client/ClientHubCitySpace.h presentationCitySpace (render pose) / authoritativeCitySpace.
+  - A1 CONFIRMED + FIXED (2b6bd0a91): a block / building target was stored as plan (x, 0, z) and read by the HUD as a
+    module offset; now semanticPlanPointMeters / planPointMeters resolved through presentationCitySpace().planToWorld.
+    Unit (EliteHubSpaceCheck, real earth_ring_hub): old error 1435.72 .. 3953.67 m on the 16 blocks (= the audit) -> 0.
+    LIVE (D:/tmp/spat2, DEV verb "spatial:<block|garage2|id>"): HUD vs presentation 0.000 m for blocks, a building and
+    both garage places; the old reading 3953.671 m (b0_0). Authoritative vs presentation pose of the city ~5-11 km =
+    0.16-0.31 s of epoch lag at ~36 km/s (Earth's orbit) - by design, never mixed inside one conversion.
+  - A4 FIXED (0fe1ee4b5): the seam - server pad service (phase choice, held place unwrapped next to its pad, capture
+    zone, manoeuvre zone exit), hubPadRoute (towers one turn either way), client service tunnel; unit: pad H2-09 190 m
+    from the seam, ship 150 m past it: route 340 m (the old non-periodic start 7260 m).
+  - A5 CONFIRMED + FIXED (dfe8f2bfe): hubl_garage2's two places landed on one point -> +-10 m along the model X (46 ring,
+    256 orbital garages); FOUND: pad axes ignored the under tier (139 under-deck multi-place berths on earth_orbital_hub:
+    bays mirrored, doors toward the building) -> hubPadAxisRight / Forward = HubExpansion's Rx(under 180) * Ry(yaw).
+  - Audit sweep (subagent, every plan <-> space use): FIXED also HUD altimeter + legs prompt (plan space), ring defence on
+    the deck (82b0b6a51; EliteHubSecurityCheck: 17 deck sites on the deck, city radius 1478 m not ~3.8 km), ring lane
+    exit / dead-end test, HUD label occluders + lane tube up (2aefebbb7). EliteHubSecurityCheck "promoted slot's track"
+    red since b8a19861e (routes), not this work.
+  - OPEN (stage A): A3 MapCameraSnapshot unproject vs planWarp (the subagent read it as consistent: unprojectPlane returns
+    sheet = plan space - to verify with picking tests); map seam (a rect crossing x0+L wraps one corner); 3D Hub map lane
+    occluders unbent; ClientHubMapBridge ring sizeMeters from the strip; A6 pad existence (HubExpansion vs static pad
+    flag); A7 GPU/CPU map; stages B, C (the "spatial" verb is the start of C: no independent render-node path yet).
+  - DEV start "hub:earth_ring_hub@3" puts the ship ON the ring's axis inside the zero-g axis industry -> killed at once
+    (208 g, axis_industry_8.hubb_warehouse.2); @8 is clear. FIXED separately (the start moves off the spin axis, R + 1.5 km).
+* 2026-11-27 SPATIAL RE-AUDIT at 8187f1c36 (A1/A2/A4/A5 accepted by the author) - continued, SOURCE + UNIT:
+  - A4 (f93245a51): SpaceStateDocking pad approach direction = periodic plan difference + ring.vectorToFrame at the
+    hover point (was the plain strip difference, unscaled).
+  - A5 (f93245a51): hubBerthTouchdownOnStructure - a place on the berth's RIGID model (HubExpansion's pose), in plan
+    metres; measured before: up to 0.293 m off the model (hangar G1-01), after 1e-12 m; server + client tunnel use it.
+    FOUND, NOT CHANGED (needs the author's rule): no berth checks a ship's size against its place (a 2-place garage
+    place is 20 m wide; hangar bays 53 m apart).
+  - A8 (78672712f): LocalSceneObject::planSheetSizeMeters; a ring city's sizeMeters = the wheel 2439 m across (was the
+    strip 7300 m); the plan view fits / picks the sheet, the 3D map the physical size.
+  - A9 (60523cc9b): HubCitySpace::planPoseToModule = the one rigid-piece placement; the 3D map's block boxes and its
+    lane occluders both use it; the HUD label occlusion = physical ray vs rigid building boxes in the module frame.
+  - DEV start on a ring hub moved off the spin axis (separate commit).
+  - A3 DONE (78532be22): LocalMapPlanWarp::unapply, unprojectSheet / unprojectPlane (screen -> sheet -> scene); the
+    plan mode explicit (LocalMapCameraSnapshot::planMode); ring plan map cursor round trip 1e-13 px (old up to 628 px).
+  - OPEN (superseded by the audit #4 list below): A6 (pad existence), A7 (GPU/CPU), A2 rest (HubMapBackend /
+    LocalMapPlanWarp / SpaceStateDocking direct bends; worldToPlan near the axis - axial docks must not be read as deck
+    points), map seam polylines, B (one epoch per kinematic pose: the client builders still share velocities), C.
+* 2026-11-27 BERTH PLACES + PAD TUNNEL (d466acacf) - SOURCE + ASSETS + LIVE:
+  - author's rule: a landing place = the Cobra class's largest ship (Cobrett-I / Cobra Mk1, 26 m) + 30 % -> 34 m
+    square. Garage models regenerated (hub_pads.py PLACE_SIDE; 14 modules packaged via the mesh editor; garage2
+    68 x 68 m, garage1 34 x 68 m); places +-17 m; plot search by the whole footprint (two-place garages: ring 46 -> 31,
+    orbital 256 -> 120). The dispatcher refuses a ship larger than its place ("refused:too_big"). Roof / stilts 36 m,
+    hangar bays 40 m unchanged. LIVE gar1: Cobra LANDED on garage A2-03 (45 s).
+  - FOUND LIVE (author's screenshots "баг с рамками"): the pad service tunnel picked the first city with the ADDRESS
+    (addresses repeat) - a city in another star system, frames 1e12 m off. padService now "phase:<n>:<frame>/<address>",
+    the HUD takes the city by frame + system; the descent ends on the ship's own place. Collision assist quiet while the
+    pad service flies (7 dodges on the descent -> 0). LIVE gar6: the tunnel ahead to A2-03.
+* 2026-11-27 SPATIAL AUDIT #4 at 78532be22 (A3 / A8 / A9 / A4 / A5 accepted) - OPEN, in order: A2 rest (+ worldToPlan
+  domain near the ring axis: axial structures are not deck points); A3 / A4 live checks (real picking, beyond the sheet,
+  seam polylines split, 2D <-> 3D keeps the target); A5 rest (door front / bay entry on the structure, landed attitude =
+  the structure's floor normal, the garage HUD zone on the place, the spatial verb on OnStructure, height over the
+  contact surface / legs; one berth geometry description); A6 (actual existence); A7 (CPU path warp twice; forced
+  GPU / CPU compare); A8 / A9 (ring extents by rigid volumes / assets; occlusion by existing structures; corridor
+  disappearance; cost); then B (one epoch: positions, orientations AND velocities per epoch - ClientHubCitySpace still
+  shares velocities), then C (independent data: asset node, contact surface, server target, autopilot target, 2D / 3D
+  picks, HUD, epochs).
+* 2026-11-27 SPATIAL A5 rest / A6 / A7 / A2 domain + AUDIT #5 P1 - SOURCE + UNIT + LIVE:
+  - A5 (ad132a1d2): hubPointOnStructure - touchdown, hangar door front, bay entry, hubPadRoute's hangar goal on the berth's
+    RIGID model; the landed hull on the berth's floor (was the deck tangent under the touchdown: up to 1.257 deg off).
+  - A6 (b9d67790f): CityPadPresence.h - a pad EXISTS when the city's physical package has its "pad_<address>" volumes
+    (HubExpansion builds it only on a finished building) and is USABLE unless its node is Gutted / Destroyed; server
+    (cityPadPresenceOf: the dispatcher refuses not built / wrecked, the manual capture ignores it) and client (the pad
+    nodes kept at the client's package assembly + the replicated buildingStates: HUD zones, a refusal at the click).
+    LIVE with a 50 % test build of earth_orbital_hub: designed 342, built 193; A2-03 refused at the click.
+  - AUDIT #5 P1 (62eb3e268): ShipSnapshot padService = the control state only "phase:<n>:<frame>/<address>#<place>",
+    padNotice = the notices (a notice replaced the phase for 4 s: the tunnel / the collision-assist gate dropped);
+    the HUD takes its place from the state (was a substring search, bay 0 when missing). Wire 60 / schema 85. LIVE
+    gar7: the tunnel through phases 0 / 1 / 2 without a gap; one assist dodge before the first state arrived.
+  - A7 (a0c9e7ae1): projectSheet (no warp) for the geometry pass's CPU fallback (it warped the pre-unrolled sheet again:
+    819 px); the GPU's screen origin = projectSheet(0) (it ignored originMeters: 255 px). Unit 1.6e-13 px; live plan OK.
+  - A2 domain (9b7e28882): HubCitySpace::moduleOnDeck / worldOnDeck - the ring's axis is not a deck point; the manual
+    capture, the altimeter and the legs prompt skip it.
+  - FOUND (backlog item 10, mojibake): src/render/cockpit/HubCorridorHudRenderer.cpp holds double-encoded UTF-8 literals
+    in its snprintf labels (the dock / pad price labels) - a real source of the in-game mojibake. Not fixed yet.
+  - OPEN: A3 / A4 live (real mouse picking, beyond the sheet, seam polylines split, 2D <-> 3D keeps the target), A8 / A9
+    extras (ring extents by rigid volumes / assets, occlusion by existing structures, corridor disappearance, cost), the
+    map's pad drawing / landing card by presence, the one-snapshot gap at the service start, audit #5 items 2 (one owner
+    of the service route) and 4 (geometry acceptance), then B, then C.
+* 2026-11-27 AUDIT #6 (657465b43; target >= 8/10 per direction) - progress. Author: D3 (UI layout) POSTPONED; no
+  cockpit / windshield redesign until A, B, C, D1 / D2 are done (memory cockpit-ui-frozen).
+  - A10 (3a868af8c): the takeover owner from padService (control state), not the displayed notice; a queued ship's
+    place published as -1 (was 0), its tunnel ends before the doors.
+  - A4 (6e0a77585): the ring's 2D plan breaks polylines at the seam; unit: one break, longest drawn step 20 m.
+  - D1 (b8e1d4e31) LIVE: with ELITE_DEV_UNIVERSE_START_S pinned, the state hash (all ships: pos / vel / orientation /
+    mass / J) at ticks 300 / 600 / 900 is bit-identical at 15, 30, 60, 120, 240 FPS and uncapped, and with render stalls
+    of 100 / 200 / 500 / 1000 ms. Limits: 3 ships, no player input, embedded session (TCP / input / autopilot / combat
+    not yet in the sweep). Real time vs simulation: a frame > 0.25 s drops the excess (500 ms stall -> 422 ms dropped),
+    debt cap 0.5 s, 8 steps per frame (below ~6 FPS the simulation runs slower than real time) - now logged
+    ([ServerTiming]).
+  - D2 (source): the embedded server is advanced from the client frame on the MAIN thread (LocalGameSession ->
+    ServerRunner::advance, accumulator); the ~9 ms "fixed_sim_ms" in [FramePerf] is the per-frame server advance (a
+    tick: simulation ~1.4 ms + snapshot ~2.4 ms + sessions ~0.3 ms, [SimPerf]); ticks per real second = 50 while
+    frames keep up, the tick count per frame depends on the frame time; a heavy client frame delays the simulation
+    (catch-up up to 8 steps, then dropped time). No worker thread yet.
+  - D4 (source + live): OpenGL 4.3 core baseline on NVIDIA Quadro RTX 3000 / 582.16; 62 shaders #version 330 core; the
+    PPI radar's 3 shaders are GLSL 120 fixed-function (gl_MultiTexCoord0, ftransform) - dead path today (the PPI widget
+    is not created), would fail on a strict core driver; no GL debug output. Discrete GPU exports present.
+  - 1440p (live, ELITE_DEV_WINDOW_SIZE): cockpit HUD texts in fixed pixels overlap (left console, the legs label over the
+    speed block) - a D3 symptom, NOT patched (author). 4K: the visible window is clamped to the 1920x1080 screen.
+  - OPEN: A2 axial-dock entry route split, A3 live picking / 2D <-> 3D target, A6 map display states + package states +
+    pad destroyed after clearance + generation / node index, B1-B3, C, D1 with input / TCP / autopilot / combat, D2
+    measurements per thread, D4 GL debug callback + other vendors, D5, D6 (clean Windows deps).
+  - A6 (014da2f94, source + contract): the pad service lets go when its pad is wrecked / gone during the approach;
+    client package states (assembling / ready / failed) and pad states (usable / not built / wrecked / unknown); the
+    server's no-package fallback said once; the city DAMAGE re-keyed by node NAME when a construction stage replaces the
+    package (pad nodes appear as buildings finish and shift every later index - only the destroyed flag was matched by
+    label before). Not live-tested (needs a damaged city across a stage change). The map's pad drawing / landing card by
+    state: open (the map has no client world access in that path).
+  - A3 LIVE (988409c10): a real-pixel click (pointer:click through the production input path) on block b5_1 of the ring's
+    2D plan picked building F2-08 inside it (buildings over blocks); HUD vs city space 0.000 m; the same target id and
+    plan point after the 2D -> 3D switch (DEV verb spatial:tracked).
+  - A2 (9df67fde9): a pad service taken off the deck's plan (the ring's axis) starts down the radius toward its pad (the
+    strip angle is undefined at r ~ 0). Live ring garage A1-03 via the sync gate: LANDED 104 s; the client's co-rotating
+    leg hands over above the pad, so the axial branch did not trigger (not live-proven).
+  - B1 (b88535376): the city's render epoch has its own linear / angular velocities (interpolated with the render pose);
+    ClientHubCitySpace builds each space from ONE epoch. MEASURED: render vs authoritative city velocity 1.41 / 1.65 m/s
+    (a low-orbit hub ~9 m/s2, epochs 0.16-0.3 s apart) - the earlier "mm/s" estimate was wrong.
+  - B1/B2 retained rows (b2b5c31f8): a sparse-retained ship row is advanced IN its reference frame (axes turned by the
+    frame's angular velocity, world derived). HubSpaceCheck: old rule 108.9 m world-vs-frame and 4.90 m off the deck arc
+    after 1 s on the ring; now 0 / 0. Not yet live-measured on a sparse remote ship.
+  - D2 (audit #7 correction ACCEPTED): the embedded server is NOT on the main thread - ServerWorker owns ServerRuntime on
+    its own std::thread; the client frame hands it elapsed (advance waits for the previous batch, one batch in flight).
+    The earlier PROJECT_STATE wording "runs on the main thread" was WRONG. DEV ELITE_DEV_WORKER_TIMING=1 ([WorkerTiming]
+    per 5 s, [RunnerTrace] per dropping advance). Live D:/tmp/d2 (ring hub, uncapped ~330 FPS): worker busy 18-20 % of
+    wall, client waits for the previous batch ~0.3 ms mean / 480 ms per 5 s (~10 % of the client thread at 330 FPS, ~0 at
+    60 FPS), worker idle the rest. 500 ms stall after loading: frame 520.7 ms -> accepted 250, DROPPED 270.7 ms = exactly
+    frame - ServerRunnerPolicy::maxFrameDeltaSeconds (0.25 s); the debt cap (0.5 s) and the 8-step catch-up limit lose
+    nothing (debt 90 ms drained next frame). 100 ms stall: 0 dropped. The earlier "422 ms" = the same clip on a stall that
+    overlapped the first-render GPU model load (frames 588 + 442 ms -> 338 + 192 dropped). Time limits per level: Application
+    passes the raw frame dt; SpaceState hands it to the session unclamped; ServerRunner clips 0.25 / debt 0.5 / 8 steps;
+    client prediction clamps 0.05 s; visual dt 0.02 s. Not yet measured: snapshot / command transfer cost.
+    PROPOSAL (minimal, not implemented): ServerWorker::threadMain advances by its own steady_clock (wait_until the next
+    0.02 s tick) instead of waiting for advance(elapsed); advance() becomes non-blocking (post inputs, read the last result);
+    explicit states Running / Paused (single player menu: clock frozen, accumulator reset) / Overloaded (debt over cap:
+    logged dilation, keep the 0.25 s wake clip + 0.5 s debt cap + 8-step limit so a stuck tick can never spiral) / Stopping;
+    resume resets the clock base. Fixed step 0.02 s kept. This also makes Host Game (D8) keep simulating when the host GUI
+    freezes.
+  - RADAR GLITCHES (author 2026-11-27: short display defects now and then, of different kinds). ROOT CAUSE they were
+    gone: the PPI scope's post shaders were GLSL 120 (rejected by the 4.3 core profile) AND the widget's glUseProgram was
+    replaced by core_legacy's own program at the quad draw - the effects never reached the screen. Fixed: lcd_effects /
+    crt_effects / passthrough ported to 430 core; core_legacy::setProgramOverride; the scheduler: every 20-60 s ONE defect
+    for 0.15-0.9 s (cable line, digital noise, tearing, interference, freeze = the scope holds its last frame, retention =
+    a displaced ghost). Shader bugs fixed: the cable row grew with time (floor(t*.5)-floor(t*.4)) and, like the tearing
+    rows, sat outside the flattened scope ellipse (now placed in the ellipse height). Live D:/tmp/radarglitch/montage.png:
+    cable / tearing / retention / interference / noise visible; freeze not visible on a still. CRT shader ported, not live-run
+    (no ship uses the CRT scope). DEV: ELITE_DEV_RADAR_GLITCH_LOG / _EVERY_S / _HOLD_S / _KIND.
+  - AUDIT #8 (bfaea7fc3 reviewed): accepted A1 9, A3 8, A4 8, A5 8.5, A7 8, A8 8, A9 8, A10 8 (do not rework without new
+    evidence); A2 7.5, A6 7.5, B1 6.5, B2 5.5, B3 5, C 7; D1/D2 measurements accepted; D4 radar GLSL 430 port accepted.
+  - A2 (4eb28bb8c) AUDIT WAS RIGHT: the 9df67fde9 axial branch jumped the ship (the held point IS its position; along :=
+    pad's at r > 0 moved it r * angle, up to ~R/2 * pi). HubCitySpace::takePlanPoint keeps the ship's own point; only on
+    the axis (r < 1 um) the pad's along. Velocity kept (PadLanding::entryResidualLocal, braked at the service's accel);
+    attitude was already continuous (rate-limited turn from the current one). HubSpaceCheck 96 points (r 0 .. 1.7 R x 12
+    angles): position step 5.6e-9 m, velocity 2.8e-14 m/s. Live ring A1-03 LANDED; the axial branch itself still not live.
+  - B1 (aa85da7ee): retained rows apply the ship's own engine acceleration in its frame; motion.local* rebuilt by
+    restoreMotionFromReferenceFrame (the decode rule, no second integration); the frame's universe time = the incoming
+    epoch's on the same timeline (was += the SERVER delta; universe time branches on a debug rewind). HubSpaceCheck moving /
+    thrusting / turning row: all residuals 0. OPEN: live sparse TCP remote-ship run, attached ships.
+  - D8 ANALYSIS (no code yet): NetworkServerHost (game/server) already owns one ServerRuntime and accepts / admits / reaps
+    TCP sessions (the dedicated EliteServer runs on it; EliteServer imports no GL - KERNEL32/WS2_32/libstdc++ only).
+    ServerRuntime admits any number of sessions (attachPlayerSessionTransport). Minimal Host Game: (1) D2 own clock in
+    ServerWorker first (else a frozen host GUI stalls remote players); (2) NetworkServerHost gains a constructor with the
+    local loopback transport (ServerRuntime(worldParams, transport, debug)) and ServerWorker owns it when a host port is
+    set; (3) the client already joins by TCP (TcpClientTransport, ClientPreferences last_server_endpoint). One exe for the
+    four modes: EliteGame.exe --dedicated would call the server_main loop moved into a library function before any
+    GLFW / GL init. Same server code in every mode - no second implementation.
+  - HANTEDPREVIEW (in progress): core/BuildFlavor (ELITE_PREVIEW_BUILD on one object file, in EliteNavigationGeometry so
+    both runtimes link it): own %LOCALAPPDATA%/HantedPreview (preferences, logs, journal, WebView2), the working directory
+    anchored to the exe when it has no assets/, the console window hidden on a double click, the developer shortcut strip
+    hidden. tools/preview/package_preview.sh (Release build, staging, recursive objdump DLL check, BUILD_INFO),
+    README.txt, localization_report.py, find_cyrillic_literals.py, syntax_check.py. D7 BASELINE: 1489 Cyrillic literals in
+    62 files (~1440 possibly player-visible; EconomyServer.cpp 375 = the server sends finished Russian text - D7.5
+    violated). D7 infrastructure (a40cbda59): LocalizedMessage (key + named params in the existing string fields),
+    LocalizationService::format / render, client-only tr / renderMessage. Translation pass running in five file groups.
+  - D7 LOCALIZATION PASS (ae613a154; five parallel workers by file group + lead fixes). SOURCE: Cyrillic literals in C++
+    1489 -> 182 (left: logs, DEV verbs, asset-alias tokens in MapCelestialRenderResources, the texture baker, log-only
+    rule helpers). Server / simulation text -> language-neutral Messages in the existing string fields, rendered by the
+    client (no wire schema change); client text -> one template per sentence. localization_report.py: en / ru 100 %
+    of 3341 keys, 0 placeholder mismatches, 0 keys used in code but missing; zh-Hans / es / ja miss the 1059 new keys
+    (English fallback; no language added). LocalizedMessage escaping fixed for any nesting depth (the first form broke
+    at depth 2 - found by a worker, depth-3 test passes). OPEN: data names (goods, licences, polities, 288 hub module
+    names in initial_world_state, system "Deep space: X" names in StarAtlasDatabase) are Russian-only data - need data
+    catalogs; old glued fragment maps in service.government.* / service.trade.* (taxes, mines, jobs, SOS lines);
+    ClientTradeResult.lines has no display yet. LIVE: the preview cockpit reads English (screenshot D:/tmp/pkgsmoke).
+  - D2 OWN CLOCK (ae613a154): ServerWorker advances by steady_clock (fixed 0.02 s, ServerRunner clips kept), advance() is
+    a non-blocking report; PAUSED / RESUMED explicit (IGameSession::setLocalPaused from the ESC menu path), OVERLOADED /
+    recovered logged; ELITE_SERVER_CLIENT_DRIVEN=1 = the old pipeline. LIVE D:/tmp/ownclock: render stalls 500 / 1000 ms
+    -> 0 ms dropped (before: frame - 250 ms), client wait n/a, 5.0 s simulated per 5 s wall, worker busy ~22 %;
+    ELITE_DEV_PAUSE=90:12 -> PAUSED / RESUMED, no catch-up, no overload. OPEN: TCP / remote session under the own clock,
+    window focus loss, snapshot / command transfer cost.
+  - CLEAN-PATH CHECK of the test package (D:/tmp/hanted_pkg_test, PATH = System32 + Windows only, started from D:/tmp):
+    17 non-system DLLs all loaded from the package, 0 modules from msys64 / mingw, the only non-Windows module the
+    WebView2 runtime (EmbeddedBrowserWebView.dll, a Windows component); 0 references to D:/__elite in the log. NOT done:
+    a run on a clean Windows install (VM / another PC).
+  - INCIDENT 2026-11-27 (my error): 'git worktree remove --force' on a temporary worktree whose third_party folders were
+    junctions to the main checkout EMPTIED third_party/{asio,miniaudio,websocketpp,webview,webview2} (git-ignored,
+    versions never recorded). Restored (b151f4d64): websocketpp 0.8.2 (local archive), WebView2 SDK 1.0.1150.38 (the
+    build's _deps copy), webview 0.12.0 (its default WebView2 version matches the build cache), miniaudio 0.11.21
+    (THIRD_PARTY_LICENSES), asio 1.28.2 (CHOSEN - the last with io_service for websocketpp 0.8.2; the old version is
+    unknown). Full client + server build passes. tools/fetch_third_party.sh + THIRD_PARTY_LICENSES.md record them. RULE:
+    never junction into a worktree; remove a worktree only after listing reparse points. OPEN (audit #9 P0): manifest
+    with hashes, a clean-directory build.
+  - LANDING HANG (e23d1e34c): the ring's co-rotating leg was planned from the ship's RAW frame velocity, which carries
+    omega x r (2.3 m off the axis -> 0.21 m/s, 6.2 m -> 0.56 m/s): the profile started at that phantom speed and the
+    follower stood still (Preview demo), or > 0.5 m/s replanned for ever (201 replans). omega x (r - pivot) taken off.
+    Live dev + Preview package: LANDED in 102 s.
+  - SAW-TOOTH FLY-BY (d00ab432f): a kinematic NPC inside the 100 km tactical radius was published every 0.20-0.24 s
+    (motion fidelity interval wins); its retained rows drifted ~0.2 m/s a snapshot and every fresh row yanked it back
+    (drawn speed peaks 25-35 m/s at 6-13 mean, 3-4 reversals/s; identical with the pre-B1 retained rule). Ships within
+    20 km (visualRadiusMeters) go with every snapshot: drawn 4.0 m/s, spread 0.1, 0 reversals. OPEN: the retained
+    extrapolation of farther ships still drifts (B1/B4).
+  - B4 WOBBLE (own ship in turns) - OPEN, PRE-EXISTING: A/B against 014da2f94 (this morning) 30-32 vs 23-26 drawn
+    reversals/s; the server's body rates are smooth, the client's ship transform turns unevenly snapshot to snapshot
+    (prediction / reconciliation); two render-side attempts and an error-blending attempt did not cure it (reverted).
+    DEV ELITE_DEV_ATTITUDE_TRACE=1/12, [InputQueue].
+  - D2 OWN CLOCK: opt-in again (ELITE_SERVER_OWN_CLOCK=1) - suspected for the wobble, A/B cleared it; the Preview
+    landing hang was the omega x r bug above, not the clock.
+  - HANTEDPREVIEW (702d692a6, in D:/__elite/prodaction; the previous package kept as D:/__elite/prodaction_prev_d79a60b1f):
+    the HUD shows only the terminal (TextRenderer::setSuppressed over the glass, the panel instruments let through, the
+    glass banners / cards not drawn), the stereo hidden, the radar caption hidden; route frames held / synthesized while
+    an autopilot flies; DEV actions refused by the server in the preview (RefitApply, DevFullRestore, economy DEV ops)
+    and not offered; HUD lanes / zones fade 1.5 s on station control instead of vanishing. Live from the package: flight,
+    system / hub maps, autopilot with frames, ring pad LANDED 102 s, refit without the DEV button, restart (several
+    launches), relocation (from D:/tmp and from prodaction). Trade at the ring hub: 'no economy data' (the ring has no
+    economy - not a hang). Data names still Russian there (next item).
+  - D7 DATA NAMES (063ebc987): data_terms tables (by source text) through render() / format(); 5346 distinct Cyrillic data
+    strings being translated in parallel (economy / services, ships / names, hub modules x2, world / fuel / plans,
+    galaxy, world sites).
+  - NEXT: B1 retained ship rows (advanceRetainedShipPresentation) + ship / attached-ship epochs, B2 one sampler for maps /
+    HUD / 3D, B3 the pad service route published by the server (the HUD stops rebuilding it), then C.
+
+### Architecture Stabilization Program 2026-11-27/28 - stages 0-2 (evidence: ARCHITECTURE_STABILIZATION_REPORT.md)
+- Stage 0 baseline: tag `stabilization-baseline-2026-11-27` (39fd7f5b7); protocol 60 / schema 85; third_party manifest
+  with hashes (`tools/third_party_manifest.py check`); Python contracts 185 pass / 17 baseline reds (listed in the report).
+- Stage 1 (source + live): world state moved out of function statics / namespace globals into its owners (pad service
+  place, pad release / zone-exit / take-off, strike / pad-node / combat radius caches -> GameSimulation; DEV start ->
+  GameServer; construction overrides reset per world; DEV script runner per world). Barrier
+  check_world_state_ownership.py. LIVE: two worlds in one process, world 1 destroyed mid-landing, world 2 (ship 204
+  reused) LANDED A1-03 102 s. NOT covered: concurrent worlds (economy service binding is one-world).
+- Stage 2 (source + live): render functions no longer drive state (docking widget, jump marks, terminal notice /
+  berth watch, cockpit radio moved to update). Barrier check_render_purity.py. LIVE: Preview flavor ring landing
+  LANDED 102 s. Contracts 187 pass / same 17 reds.
+- Stages 3-9 (2026-11-28; evidence in ARCHITECTURE_STABILIZATION_REPORT.md):
+  - 3 FINITE PLANNER: a retryable plan failure re-planned for ever (B2-04 EN ROUTE); now <= 3 attempts per request, then
+    refused with cockpit.dock.refused.no_route (5 languages). B2-04 reproduced live from the author's side point
+    (ELITE_DEV_START_CITY_AT=0,2810,5588): first plan infeasible, replan 1/3, LANDED 101 s. Grid tool
+    tests/planner/planner_start_grid.sh (results below when done).
+  - 4 B3: ShipExecutedRouteSnapshot (wire schema 86) - the pad service publishes the route it flies; the HUD tunnel draws
+    it; the HUD's own route reconstruction (pad route recompute, held / straight frames) removed; the docking plan stays
+    published while the same request re-plans. Live ring landing tunnel from the server's route.
+  - 5 A6 one InfrastructureState (+ stale-package defect fixed), A2 one co-rotation rule (unit 0.18 mm float limit).
+  - 8 WORLD SAVE: one generation of economy + ships committed by an atomic manifest (WorldSaveStore), verified load,
+    fallback; unit EliteWorldSaveCheck; live save -> exit -> load -> continue. docs/WORLD_SAVE_CONTRACT.md.
+  - 9 one capability policy (core::Capability), DEV switch inventory docs/DEV_SWITCHES.md (197), the preview package
+    removes ELITE_* switches at start. check_ship_ownership_authority updated to the save mechanism (same guarantee).
+  - Contracts: 189 pass / the same 17 baseline reds.
+  - Stage 3 grid (10 starts, B2-04): 6 LANDED / 4 REFUSED / 0 HANG after bounding a second loop (lift-clear) + a request
+    watchdog (240 s); the first grid had 1 HANG (recorded). Stage 7 matrix: pause / render stall / debt (fixed: 63 ms
+    dropped -> 0) / overload / client-driven comparison - own clock still OPT-IN (TCP + focus-loss runs open).
+    Clean build from an empty dir PASSED. Final scores + open items: ARCHITECTURE_STABILIZATION_REPORT.md (target >= 8
+    NOT met for B1, B2, B4, D7, D8, SpaceState decomposition).
+- 2026-11-28 audit #11 continuation (ARCHITECTURE_STABILIZATION_REPORT.md): planner recovery strategies (lanes-only,
+  then the guaranteed voxel route; refusal only for a proven enclosure) - live 4/4 formerly refused points LANDED; E3
+  progress watchdog before every early return; save 4.1-4.5 (immutable ships snapshot at the flush, load statuses, the
+  known-good generation kept, failure tests incl. a locked manifest - a real defect fixed); D2 chunks from the runner
+  policy; B4 attitude layers (partial: reversals 26.9 -> 22.3 /s, spread unchanged - OPEN).
+- 2026-11-28 B4 own-ship attitude (656731e65): per-snapshot correction 13 -> 0.35-0.57 deg (live); B1 finding - the
+  server-time estimate and the snapshot stamps are different time bases with the client-driven server (the presentation
+  clock is the consistent one). Full acceptance suite: unit x2, ring landing, Preview landing, save/continue, B2-04 side
+  PASS; two_worlds FAILED on its 700 s budget (world 2 was descending, 319 m to go) - budget raised to 900 s: re-run PASS.
+  OPEN B1/B2/B4: position layers outside HubTactical, one epoch for cockpit / HUD / maps, remote ships, the own clock as
+  the default (would make the server stamps wall-clock time).
+- OPEN ITEMS (audits #11 / #12), kept while the navigation concept review runs (no large refactor until it is done):
+  - E7 voxel fallback: the audit #12 contract (outcome categories, no planning through solids, bounded memory / time /
+    cancel, every executed segment verified, no own executor) - STOPPED by the author until a scenario proves the need;
+    the planned rewrite was not applied.
+  - B1/B2/B4: position layers outside HubTactical; the time contract (server physics time / server-time estimate /
+    universe time / presentation epoch / local monotonic) with explicit conversions; the attitude layers' lifecycle
+    (ship change, destruction, frame change, jump, reconnect, timeline reset, landing / docking); real input prediction
+    vs rate extrapolation; one presentation sample for cockpit / cameras / HUD / maps (incl. qSmooth); attitude_report.py
+    to use the measured interval; A/B on identical scenarios incl. Assisted / Newtonian / HubTactical / manual / TCP.
+  - D1/D2: the own clock's remaining runs (TCP, focus loss, minimize, render stall, pause with debt, manual flight,
+    landing, world change); clock_matrix.sh with tolerances and an exit code; then the own clock as the default.
+  - B3: one executed-route contract for the pad service / docking / fallback / maps; geometry revision vs progress.
+  - E3: progress-kind switching resets the no-progress timer - a per-request total progress budget; justify 5 m / 90 s;
+    a live run with destroyed engines + RCS; complete executor cleanup on refusal / cancel.
+  - E4: the mandatory part set (not only the manifest's), file-existence errors vs absence, part names / paths / owner
+    generation, one writer process per save, per-part schema versions, the inventory of persistent state, buy / sell /
+    transfer transactions live.
+  - C: run_acceptance.sh - the game's exit code, unknown scenario = error (done), EliteVoxelRouteCheck, per-scenario
+    expected outcome, finiteness vs success split, attitude / position checks, clean per-run dirs, revision + build config
+    + start conditions recorded; no timeout raised without the cause (the two_worlds 700 -> 900 s raise was made without
+    a timing analysis - to revisit).
+  - A6 live pad destruction during an approach; E1 concurrent worlds; E2 behaviour with rendering fully off; E5; D4 GL
+    diagnostics; D5 metrics; D7 stable localization ids; D8 after the own clock.
+- 2026-11-28 universal navigation programme, stage 1: speed-derived constraints (start lead, terminal approach) derived
+  from the FINAL request (after the hub lanes' caps) - B2-04 grid 8 / 9 valid starts LANDED on the FIRST plan (was 6 / 10
+  with replans + 3 refusals). Open: a one-off 606 s client main-thread stall with no foreground window (not reproduced).
+  Concept audit + zone inventory + moving-target baseline: docs/NAVIGATION_CONCEPT_AUDIT.md sections 11-15.
+- 2026-11-28 navigation stages 2/8, 4, 7: the open pad as its own task (the service's takeover point, no arrival
+  direction, no terminal straight; `RoutePlanRequest::terminalDirectionFree`); lane joins without the derived 700 m /
+  braking straight (the lane's own join straight + the speed profile); the real hull + mass to the dock dispatcher.
+  B2-04 grid 9 / 9 LANDED on the first plan (0 replans); ring landing PASS; plane_demo dock DOCKED.
+- 2026-11-28 navigation stages 12 / 11 / 10: voxel fallback out of the ladder (one executor); adaptive HUD frames + a
+  geometric (not visual) radius floor (routes up to 17 % shorter, grid 9 / 9 first plan); ring gate off-axis re-plan
+  recovery (traffic at the gate); one client control gate with conflict counting + the capsule in the arbitration (0
+  conflicts live). Contracts 190 / the same 17 reds.
+- 2026-11-28 navigation stages 3 + 5: the hub-frame entry keeps the ship's velocity (it zeroed it - a no-thrust stop and
+  every plan from a fictitious rest); the optimizer's entry curve (a start faster than the zone brakes down along the
+  route); moving starts 39-300 m/s all LANDED, all on the first plan after the fix. Two-stage docking: pilots take the
+  dock's waiting place (dispatcher-assigned), then the entry route on EntryCleared - live plane_demo DOCKED via hold H4.

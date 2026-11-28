@@ -1,3 +1,5 @@
+> **ИСТОРИЧЕСКИЙ ДОКУМЕНТ, НЕ НОРМАТИВНЫЙ (ревизия требований 2026-11-28).** Его нормы (включая «frozen»/«accepted», запрет выбора закона управления во время работы, числовые радиусы, прямые и скорости) не действуют, если не перенесены в `PROJECT_STATE.md`. Действующее состояние и требования — `PROJECT_STATE.md`.
+
 # Hub navigation — conceptual audit (2026-11-28, revision 2)
 
 Requested by the author before any further work on the voxel planner or a "hub envelope". Facts are from the source at

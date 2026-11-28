@@ -9786,3 +9786,7 @@ start-up hitches (render), trade step 16 part 3 live.
     a timing analysis - to revisit).
   - A6 live pad destruction during an approach; E1 concurrent worlds; E2 behaviour with rendering fully off; E5; D4 GL
     diagnostics; D5 metrics; D7 stable localization ids; D8 after the own clock.
+- 2026-11-28 universal navigation programme, stage 1: speed-derived constraints (start lead, terminal approach) derived
+  from the FINAL request (after the hub lanes' caps) - B2-04 grid 8 / 9 valid starts LANDED on the FIRST plan (was 6 / 10
+  with replans + 3 refusals). Open: a one-off 606 s client main-thread stall with no foreground window (not reproduced).
+  Concept audit + zone inventory + moving-target baseline: docs/NAVIGATION_CONCEPT_AUDIT.md sections 11-15.

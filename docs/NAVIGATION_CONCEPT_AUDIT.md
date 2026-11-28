@@ -255,3 +255,21 @@ code only), route building 1/10, execution 4/10 (the formation law reaches and h
 2/10, handover after closing 2/10. Harness for stage 9: `spawnCombatTarget` + `ELITE_DEV_RAM_STRAIGHT` (a constant-
 velocity mover) or a lane traffic ship; baselines `leg:ship:any` and `join:<id>:column:0`; the headless
 `NavigationScenarioRunner` for the planner in the frozen target frame.
+
+## 15. Stage 1 (universal navigation programme) — derived constraints from the FINAL request (2026-11-28)
+
+Cause (confirmed, section 11): the start lead and the terminal approach were derived once, from the ship's maximum speed,
+before the hub lanes capped the speeds; the direct path kept the stale values. Owner now: one helper,
+`deriveSpeedConstraints` in `updateDockingStabilizing` (SpaceStateDocking.cpp), called when the request is formed, when
+the tunnel cadence is set, and again after the hub lanes' caps - every speed-derived constraint from the final speeds; the
+terminal approach from the speed that may ARRIVE there (the geometry speed / the zone's limit), not the route maximum.
+Log `[DockDerived]` (formed 8819.84 m -> after the caps 764.787 m at the B2-04 side point). The segmented path already
+recomputed its legs (unchanged). Not a universal constant: the length follows the request's speeds, braking, hull.
+
+Grid (10 starts, B2-04, `D:/tmp/grid_stage1/summary.txt`): **8 of the 9 valid starts LANDED on the FIRST plan (0
+replans)**, 92-101 s landings; the DEV start inside the solid core (0,6000,0) refused finitely (an invalid state). Point
+(-8000,500,-8000) recorded HANG: the plan was valid at the first attempt and flown at 43 m/s when the CLIENT main thread
+stalled 606 s in one state update (`phase=state-update duration_ms=606515 ... foreground_pid=0` - no foreground window,
+likely the desktop locked at night). Its re-run: LANDED on the first plan (`D:/tmp/grid_p10`). The stall is an open
+intermittent defect (E2 / D2: the client-driven clock under a lost foreground), not a navigation one.
+Before the fix: 6 / 10 landed, 3 of them only after replans; 3 refused.

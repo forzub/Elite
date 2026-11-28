@@ -194,3 +194,64 @@ this case. The radius floor alone also unblocks it, at twice the route time (a l
 - One control writer per frame (a DEV counter of submitters per frame = 1).
 - HUD / map route = the executed route (B3 barrier), frames continuous with adaptive spacing.
 - Docks: a long-hull request gets a goal inside the capture box; the dispatcher sees the real hull.
+
+## 13. Space-access zones — inventory against the access-regulation principle (2026-11-28)
+
+The principle (the author): one dynamic system of space-access regulation; geometry and rights are separate; colour is
+DERIVED per ship (green = preferred organized traffic, blue = open to THIS ship by a permit, red = forbidden to THIS ship,
+none = free space); the server's service owns rights; planner / autopilot / HUD / maps only read. Red is a rule, not a wall.
+
+| mechanism | geometry / frame | rights | colour | server enforcement | planner use |
+|---|---|---|---|---|---|
+| hub lanes + red boxes (`HubLaneNetwork`, `hub_lanes/*.json`) | lane tubes, connectors, OBB red boxes; city module frame (rotating on rings) | none (static `maxShipLength` only) | global (`kind=="blue"` only recolours the map) | wrong-way only (players); red boxes, speed limit, size NOT enforced | red boxes = obstacles; lanes = time-cost preference (lost, section 2) |
+| navigation volumes + traffic graph (`NavigationVolume`, `TrafficRouteGraph`) | volumes in a module frame | none | policy KeepOutside / KeepInside / PreferInside, global | none | KeepInside validated (`cylinder_b.blue_lane`, hard-coded) |
+| system route zones (`route_zones.json`, `RouteZones.h`) | spheres / capsules anchored to bodies / hubs / L-points (moving) | none | fixed field | 4 Hz judge, fines (players only) | system planner: red = avoid, blue gate = via point (official) |
+| hub security (`HubSecurity`, `GameSimulationHubSecurity`) | lane tubes, defence perimeter | per-ship STATUS (warned / fined / locked), replicated | - | yes (players only) | - |
+| pads / berths (`HubPadZone*`, `occupiedBerths`) | box over each pad, city frame | per-ship reservation (pad service), replicated | **derived per viewer** (HubCorridorHudRenderer:338-356) | capture does NOT check the berth right | - |
+| hex-dock dispatcher (`DockTrafficController`) | none for its resources (`outer_lane`, `chamber_lane`); the corridor = hard-coded thresholds | **per-ship clearance, revision, holder** - server-owned, replicated, the same for NPCs and players | HUD terminal | admission / queue; an uncleared ship in the corridor is not judged | not used (timing only) |
+| J keep-out (`JDrive`) | 20 km objects / 5 km ships | - | - | refusal / drop (all ships) | arrival aim point |
+| interstellar lane records | jump lanes | per-ship knowledge | - | - | jump route |
+
+Matches the principle: the dock dispatcher (server-owned per-ship rights, one mechanism for NPCs and players) and the berth
+colour derived per viewer. Does not: everything else is a global colour without an owner / permit / validity; three
+private geometry types; enforcement for players only; red boxes / speed limits / uncleared corridor entry not judged.
+
+Proposed base (one contract, no parallel system): geometry = `NavigationVolumeDefinition` (+ converters from lane tubes,
+red boxes, route-zone primitives, pad boxes, an AUTHORED dock corridor); rights = the `DockTrafficController` pattern
+generalised into a server zone-access service (per ship per zone: open / permit / forbidden, permit id, validity,
+revision; dock clearances and berth reservations become its grants), replicated per ship like
+`ShipDockDispatcherSnapshot`; colour = one shared function `f(policy, access)` for planner, HUD and map; the planner maps
+forbidden-for-me -> obstacle, blue-for-me -> KeepInside stage, green -> PreferInside cost; one judge for all ships,
+violations separate from collisions. To be implemented with stage 6 of the universal-navigation programme.
+
+## 14. Moving-target navigation (rendezvous / intercept) — baseline (2026-11-28, source audit)
+
+The universal planner cannot pose or fly an intercept today. What exists chases a moving ship by per-tick velocity laws:
+- `RouteLegPilot` ship leg (RouteLegPilot.cpp:144-180): the target's CURRENT position + velocity, no lead; arrival
+  < 1500 m / < 20 m/s; ends in Stabilization (a hub / own orbit), no handover to formation.
+- Formation (SpaceStateFormation.cpp:65-151, FormationGuidance.h): Wide -> Behind -> Close -> Hold, slot offsets,
+  re-solved every frame; position from the leader's interpolated render pose, velocity from its raw transform (an epoch
+  mix - to check).
+- NPC slot tracking (`TrackFormationSlot`): `v = v_target + clamp(k dp)` toward a KNOWN script point.
+- NPC combat / the DEV rammer (GameSimulationCombat.cpp:1056-1212): server-truth finite-difference tracks; it overwrites
+  orientation and velocity directly - bypasses the ship plant and both control laws.
+- Missiles: proportional-navigation-like.
+- Evasion: constant-velocity threat prediction, 12 s horizon (avoidance only).
+
+Gaps for a planner-based intercept: no time-parameterized goal or goal velocity in `RoutePlanRequest` / the optimizer
+(boundary state = position, tangent, speed; no clock); obstacles static; no ship-fixed reference frame / carry-back (the
+co-rotating map exists for ring pads only); the docking entry takes semantic anchors / hub frames only; no intercept-point
+solver; no rendezvous -> hold handover; no target-manoeuvre replan trigger; NPC pursuit outside the plant.
+
+The precedent to reuse: the ring pad's co-rotating map (CityCoRotationMap.h, SpaceStateDocking.cpp:749-790) - a route
+planned against a target frozen at t0, the ship's state carried into that frame every tick. A translating target's frame
+is Galilean (pointToMap = p - (p_T0 + v_T (t - t0)), vectorToMap = v - v_T): "stop at the slot in the target frame" =
+"match its velocity at the slot". `KinematicFrame` already carries velocity / acceleration. Legitimate target data: the
+replicated transform (+ velocity), radar `RadarScanReport` (relative position / velocity + uncertainty + latency, no
+acceleration), never the target's commands.
+
+Readiness (baseline, before stage 9): task posing 2/10, target prediction 3/10 (constant velocity exists in the evasion
+code only), route building 1/10, execution 4/10 (the formation law reaches and holds), robustness to target manoeuvres
+2/10, handover after closing 2/10. Harness for stage 9: `spawnCombatTarget` + `ELITE_DEV_RAM_STRAIGHT` (a constant-
+velocity mover) or a lane traffic ship; baselines `leg:ship:any` and `join:<id>:column:0`; the headless
+`NavigationScenarioRunner` for the planner in the frozen target frame.

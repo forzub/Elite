@@ -3406,26 +3406,31 @@ void SpaceState::updateDockingStabilizing(Frame& f)
     request.initialSpeedMps = glm::length(startVelocityMps);
 
     request.assistedCompactStartLead = assisted;
-    request.initialForwardLeadMeters =
-        assisted
-            ? game::navigation::OrdinaryRoutePolicy::
-                requiredAssistedStartLeadMeters(
-                    request.initialSpeedMps,
-                    request.maxSpeedMps,
-                    request.brakingMps2,
-                    request.lateralMps2,
-                    request.maxAngularVelocityRadPerSecond,
-                    hull.lengthMeters
-                )
-            : game::navigation::OrdinaryRoutePolicy::
-            requiredStartLeadMeters(
-                request.initialSpeedMps,
-                request.maxSpeedMps,
-                request.brakingMps2,
-                request.lateralMps2,
-                request.maxAngularVelocityRadPerSecond,
-                hull.lengthMeters
-            );
+    // THE SPEED-DERIVED CONSTRAINTS of the request (navigation stage 1, 2026-11-28): the start lead and the terminal
+    // approach are FUNCTIONS of the request's final speeds / accelerations / hull - derived here, and derived AGAIN after
+    // anything changes those speeds (the hub lanes' cap 500 -> 150 m/s). B2-04: the terminal straight stayed the 500 m/s
+    // one (8820 m on an 8374 m route) - the task was infeasible as posed (docs/NAVIGATION_CONCEPT_AUDIT.md section 11).
+    // The terminal approach is sized from the speed that may ARRIVE there: the geometry speed (the zone's limit), not the
+    // route maximum.
+    const double maxEntrySpeedForTerminal = definition->maxEntrySpeedMps;
+    const auto deriveSpeedConstraints = [&](const char* why) {
+        request.initialForwardLeadMeters =
+            assisted
+                ? game::navigation::OrdinaryRoutePolicy::requiredAssistedStartLeadMeters(
+                      request.initialSpeedMps, request.maxSpeedMps, request.brakingMps2, request.lateralMps2,
+                      request.maxAngularVelocityRadPerSecond, hull.lengthMeters)
+                : game::navigation::OrdinaryRoutePolicy::requiredStartLeadMeters(
+                      request.initialSpeedMps, request.maxSpeedMps, request.brakingMps2, request.lateralMps2,
+                      request.maxAngularVelocityRadPerSecond, hull.lengthMeters);
+        if (assisted)
+            request.terminalApproachLengthMeters = game::navigation::OrdinaryRoutePolicy::requiredTerminalApproachMeters(
+                request.geometrySpeed(), maxEntrySpeedForTerminal, request.brakingMps2, request.terminalReferenceDistanceMeters,
+                hull.lengthMeters);
+        std::cerr << "[DockDerived] request=" << pending.serial << " " << why << ": route max " << request.maxSpeedMps
+                  << " m/s, geometry " << request.geometrySpeed() << " m/s -> start lead " << request.initialForwardLeadMeters
+                  << " m, terminal approach " << request.terminalApproachLengthMeters << " m" << std::endl;
+    };
+    deriveSpeedConstraints("formed");
 
     std::cout
         << "[DockEntryPolicy]"
@@ -3464,18 +3469,8 @@ void SpaceState::updateDockingStabilizing(Frame& f)
 
     if (assisted)
     {
-        // Ordinary terminal geometry is sized from the speed that may
-        // arrive at the final approach and the actual terminal crossing
-        // limit. Speed yields to geometry; no fixed 9 km approach.
-        request.terminalApproachLengthMeters =
-            game::navigation::OrdinaryRoutePolicy::
-                requiredTerminalApproachMeters(
-                    request.maxSpeedMps,
-                    definition->maxEntrySpeedMps,
-                    request.brakingMps2,
-                    request.terminalReferenceDistanceMeters,
-                    hull.lengthMeters
-                );
+        // (the terminal approach length is one of the speed-derived constraints: deriveSpeedConstraints)
+        deriveSpeedConstraints("tunnel cadence set");
         request.terminalTurnSegmentFraction = 0.85;
         request.deriveTerminalTurnRadiusFromVehicle = true;
     }
@@ -3631,6 +3626,8 @@ void SpaceState::updateDockingStabilizing(Frame& f)
                 request.mandatoryTangentStraights = std::move(r.request.mandatoryTangentStraights);
             }
             std::cerr << "[HubLanes] request=" << pending.serial << " " << log << std::endl;
+            // the lanes changed the speeds (the hub cap, the craft cap): every speed-derived constraint again
+            deriveSpeedConstraints("after the hub lanes' speed caps");
             // a city pad whose straight way beats every lane chain (a free metre costs FreeInHubFactor x a lane metre,
             // author 2026-11-22: «надо иметь баланс ... это не значит, что я должен лететь вниз в зелёную зону») from a
             // ship already over the city: the pad service flies it straight across over the roofs, round the towers -

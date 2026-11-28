@@ -28,8 +28,21 @@ struct WorldSavePart
     std::string text;
 };
 
+// what load() found (audit #11 4.2 - every case told apart; none of the failures falls back to the legacy layout)
+enum class WorldSaveStatus
+{
+    None,                 // no save at all (no manifest, no legacy file)
+    Loaded,               // the manifest's generation, verified
+    LoadedPrevious,       // the newest generation damaged / incomplete - the previous one, verified
+    Legacy,               // no manifest: the pre-manifest layout
+    ManifestCorrupt,      // a manifest exists and cannot be read (never written over)
+    VersionUnsupported,   // a manifest of another format version (never written over)
+    NoUsableGeneration    // a readable manifest, but neither generation verifies (never written over)
+};
+
 struct WorldSaveLoaded
 {
+    WorldSaveStatus status = WorldSaveStatus::None;
     bool found = false;               // a manifest (or the legacy files) exists
     bool legacy = false;              // read from the pre-manifest layout
     std::uint64_t generation = 0;
@@ -54,6 +67,12 @@ public:
     static bool commit(const std::string& base, const std::vector<WorldSavePart>& parts, std::string* error = nullptr);
     // the parts of the newest complete, verified generation (or the legacy layout)
     [[nodiscard]] static WorldSaveLoaded load(const std::string& base);
+    // a load that must NOT be followed by saving over the files (they may be repairable by hand)
+    [[nodiscard]] static bool protectsFiles(WorldSaveStatus s) noexcept
+    {
+        return s == WorldSaveStatus::ManifestCorrupt || s == WorldSaveStatus::VersionUnsupported ||
+               s == WorldSaveStatus::NoUsableGeneration;
+    }
     // FNV-1a 64 over the bytes (the integrity check of a part)
     [[nodiscard]] static std::uint64_t fnv1a64(const std::string& bytes);
 };

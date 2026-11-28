@@ -403,6 +403,12 @@ target_include_directories(EliteHubSpaceCheck PRIVATE src "${CMAKE_SOURCE_DIR}")
 target_compile_features(EliteHubSpaceCheck PRIVATE cxx_std_17)
 target_link_libraries(EliteHubSpaceCheck PRIVATE nlohmann_json::nlohmann_json EliteNavigationWorldRuntime)
 
+# The guaranteed route (VoxelRoutePlanner.h): the author's geometric cases
+add_executable(EliteVoxelRouteCheck tests/planner/VoxelRouteCheck.cpp)
+target_include_directories(EliteVoxelRouteCheck PRIVATE src "${CMAKE_SOURCE_DIR}")
+target_compile_features(EliteVoxelRouteCheck PRIVATE cxx_std_17)
+target_link_libraries(EliteVoxelRouteCheck PRIVATE EliteNavigationGeometry)
+
 # Stabilization stage 8: the world save contract (one generation of all parts, one commit, verified load)
 add_executable(EliteWorldSaveCheck
     tests/world_save/WorldSaveCheck.cpp

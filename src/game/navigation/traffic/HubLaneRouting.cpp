@@ -117,7 +117,10 @@ CompiledTrafficRoute applyHubLanes(
     auto freeLegs = freeLegModelFor(request, handoff);
     freeLegs.freeSpeedMps = request.maxSpeedMps;   // the chain is costed in time at the free legs' real cruise
     freeLegs.goalByService = request.endAtLaneExit;
-    freeLegs.serviceDirect = request.serviceDirectAllowed;
+    freeLegs.serviceDirect = request.serviceDirectAllowed && !request.forbidDirectFreeLeg;
+    freeLegs.forbidDirect = request.forbidDirectFreeLeg;
+    if (request.forbidDirectFreeLeg)
+        text << "recovery=lanes_only ";
     text << "free_legs{join_approach_m=" << freeLegs.joinApproachMeters << " turn_r_m=" << freeLegs.turnRadiusMeters
          << " exit_min_m=" << freeLegs.exitMinimumMeters << "} ";
     std::string summary;

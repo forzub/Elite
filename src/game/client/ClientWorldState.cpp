@@ -4,6 +4,7 @@
 #include "src/game/client/ClientSpatialDomain.h"
 #include "src/game/client/ReferenceFramePresentation.h"
 #include "src/game/client/ClientHubTacticalPrediction.h"
+#include "src/game/shared/SharedShipPhysics.h"
 #include "src/game/client/SnapshotPresentationWindow.h"
 #include "src/game/network/ReplicationSnapshotMerge.h"
 #include "src/game/client/presentation/LocalPredictedPresentation.h"
@@ -859,6 +860,13 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.materializedFidelity = s.materializedFidelity;
             state.transform = s.transform;
             state.referenceFrame = s.referenceFrame;
+            if (isLocalControlledEntity(EntityId {s.id}))
+            {
+                // B4: the authoritative attitude layer, raw (before any replay / prediction rewrites state.transform)
+                m_ownAttitude.valid = true;
+                m_ownAttitude.snapshot = s.transform;
+                m_ownAttitude.snapshotServerTimeSeconds = snapshot.metadata.serverTimeSeconds;
+            }
             if (const auto* execution =
                     std::get_if<
                         game::simulation::NavigationExecutionSnapshot
@@ -1353,7 +1361,8 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
 void ClientWorldState::update(
     float dt,
     bool authoritativePlayerRendering,
-    double renderServerTimeSeconds
+    double renderServerTimeSeconds,
+    double estimatedServerTimeNowSeconds
 )
 {
     m_presentationServerTimeSeconds = renderServerTimeSeconds;
@@ -1517,6 +1526,49 @@ void ClientWorldState::update(
                     ship.referenceFrame,
                     dt
                 );
+            // B4: the own ship's ORIENTATION from its layers (ELITE_DEV_ATTITUDE_LEGACY=1: the old exponential chase, A/B)
+            static const bool attitudeLegacy = [] {
+                const char* v = std::getenv("ELITE_DEV_ATTITUDE_LEGACY");
+                return v && *v == '1';
+            }();
+            auto& L = m_ownAttitude;
+            if (!attitudeLegacy && L.valid && estimatedServerTimeNowSeconds > 0.0 &&
+                L.snapshot.motion.systemId == ship.transform.motion.systemId)
+            {
+                constexpr double MaxHorizonSeconds = 0.30, CorrectionTauSeconds = 0.12, SnapDeg = 25.0;
+                const double now = std::max(estimatedServerTimeNowSeconds, L.lastNowSeconds);   // never backwards
+                L.lastNowSeconds = now;
+                ShipTransform predicted = L.snapshot;
+                const double horizon = std::clamp(now - L.snapshotServerTimeSeconds, 0.0, MaxHorizonSeconds);
+                if (horizon > 0.0)
+                    SharedShipPhysics::propagateOrientation(predicted, static_cast<float>(horizon));
+                const glm::quat qPred = glm::normalize(glm::quat_cast(glm::mat3(predicted.orientation)));
+                if (L.consumedSnapshotTime != L.snapshotServerTimeSeconds)
+                {
+                    // a new authoritative state: what was presented, expressed against the new prediction
+                    L.consumedSnapshotTime = L.snapshotServerTimeSeconds;
+                    L.correction = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+                    if (L.presentedValid)
+                    {
+                        const glm::quat err = glm::normalize(L.presented * glm::inverse(qPred));
+                        const float angle = 2.0f * std::acos(std::clamp(std::abs(err.w), 0.0f, 1.0f));
+                        if (glm::degrees(angle) < SnapDeg)
+                            L.correction = err;
+                    }
+                    L.correctionAtSeconds = now;
+                }
+                const float keep = static_cast<float>(std::exp(-(now - L.correctionAtSeconds) / CorrectionTauSeconds));
+                const glm::quat corr = glm::slerp(glm::quat(1.0f, 0.0f, 0.0f, 0.0f), L.correction, keep);
+                const glm::quat presented = glm::normalize(corr * qPred);
+                L.presented = presented;
+                L.presentedValid = true;
+                const glm::mat3 R = glm::mat3_cast(presented);
+                glm::mat4 o(R);
+                o[3] = ship.renderTransform.orientation[3];
+                ship.renderTransform.orientation = o;
+            }
+            else
+                L.presentedValid = false;
 
             if (ship.referenceFrame.valid)
             {

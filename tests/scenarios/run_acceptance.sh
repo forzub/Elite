@@ -51,9 +51,12 @@ for s in $SCEN; do
         mkdir -p "$OUT/save"
         game "$OUT/save1.log" 70 ELITE_DEV_START=hub:earth_orbital_hub@10 ELITE_ECONOMY_STATE_FILE="$OUT/save/w.json" \
             "ELITE_DEV_SOL_MAP_SCRIPT=25:econ:days:1"
+        # run 2 restores the LAST generation run 1 committed (run 1 commits on changes and at shutdown), then commits newer
+        g1=$(grep -o '"generation": [0-9]*' "$OUT/save/w.json.manifest.json" | head -1 | grep -o '[0-9]*$')
         game "$OUT/save2.log" 70 ELITE_DEV_START=hub:earth_orbital_hub@10 ELITE_ECONOMY_STATE_FILE="$OUT/save/w.json" \
             "ELITE_DEV_SOL_MAP_SCRIPT=25:econ:days:1"
-        if grep -aq "restored from .* generation 1" "$OUT/save2.log" && grep -q '"generation": 2' "$OUT/save/w.json.manifest.json"; then
+        g2=$(grep -o '"generation": [0-9]*' "$OUT/save/w.json.manifest.json" | head -1 | grep -o '[0-9]*$')
+        if [ -n "$g1" ] && grep -aq "restored from .* generation $g1 " "$OUT/save2.log" && [ "${g2:-0}" -gt "$g1" ]; then
             verdict save_continue PASS
         else verdict save_continue FAIL; fi ;;
     b204_side)
@@ -65,3 +68,5 @@ for s in $SCEN; do
     esac
 done
 echo "---"; grep -c "PASS" "$report" | xargs echo "passed:"; grep -c "FAIL" "$report" | xargs echo "failed:"
+grep -q "FAIL" "$report" && exit 1
+exit 0

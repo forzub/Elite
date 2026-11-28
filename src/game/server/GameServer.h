@@ -467,7 +467,7 @@ public:
     std::uint64_t m_shipsSavedTick = 0;
     std::uint64_t m_shipsSaveRetryTick = 0;   // after a FAILED write: not before this tick
     void saveRuntimeShips();
-    std::string m_shipsJson;   // stage 8: the ships part of the next world-save generation
+    std::string buildRuntimeShipsJson();   // audit #11 4.1: the ships part, serialized at the generation's flush
     void restoreRuntimeShipsIfDue();
     // the employment service: the employer's ship and the pilot's own ship to go back to
     struct Hire

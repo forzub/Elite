@@ -91,6 +91,9 @@ if not hire or "registerShipInstance(" not in hire:
 
 # 5. persistence: the owner rides the ship save and comes back
 save = function_body(server, "void GameServer::saveRuntimeShips()")
+# audit #11 4.1: the rows are serialized by buildRuntimeShipsJson at the generation's flush - the save's content checks read both
+saveRows = function_body(server, "std::string GameServer::buildRuntimeShipsJson()") or ""
+save = (save or "") + saveRows if (save or saveRows) else save
 restore = function_body(server, "void GameServer::restoreRuntimeShipsIfDue()")
 if not save or "owner_player" not in save:
     failures.append("saveRuntimeShips does not write owner_player")
@@ -110,7 +113,7 @@ if save:
     # failed generation until written (never dropped)
     w = save.find("m_economy.companionChanged(")
     d = save.find("m_shipsDirty = false", w)
-    if w < 0 or d < 0 or "m_shipsJson = " not in save[:w]:
+    if w < 0 or d < 0 or "buildRuntimeShipsJson()" not in server:   # audit #11 4.1: built at the generation's flush
         failures.append("saveRuntimeShips: the dirty flag must be cleared only AFTER the ships part is handed to the world save")
     eco = (ROOT / "src" / "game" / "economy" / "EconomyServer.cpp").read_text(encoding="utf-8")
     if "WorldSaveStore::commit(path, generation" not in eco or "unsaved = generation" not in eco:

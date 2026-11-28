@@ -213,6 +213,13 @@ void ServerWorker::threadMain(
             const auto step = std::chrono::duration_cast<Clock::duration>(std::chrono::duration<double>(runtime.fixedStepSeconds()));
             auto last = Clock::now();
             bool overloaded = false;
+            // this run's clock account and DEV stall schedule (owned by the worker run, stabilization stage 1)
+            const auto clockStart = Clock::now();
+            auto reportAt = clockStart + std::chrono::seconds(10);
+            double simulatedTotal = 0.0;
+            const auto workerStart = clockStart;
+            std::vector<std::pair<double, double>> stalls;
+            bool stallsLoaded = false;
             while (true)
             {
                 {
@@ -239,7 +246,9 @@ void ServerWorker::threadMain(
                 // frame clip (250 ms, made for the client-driven frame) cut a stall the debt cap (500 ms) can carry. The
                 // own clock hands its elapsed time in <= FrameChunk pieces while the debt can absorb them; the rest
                 // goes in one last call, which the runner clips - dropped explicitly and counted, as before.
-                constexpr double FrameChunk = 0.25, CarryLimit = 0.75;   // the frame cap + the debt cap
+                // the runner's own policy (audit #11 D2: no second copy of its numbers)
+                const double FrameChunk = runtime.tickPolicy().maxFrameDeltaSeconds;
+                const double CarryLimit = FrameChunk + runtime.tickPolicy().maxAccumulatedDebtSeconds;
                 ServerAdvanceResult result;
                 {
                     double left = elapsedSeconds, carried = 0.0;
@@ -275,9 +284,6 @@ void ServerWorker::threadMain(
                 // the clock's account (stabilization stage 7, the D2 matrix): every 10 s of wall time - wall vs simulated,
                 // dropped, debt - so pause / overload / debt runs are judged from the log, not inferred
                 {
-                    static const auto clockStart = Clock::now();
-                    static auto reportAt = clockStart + std::chrono::seconds(10);
-                    static double simulatedTotal = 0.0;
                     simulatedTotal += result.simulatedSeconds;
                     if (now >= reportAt)
                     {
@@ -290,7 +296,7 @@ void ServerWorker::threadMain(
                 // DEV (stage 7): ELITE_DEV_WORKER_STALL=<worker s>:<ms>[,...] - the WORKER blocks once at each time (an
                 // overloaded server tick), to see the debt, the catch-up clip and the drop
                 {
-                    static std::vector<std::pair<double, double>> stalls = [] {
+                    static const std::vector<std::pair<double, double>> stallSpec = [] {
                         std::vector<std::pair<double, double>> out;
                         if (const char* v = std::getenv("ELITE_DEV_WORKER_STALL"))
                         {
@@ -309,8 +315,12 @@ void ServerWorker::threadMain(
                         }
                         return out;
                     }();
-                    static const auto workerStart = Clock::now();
                     const double t = std::chrono::duration<double>(now - workerStart).count();
+                    if (!stallsLoaded)
+                    {
+                        stalls = stallSpec;   // the parsed environment (constant); this run consumes its own copy
+                        stallsLoaded = true;
+                    }
                     for (auto& st : stalls)
                         if (st.second > 0.0 && t >= st.first)
                         {

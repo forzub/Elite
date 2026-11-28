@@ -319,40 +319,6 @@ CompiledTrafficRoute HubLaneNetwork::chooseRoute(
     // a goal reached by a service (a city pad): the straight way costs FreeInHubFactor per metre whether or not a free
     // leg fits it (the service flies it, not the planner) - balanced against the lane chains (author 2026-11-22: «надо
     // иметь баланс»)
-    if (freeLegs.goalByService && freeLegs.serviceDirect)
-        relax(goal, serviceTime(glm::length(goalWorld - shipWorld)), count, EdgeFromShip);
-    else   // the planner flies the straight way itself: its own free-leg cost (Inf when it has no room)
-    {
-        // ... and in a city it never cuts through a lane's tube (author 2026-11-22: «пролетает сквозь тоннели. Это не
-        // безопасно»): a straight that passes inside any tube (but near its own ends) is no way - the lanes are taken
-        bool cutsTube = false;
-        if (freeLegs.goalByService && std::isfinite(direct))
-        {
-            const glm::dvec3 a = leadEnd, b = goalApproach;
-            const double len = glm::length(b - a);
-            const int n = std::max(1, static_cast<int>(len / 25.0));
-            for (int i = 1; i < n && !cutsTube; ++i)
-            {
-                const glm::dvec3 q = a + (b - a) * (static_cast<double>(i) / n);
-                if (glm::length(q - shipWorld) < 300.0 || glm::length(q - goalWorld) < 300.0)
-                    continue;
-                for (std::size_t l = 0; l < laneCount && !cutsTube; ++l)
-                    for (std::size_t k = 0; k + 1 < P[l].size(); ++k)
-                    {
-                        const glm::dvec3 s0 = P[l][k], s1 = P[l][k + 1], d = s1 - s0;
-                        const double t = std::clamp(glm::dot(q - s0, d) / std::max(glm::dot(d, d), 1.0e-9), 0.0, 1.0);
-                        if (glm::length(q - (s0 + d * t)) < m_lanes[l].radiusMeters + agentRadiusMeters)
-                        {
-                            cutsTube = true;
-                            break;
-                        }
-                    }
-            }
-        }
-        if (!cutsTube)
-            relax(goal, std::isfinite(direct) ? direct : freeTime(glm::length(goalWorld - shipWorld)) + 1.0e6, count,
-                  EdgeFromShip);
-    }
     int entriesOk = 0, exitsTried = 0, exitsOk = 0;
     for (std::size_t l = 0; l < laneCount; ++l)
         if (usable[l])
@@ -366,6 +332,44 @@ CompiledTrafficRoute HubLaneNetwork::chooseRoute(
                               laneTime(JoinStraightMeters, m_lanes[l].maxSpeedMps),
                           count, EdgeFromShip);
             }
+    // the direct way (ship -> goal) - not in a lanes-only recovery attempt while a lane entry exists
+    if (!freeLegs.forbidDirect || entriesOk == 0)
+    {
+        if (freeLegs.goalByService && freeLegs.serviceDirect)
+            relax(goal, serviceTime(glm::length(goalWorld - shipWorld)), count, EdgeFromShip);
+        else   // the planner flies the straight way itself: its own free-leg cost (Inf when it has no room)
+        {
+            // ... and in a city it never cuts through a lane's tube (author 2026-11-22: «пролетает сквозь тоннели. Это не
+            // безопасно»): a straight that passes inside any tube (but near its own ends) is no way - the lanes are taken
+            bool cutsTube = false;
+            if (freeLegs.goalByService && std::isfinite(direct))
+            {
+                const glm::dvec3 a = leadEnd, b = goalApproach;
+                const double len = glm::length(b - a);
+                const int n = std::max(1, static_cast<int>(len / 25.0));
+                for (int i = 1; i < n && !cutsTube; ++i)
+                {
+                    const glm::dvec3 q = a + (b - a) * (static_cast<double>(i) / n);
+                    if (glm::length(q - shipWorld) < 300.0 || glm::length(q - goalWorld) < 300.0)
+                        continue;
+                    for (std::size_t l = 0; l < laneCount && !cutsTube; ++l)
+                        for (std::size_t k = 0; k + 1 < P[l].size(); ++k)
+                        {
+                            const glm::dvec3 s0 = P[l][k], s1 = P[l][k + 1], d = s1 - s0;
+                            const double t = std::clamp(glm::dot(q - s0, d) / std::max(glm::dot(d, d), 1.0e-9), 0.0, 1.0);
+                            if (glm::length(q - (s0 + d * t)) < m_lanes[l].radiusMeters + agentRadiusMeters)
+                            {
+                                cutsTube = true;
+                                break;
+                            }
+                        }
+                }
+            }
+            if (!cutsTube)
+                relax(goal, std::isfinite(direct) ? direct : freeTime(glm::length(goalWorld - shipWorld)) + 1.0e6, count,
+                      EdgeFromShip);
+        }
+    }
     while (!open.empty())
     {
         const auto [d, s] = open.top();

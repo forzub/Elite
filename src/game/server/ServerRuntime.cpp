@@ -147,6 +147,11 @@ double ServerRuntime::fixedStepSeconds() const
     return m_runner->fixedStepSeconds();
 }
 
+const ServerTickPolicy& ServerRuntime::tickPolicy() const
+{
+    return m_runner->policy();
+}
+
 game::diagnostics::NavigationRuntimeLabObservation
 ServerRuntime::navigationRuntimeLabObservation() const noexcept
 {

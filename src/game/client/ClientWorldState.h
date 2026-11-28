@@ -200,7 +200,8 @@ public:
     void update(
         float dt,
         bool authoritativePlayerRendering,
-        double renderServerTimeSeconds
+        double renderServerTimeSeconds,
+        double estimatedServerTimeNowSeconds = -1.0
     );
 
     const std::unordered_map<uint32_t, ClientShipState>& ships() const {return m_ships;}
@@ -232,6 +233,28 @@ public:
         return m_localControlledEntityId;
     }
 
+    // B4 (stabilization, audit #11): THE OWN SHIP'S ATTITUDE LAYERS - one owner, here.
+    //   authoritative: the last snapshot's orientation + body rates + its server time (kept raw: the replay overwrites
+    //                  ShipTransform with a predicted copy);
+    //   predicted:     that snapshot propagated by its own rates to "now" (the client's server-time estimate) - in every
+    //                  motion mode (only HubTactical extrapolated before: a 16.7 Hz staircase elsewhere);
+    //   correction:    on a new snapshot, the rotation from the new prediction to what was presented, decayed (tau);
+    //                  a jump > SnapDeg is taken at once;
+    //   presentation:  correction o predicted -> renderTransform.orientation (no exponential chase of a stepping target:
+    //                  that turned every snapshot into a rate pulse, the 23-32 reversals / s).
+    struct OwnShipAttitudeLayers
+    {
+        bool valid = false;
+        double snapshotServerTimeSeconds = -1.0;
+        ShipTransform snapshot;                 // orientation + rates as received
+        double consumedSnapshotTime = -1.0;     // the snapshot the correction was taken for
+        glm::quat correction {1.0f, 0.0f, 0.0f, 0.0f};
+        double correctionAtSeconds = 0.0;
+        bool presentedValid = false;
+        glm::quat presented {1.0f, 0.0f, 0.0f, 0.0f};
+        double lastNowSeconds = -1.0;
+    };
+    [[nodiscard]] const OwnShipAttitudeLayers& ownShipAttitudeLayers() const noexcept { return m_ownAttitude; }
     bool isLocalControlledEntity(EntityId id) const noexcept
     {
         return game::client::isLocalControlledEntity(
@@ -347,6 +370,8 @@ public:
     void clearLocalPredictedPresentation() noexcept;
 
 private:
+    OwnShipAttitudeLayers m_ownAttitude;   // B4: the own ship's attitude layers
+
 
     std::unordered_map<uint32_t, ClientShipState>   m_ships;
     std::unordered_map<uint32_t, ClientObjectState> m_objects;

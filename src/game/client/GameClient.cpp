@@ -992,7 +992,8 @@ void GameClient::updateGameplay(
     m_world.update(
         simulationDt,
         trajectoryDebugMode,
-        renderServerTimeSeconds()
+        renderServerTimeSeconds(),
+        estimatedServerTimeSeconds()   // B4: the predicted attitude layer's clock
     );
 }
 

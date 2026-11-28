@@ -138,9 +138,9 @@ GameServer::~GameServer()
 {
     // the world save's last generation: the ships and the economy together, while the ships' owners still exist (the
     // members are destroyed after this body; the economy's own destructor would otherwise call a provider into them)
-    if (!m_runtimeShips.empty() && !m_economy.stateFilePath().empty())
+    if (!m_economy.stateFilePath().empty())
         saveRuntimeShips();
-    m_economy.flushFinal();
+    m_economy.flushFinal();   // the provider builds the ships part in this call, while the owners exist
     m_economy.setCompanionProvider({});   // its last parts stay with the economy (written again if it is dirty later)
 }
 
@@ -565,9 +565,11 @@ m_simulation.setCelestialBodyKinematicStateAu(
             m_economy.start(game::economy::EconomyModel::dayOf(universeTime));
             // stage 8: the runtime ships are a part of the economy's world-save generation
             m_economy.setCompanionProvider([this] {
+                // built NOW, in the flush's tick, from the live owners (audit #11 4.1); before the saved ships are restored
+                // nothing (the loaded part is kept - an empty list would erase them)
                 std::vector<game::economy::WorldSavePart> parts;
-                if (!m_shipsJson.empty())
-                    parts.push_back({"ships", m_shipsJson});
+                if (m_shipsRestored)
+                    parts.push_back({"ships", buildRuntimeShipsJson()});
                 return parts;
             });
             for (const auto& [playerValue, player] : m_players.all())
@@ -2779,15 +2781,23 @@ std::string GameServer::transferPlayerControl(PlayerId playerId, EntityId target
     return {};
 }
 
+// audit #11 4.1: the ships part is SERIALIZED WHEN THE GENERATION IS MADE (the economy's flush calls the provider in that
+// server tick) - an immutable snapshot of the owners' state of ONE tick; saveRuntimeShips only marks the change
 void GameServer::saveRuntimeShips()
 {
-    const std::string path = m_economy.stateFilePath();
-    if (path.empty())
+    if (m_economy.stateFilePath().empty())
     {
         m_shipsDirty = false;   // nothing to persist to
         m_shipsSavedTick = m_serverTick;
         return;
     }
+    m_economy.companionChanged("ships", m_shipsDirty);
+    m_shipsDirty = false;
+    m_shipsSavedTick = m_serverTick;
+}
+
+std::string GameServer::buildRuntimeShipsJson()
+{
     nlohmann::json j;
     j["schema"] = "runtime_ships/2";   // 2: owner (ShipOwnershipRegistry) + unresolved legacy ownership
     j["next_instance"] = m_nextBoughtShipInstance;
@@ -2835,10 +2845,7 @@ void GameServer::saveRuntimeShips()
     // the "saved" state only after the write succeeded: a failed write stays dirty and is retried on the next tick
     // that allows it (not an hour later by the periodic save)
     // stage 8: the ships are committed WITH the economy (one generation, WorldSaveStore) - not a file of their own
-    m_shipsJson = j.dump(1);
-    m_economy.companionChanged("ships", m_shipsDirty);
-    m_shipsDirty = false;
-    m_shipsSavedTick = m_serverTick;
+    return j.dump(1);
 }
 
 void GameServer::restoreRuntimeShipsIfDue()

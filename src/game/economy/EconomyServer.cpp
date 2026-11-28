@@ -759,7 +759,7 @@ void EconomyServer::start(int day)
         const WorldSaveLoaded loaded = WorldSaveStore::load(m_stateFile);   // stage 8: one verified generation
         if (!loaded.note.empty())
             std::cerr << "[WorldSave] " << m_stateFile << ": " << loaded.note << '\n';
-        if (loaded.found && !loaded.legacy && !loaded.part("economy"))
+        if (WorldSaveStore::protectsFiles(loaded.status) || (loaded.found && !loaded.part("economy")))
         {
             // a manifest whose generations are all unusable: never write over them (they may be repairable)
             std::cerr << "[WorldSave] " << m_stateFile << ": NO usable generation - saving DISABLED to protect the files" << '\n';

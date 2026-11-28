@@ -165,6 +165,10 @@ struct RoutePlanRequest
     // ... and the ship is already over the city (the pad service can fly the straight way): that straight way competes
     // with the lane chains; from outside the city it does not (it is no route the service flies)
     bool serviceDirectAllowed = false;
+    // RECOVERY STRATEGY (author 2026-11-28: «нужно было нырнуть в ближайшую зелёную зону»): the direct free leg from
+    // the ship failed in the optimizer - this attempt goes through the green lanes (the direct leg only when no lane
+    // entry exists at all)
+    bool forbidDirectFreeLeg = false;
 
     // Minimum straight that must remain untouched before the first curve.
     // Zero keeps the backend legacy heuristic. Segmented mandatory passages

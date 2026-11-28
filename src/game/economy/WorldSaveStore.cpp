@@ -76,6 +76,7 @@ bool readAll(const std::string& path, std::string& out)
 }
 struct Manifest
 {
+    enum class State { Absent, Ok, Corrupt, Unsupported, Unreadable } state = State::Absent;
     bool ok = false;
     std::uint64_t generation = 0;
     struct Entry
@@ -92,12 +93,24 @@ Manifest readManifest(const std::string& base)
     Manifest m;
     std::string text;
     if (!readAll(manifestPath(base), text))
-        return m;
+    {
+        std::error_code ec;
+        if (std::filesystem::exists(manifestPath(base), ec))
+            m.state = Manifest::State::Unreadable;   // it is there and cannot be read now (locked): never "absent"
+        return m;   // Absent
+    }
+    m.state = Manifest::State::Corrupt;   // until it reads
     try
     {
         const auto j = nlohmann::json::parse(text);
-        if (j.value("format", std::string()) != Format)
+        const std::string format = j.value("format", std::string());
+        if (format.rfind("hanted_world_save/", 0) == 0 && format != Format)
+        {
+            m.state = Manifest::State::Unsupported;
             return m;
+        }
+        if (format != Format)
+            return m;   // Corrupt
         const auto entries = [](const nlohmann::json& parts) {
             std::vector<Manifest::Entry> out;
             for (auto it = parts.begin(); it != parts.end(); ++it)
@@ -109,7 +122,9 @@ Manifest readManifest(const std::string& base)
         m.parts = entries(j.value("parts", nlohmann::json::object()));
         m.previous = j.value("previous_generation", std::uint64_t {0});
         m.previousParts = entries(j.value("previous_parts", nlohmann::json::object()));
-        m.ok = m.generation > 0;
+        m.ok = m.generation > 0 && !m.parts.empty();
+        if (m.ok)
+            m.state = Manifest::State::Ok;
     }
     catch (...)
     {
@@ -170,7 +185,45 @@ std::uint64_t WorldSaveStore::committedGeneration(const std::string& base)
 bool WorldSaveStore::commit(const std::string& base, const std::vector<WorldSavePart>& parts, std::string* error)
 {
     const Manifest current = readManifest(base);
-    const std::uint64_t g = current.generation + 1;
+    if (current.state == Manifest::State::Corrupt || current.state == Manifest::State::Unsupported ||
+        current.state == Manifest::State::Unreadable)
+    {
+        if (error)
+            *error = current.state == Manifest::State::Unreadable ? "the manifest cannot be read now (locked) - retried later"
+                   : current.state == Manifest::State::Corrupt ? "the manifest is corrupt - not written over"
+                                                               : "the manifest is of another version - not written over";
+        return false;
+    }
+    // the fallback of the new generation: the newest generation that VERIFIES (audit #11 4.3: a damaged newest one must
+    // not push the last good one out)
+    std::uint64_t keepGeneration = 0;
+    std::vector<Manifest::Entry> keepParts, dropParts;
+    if (current.ok)
+    {
+        std::vector<WorldSavePart> probe;
+        std::string why;
+        if (loadGeneration(base, current.parts, probe, why))
+        {
+            keepGeneration = current.generation;
+            keepParts = current.parts;
+            dropParts = current.previousParts;   // g-2: no longer named
+        }
+        else if (current.previous > 0 && loadGeneration(base, current.previousParts, probe, why))
+        {
+            keepGeneration = current.previous;
+            keepParts = current.previousParts;   // the damaged newest stays on disk, unnamed (never deleted)
+        }
+    }
+    std::uint64_t g = std::max(current.generation, keepGeneration) + 1;
+    // never over an existing file of another generation (a manifest lost / rolled back must not let g collide)
+    for (bool taken = true; taken; )
+    {
+        taken = false;
+        for (const auto& p : parts)
+            taken = taken || std::filesystem::exists(partPath(base, g, p.name));
+        if (taken)
+            ++g;
+    }
     nlohmann::json j;
     j["format"] = Format;
     j["generation"] = g;
@@ -182,17 +235,17 @@ bool WorldSaveStore::commit(const std::string& base, const std::vector<WorldSave
         {
             if (error)
                 *error = "part " + p.name + " not written (" + path + ")";
-            return false;   // the manifest still names generation g-1: nothing changed
+            return false;   // the manifest still names the previous generation: nothing changed
         }
         std::ostringstream hex;
         hex << std::hex << fnv1a64(p.text);
         j["parts"][p.name] = {{"file", fileName(path)}, {"bytes", p.text.size()}, {"fnv1a64", hex.str()}};
     }
-    if (current.ok)
+    if (keepGeneration > 0)
     {
-        j["previous_generation"] = current.generation;
+        j["previous_generation"] = keepGeneration;
         j["previous_parts"] = nlohmann::json::object();
-        for (const auto& e : current.parts)
+        for (const auto& e : keepParts)
         {
             std::ostringstream hex;
             hex << std::hex << e.hash;
@@ -206,13 +259,16 @@ bool WorldSaveStore::commit(const std::string& base, const std::vector<WorldSave
             *error = "manifest not written (" + manifestPath(base) + ")";
         return false;
     }
-    // generation g-2 is no longer named by the manifest: removed (g-1 stays as the fallback)
-    if (current.ok && current.previous > 0)
-        for (const auto& e : current.previousParts)
-        {
-            std::error_code ec;
-            std::filesystem::remove(dirOf(base) + e.file, ec);
-        }
+    for (const auto& e : dropParts)
+    {
+        bool stillNamed = false;
+        for (const auto& k : keepParts)
+            stillNamed = stillNamed || k.file == e.file;
+        if (stillNamed)
+            continue;
+        std::error_code ec;
+        std::filesystem::remove(dirOf(base) + e.file, ec);
+    }
     return true;
 }
 
@@ -220,33 +276,46 @@ WorldSaveLoaded WorldSaveStore::load(const std::string& base)
 {
     WorldSaveLoaded out;
     const Manifest m = readManifest(base);
+    if (m.state == Manifest::State::Corrupt || m.state == Manifest::State::Unsupported || m.state == Manifest::State::Unreadable)
+    {
+        out.found = true;
+        out.status = m.state == Manifest::State::Unsupported ? WorldSaveStatus::VersionUnsupported : WorldSaveStatus::ManifestCorrupt;
+        out.note = m.state == Manifest::State::Unsupported ? "the manifest is of an unsupported version - nothing loaded, the files are kept"
+                 : m.state == Manifest::State::Unreadable ? "the manifest cannot be read (locked by another process?) - nothing loaded, the files are kept"
+                                                          : "the manifest is corrupt - nothing loaded, the files are kept";
+        return out;
+    }
     if (m.ok)
     {
         out.found = true;
         std::string why;
         if (loadGeneration(base, m.parts, out.parts, why))
         {
+            out.status = WorldSaveStatus::Loaded;
             out.generation = m.generation;
             return out;
         }
         std::string whyPrev;
         if (m.previous > 0 && loadGeneration(base, m.previousParts, out.parts, whyPrev))
         {
+            out.status = WorldSaveStatus::LoadedPrevious;
             out.generation = m.previous;
             out.note = "generation " + std::to_string(m.generation) + " unusable (" + why + ") - generation " +
                        std::to_string(m.previous) + " loaded";
             return out;
         }
         out.parts.clear();
+        out.status = WorldSaveStatus::NoUsableGeneration;
         out.note = "no usable generation (" + why + (whyPrev.empty() ? std::string() : "; previous: " + whyPrev) + ")";
         return out;
     }
-    // the legacy layout (before the manifest): <base> = the economy, <base>.ships.json = the ships
+    // no manifest: the legacy layout (before the manifest): <base> = the economy, <base>.ships.json = the ships
     std::string economy, ships;
     if (readAll(base, economy))
     {
         out.found = true;
         out.legacy = true;
+        out.status = WorldSaveStatus::Legacy;
         out.parts.push_back({"economy", std::move(economy)});
         if (readAll(base + ".ships.json", ships))
             out.parts.push_back({"ships", std::move(ships)});

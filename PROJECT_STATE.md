@@ -9752,3 +9752,8 @@ start-up hitches (render), trade step 16 part 3 live.
     dropped -> 0) / overload / client-driven comparison - own clock still OPT-IN (TCP + focus-loss runs open).
     Clean build from an empty dir PASSED. Final scores + open items: ARCHITECTURE_STABILIZATION_REPORT.md (target >= 8
     NOT met for B1, B2, B4, D7, D8, SpaceState decomposition).
+- 2026-11-28 audit #11 continuation (ARCHITECTURE_STABILIZATION_REPORT.md): planner recovery strategies (lanes-only,
+  then the guaranteed voxel route; refusal only for a proven enclosure) - live 4/4 formerly refused points LANDED; E3
+  progress watchdog before every early return; save 4.1-4.5 (immutable ships snapshot at the flush, load statuses, the
+  known-good generation kept, failure tests incl. a locked manifest - a real defect fixed); D2 chunks from the runner
+  policy; B4 attitude layers (partial: reversals 26.9 -> 22.3 /s, spread unchanged - OPEN).

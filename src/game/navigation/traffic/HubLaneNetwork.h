@@ -94,6 +94,7 @@ public:
         bool goalByService = false;            // the route ends at the exit station; the goal is reached by a service
                                                // (a pad: straight at transit height) - costed as the straight distance
         double freeSpeedMps = 150.0;           // the free legs' cruise (the chain cost in TIME)
+        bool forbidDirect = false;             // recovery: no direct free leg ship -> goal while a lane entry exists
     };
     // THE CHAIN COST IS TIME (author 2026-11-24: «все выбираем по времени - минимальное время»): seconds - a free leg at
     // the cruise, a lane / connector at ITS limit, the join approach at the mean of the two, the pad service's flight by

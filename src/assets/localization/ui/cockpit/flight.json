@@ -1843,6 +1843,20 @@
       "es": "no se pudo iniciar una ruta en {minutes} min - vuelva a solicitar desde otra posición",
       "ja": "{minutes} 分以内に航路を開始できませんでした - 別の位置から再要求してください"
     },
+    "cockpit.dock.fallback_route": {
+      "en": "DOCKING: no smooth route - flying a safe step-by-step route",
+      "ru": "СТЫКОВКА: плавного маршрута нет - летим безопасным пошаговым маршрутом",
+      "zh-Hans": "对接：无平滑航线 - 按安全的分段航线飞行",
+      "es": "ATRAQUE: sin ruta suave - volando una ruta segura paso a paso",
+      "ja": "ドッキング：滑らかな航路なし - 安全な段階的航路で飛行"
+    },
+    "cockpit.dock.refused.no_progress": {
+      "en": "the ship made no progress for {seconds} s (thrust, an obstacle) - the autopilot let go, request again",
+      "ru": "корабль не продвигается {seconds} с (тяга, препятствие) - автопилот отпустил управление, повторите запрос",
+      "zh-Hans": "飞船 {seconds} 秒内没有进展（推力、障碍物）- 自动驾驶已释放控制，请重新请求",
+      "es": "la nave no avanzó durante {seconds} s (empuje, un obstáculo) - el piloto automático soltó el control, vuelva a solicitar",
+      "ja": "船が {seconds} 秒間進んでいません（推力、障害物）- オートパイロットは制御を解放しました。再要求してください"
+    },
     "cockpit.dock.refused.no_route": {
       "en": "no safe route from here ({attempts} attempts) - move closer to the hub's lanes and request again",
       "ru": "безопасный маршрут отсюда не найден ({attempts} попытки) - подойдите ближе к трассам хаба и повторите запрос",

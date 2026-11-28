@@ -61,6 +61,8 @@ public:
 
     ServerAdvanceResult advance(double elapsedSeconds);
     double fixedStepSeconds() const;
+    // the runner's tick policy (frame clip, debt cap): the own clock hands its time by THESE (audit #11 D2)
+    const ServerTickPolicy& tickPolicy() const;
     game::diagnostics::NavigationRuntimeLabObservation
     navigationRuntimeLabObservation() const noexcept;
     bool copyAuthoritativePublishedSnapshot(

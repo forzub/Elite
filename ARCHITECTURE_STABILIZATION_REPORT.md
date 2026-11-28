@@ -257,3 +257,52 @@ f65fa81f8 (stages 0-2), 90afb39c4 (stages 3-9), 42d59707a (stage 3 loops + stage
 Clean build (stage 0 / D6): from an empty directory `D:/tmp/cleanbuild2` (`-DELITE_BUILD_CLIENT=ON -DELITE_BUILD_SERVER=ON`,
 RelWithDebInfo) at 42d59707a: exit 0, 15641 steps; EliteHubSpaceCheck and EliteWorldSaveCheck from it pass. (The first
 attempt on 2026-11-27 failed because I edited sources during it - not a baseline defect; recorded.)
+
+## Audit #11 continuation (2026-11-28)
+
+### Planner: a route is ALWAYS built (the author's rule; exception: an enclosure without an exit wide enough for the hull)
+- Root cause of the 6 km refusals (source + live): the lane-chain search chose the direct free leg by TIME (64 s vs 86 s
+  through the lanes, `direct_m` / `chain_cost` are seconds); the continuous optimizer could not fly that 6 km leg, and
+  every retry asked for the same leg. The 3-attempt bound (stage 3) turned the old endless re-planning - which sometimes
+  succeeded by chance - into a refusal: the regression the author saw. The route-draft net is loaded and used (its
+  drafts were infeasible there; not the cause).
+- Strategy 2 (lanes-only recovery): a retried request forbids the direct free leg while a lane entry exists - "dive into
+  the nearest green zone". Live: the 4 points refused before (incl. the author's) LANDED 61-120 s, 1 replan each.
+- Strategy 3 (THE GUARANTEED ROUTE, `VoxelRoutePlanner.h`): resolution-complete voxel search - an escape on a fine grid
+  (half the hull radius: a gap narrower than the hull stays closed) off a pad / out of a hangar / out of a solid volume,
+  then A* over a coarse transit grid; every polyline segment checked against the exact obstacle geometry. Flown leg by leg
+  (escape legs slowly with the attitude held; else stop - turn - go), shown as frames (the polyline is the plan's gates),
+  the pad handed to its service in reach. Refusal ONLY when the escape search proves no exit for the hull.
+  Unit `EliteVoxelRouteCheck`: round a wall, off a pad, out of a hangar through a door wider than the hull, ENCLOSED for a
+  door narrower than the hull and for a closed cube, out of a solid block.
+  Live: a start 660 m inside the hub's solid core box -> "deep embedded: straight out 825 m", flown at 5 m/s; after
+  ~470 m the physics' contact with the core's real collision geometry held the ship and the progress watchdog let go at
+  90 s (finite, told). Residual: a DEV start inside a solid core is not a gameplay state; the escape fights the contact.
+### E3 watchdogs (audit #11 P0)
+- The watchdogs now run BEFORE every early return (the lift-clear and the fallback course returned before the old one).
+- A separate PROGRESS watchdog for every executed motion (route progress, fallback points / distance, lift height): no
+  5 m of progress in 90 s -> refused (`cockpit.dock.refused.no_progress`), the autopilot released, a stop commanded,
+  every executor's state cleared in fail(). A legitimate wait (the dispatcher queues / holds / flies the ship, the ring
+  sync hold) pauses it. Live: the embedded run above ended by this watchdog.
+- NOT yet run live: a ship without thrust (ELITE_DEV_DESTROY_MODULES_AT on the engines + RCS mid-route).
+### E4 save (audit #11 4.1-4.5)
+- 4.1: the ships part is serialized by `buildRuntimeShipsJson()` INSIDE the economy's flush (the provider), i.e. the same
+  server tick as the economy - no older copy.
+- 4.2: `WorldSaveStatus` {None, Loaded, LoadedPrevious, Legacy, ManifestCorrupt, VersionUnsupported, NoUsableGeneration};
+  a present manifest never falls back to the legacy layout; protected statuses disable saving.
+- 4.3: commit names as fallback the newest generation that VERIFIES; a damaged newest stays on disk unnamed, never deletes
+  the known-good one. New-generation numbers never collide with existing part files.
+- 4.5 (unit, `EliteWorldSaveCheck`): corrupt manifest (no legacy fallback, commit refuses), unsupported version, missing
+  part, partial write -> previous; save after a restore keeps the known-good; the new generation damaged again -> the
+  known-good loads; a LOCKED manifest -> the commit fails and the previous generation stays intact. The locked case found
+  a real defect: an unreadable manifest read as "absent" and generation 1 was rewritten over the good one - fixed
+  (Unreadable state, the commit waits).
+- Live: `run_acceptance.sh save_continue` PASS (run 2 restored run 1's last generation, committed a newer one, ships part
+  included). The acceptance suite now returns a non-zero exit code on any failure.
+### D2: the own clock's chunk sizes come from the runner's `ServerTickPolicy` (no second copy).
+### B4 (started): the own ship's attitude LAYERS in ClientWorldState (authoritative raw snapshot / predicted to "now" in
+every mode / decaying correction / presentation; `ELITE_DEV_ATTITUDE_LEGACY=1` A/B). Cause found by the source audit: the
+presentation target was reset to each snapshot (16.7 Hz) - no extrapolation outside HubTactical - and chased by a 22/s
+exponential filter: a rate pulse per snapshot. Live A/B on the B2-04 approach (`tools/attitude_report.py`): reversals
+26.9 -> 22.3 /s, drawn max 81 vs auth 88 -> 20.3 vs 20.0; the drawn spread did NOT improve (2.29 -> 2.35, auth ~1.6).
+NOT solved: the remaining jitter is the next measurement (suspected: the presentation clock vs the frame clock).

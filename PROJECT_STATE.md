@@ -9763,3 +9763,26 @@ start-up hitches (render), trade step 16 part 3 live.
   PASS; two_worlds FAILED on its 700 s budget (world 2 was descending, 319 m to go) - budget raised to 900 s: re-run PASS.
   OPEN B1/B2/B4: position layers outside HubTactical, one epoch for cockpit / HUD / maps, remote ships, the own clock as
   the default (would make the server stamps wall-clock time).
+- OPEN ITEMS (audits #11 / #12), kept while the navigation concept review runs (no large refactor until it is done):
+  - E7 voxel fallback: the audit #12 contract (outcome categories, no planning through solids, bounded memory / time /
+    cancel, every executed segment verified, no own executor) - STOPPED by the author until a scenario proves the need;
+    the planned rewrite was not applied.
+  - B1/B2/B4: position layers outside HubTactical; the time contract (server physics time / server-time estimate /
+    universe time / presentation epoch / local monotonic) with explicit conversions; the attitude layers' lifecycle
+    (ship change, destruction, frame change, jump, reconnect, timeline reset, landing / docking); real input prediction
+    vs rate extrapolation; one presentation sample for cockpit / cameras / HUD / maps (incl. qSmooth); attitude_report.py
+    to use the measured interval; A/B on identical scenarios incl. Assisted / Newtonian / HubTactical / manual / TCP.
+  - D1/D2: the own clock's remaining runs (TCP, focus loss, minimize, render stall, pause with debt, manual flight,
+    landing, world change); clock_matrix.sh with tolerances and an exit code; then the own clock as the default.
+  - B3: one executed-route contract for the pad service / docking / fallback / maps; geometry revision vs progress.
+  - E3: progress-kind switching resets the no-progress timer - a per-request total progress budget; justify 5 m / 90 s;
+    a live run with destroyed engines + RCS; complete executor cleanup on refusal / cancel.
+  - E4: the mandatory part set (not only the manifest's), file-existence errors vs absence, part names / paths / owner
+    generation, one writer process per save, per-part schema versions, the inventory of persistent state, buy / sell /
+    transfer transactions live.
+  - C: run_acceptance.sh - the game's exit code, unknown scenario = error (done), EliteVoxelRouteCheck, per-scenario
+    expected outcome, finiteness vs success split, attitude / position checks, clean per-run dirs, revision + build config
+    + start conditions recorded; no timeout raised without the cause (the two_worlds 700 -> 900 s raise was made without
+    a timing analysis - to revisit).
+  - A6 live pad destruction during an approach; E1 concurrent worlds; E2 behaviour with rendering fully off; E5; D4 GL
+    diagnostics; D5 metrics; D7 stable localization ids; D8 after the own clock.

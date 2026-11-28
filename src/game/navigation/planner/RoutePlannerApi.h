@@ -665,6 +665,13 @@ struct RoutePlannerOptions
 {
     bool timeObjective = true;                     // minimize the travel time (false: the old weighted mix)
     const RouteDraftNet* draftNet = nullptr;       // the route-draft net (its first seed + the fast path); null = none
+    // DEV (the navigation concept review 2026-11-28, ELITE_DEV_NAV_EXP=<a,b,...>): controlled experiments that remove ONE
+    // constraint each from the continuous optimizer's request - to show which constraint makes a solvable task
+    // infeasible. Never on by default. nofloor = no minimum radius from the HUD gate spacing; freegoal = no mandatory
+    // arrival tangent (the goal tangent = the start -> goal direction); termcap = the terminal straight from the design
+    // speed (not the 500 m/s route maximum it was computed at); nostart = the hard start straight 30 m. dump = log the
+    // final optimizer request (also on with any experiment).
+    bool expNoFloor = false, expFreeGoal = false, expTermCap = false, expNoStart = false, expDump = false;
     std::function<void(const std::string&)> log;   // diagnostics lines (the orchestration's logger); empty = silent
     std::string draftDumpPath;                     // every optimizer request appended here (the net's dataset); empty = none
     std::function<double()> budgetClockSeconds;    // the search budget's clock (seconds); empty = an evaluation-count budget

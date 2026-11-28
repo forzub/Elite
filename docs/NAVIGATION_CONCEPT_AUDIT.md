@@ -1,89 +1,196 @@
-# Hub navigation — conceptual audit (2026-11-28)
+# Hub navigation — conceptual audit (2026-11-28, revision 2)
 
-Requested by the author before any further work on the voxel planner. Facts are from the source at 8f12bdd92 and the
-live grid logs (D:/tmp/grid_full2, D:/tmp/grid_lanes); proposals are marked as such.
+Requested by the author before any further work on the voxel planner or a "hub envelope". Facts are from the source at
+76ee41b09 (file:line), the live logs and controlled experiments; proposals are marked as such. The hypothesis under
+test: the failures come from how navigation TASKS are posed (destination, arrival conditions, their owners), not from
+the search.
 
-## 1. What each part solves today
+**Verdict: confirmed.** The B2-04 failure is a mis-posed task: the request demanded a mandatory terminal straight of
+8820 m on an 8374 m route (section 11). With that one value corrected the ORIGINAL continuous planner solves it at the
+first attempt. The revision-1 proposal (a hub envelope with lanes mandatory inside it) is withdrawn as the primary
+remedy (section 8).
 
-| part | what it decides | how it checks feasibility |
+## 1. Current architecture (what each part does)
+
+| part | decides | feasibility it checks |
 |---|---|---|
-| Continuous planner (`ContinuousAssistedPathOptimizer`, via `RoutePlanner`) | the SHAPE of one leg: two Béziers + a cruise straight between a start state (position, velocity, heading) and a goal state (position, arrival direction, a mandatory terminal straight), time-optimal | lateral / angular limits, turn radius at speed, clearance against every obstacle - hard constraints |
-| `HubLaneNetwork::chooseRoute` | the TOPOLOGY: a Dijkstra over lane stations / connectors plus free join / exit / direct legs | a free leg = a straight segment clear by hull + 10 m, plus a turn-room heuristic (`MinFreeLegMeters + turnRadius x turn`) |
-| `SegmentedRouteComposer` | turns the chosen chain into legs, each solved by the continuous planner | per leg (the optimizer) |
-| Pad service (server, `GameSimulationPadLanding`) | the final approach: from its takeover point climb to the transit height (525 m over the deck), across (round tall buildings), down onto the pad / into a hangar | its own geometry (`hubPadRoute`, door / bay points) |
-| LiftClear / PreplanningSafetyCourse (client) | getting out of contact / onto a safe course before a route exists | rays / contact normals |
-| Voxel fallback (2026-11-28, new) | a polyline when everything above failed | voxel search + exact segment checks |
+| Continuous planner (`ContinuousAssistedPathOptimizer`, via `RoutePlanner::planContinuousAssisted`) | one leg's shape: hard start line along `start.tangent` -> cubic -> optional cruise straight -> cubic -> hard goal line along `goal.tangent`; a speed profile per candidate (slows for curvature, braking / acceleration passes) | HARD (violation): collision (>= 1.0), curvature above 1/Rcomfort, a start speed it cannot shed, angular acceleration; exact by construction: both positions, both tangents, both protected straights |
+| `HubLaneNetwork::chooseRoute` | the topology (lanes, connectors, free join / exit / direct legs), costed in seconds | a free leg = a straight clear by hull + 10 m and a turn-room heuristic |
+| `SegmentedRouteComposer` | the chain's legs, each solved by the continuous planner, recomputing their own leads / terminal straights | per leg |
+| Hex dock (server, `DockServiceTraffic`, `DockTrafficController`) | admission, the pad, the capture box, the corridor, docking, the exit along the axis | its own geometry (`HexDockGeometry`) |
+| Pad service (server, `GameSimulationPadLanding`) | the pad approach: climb to the transit height, across, down; hangar door / bay steps | its own route |
+| Ring sync (client) | the sync gate on the axis, the hold, the co-rotating leg | client thresholds |
+| LiftClear / PreplanningSafetyCourse / voxel fallback (client) | out of contact / onto a safe course / a polyline when everything failed | rays, contact normals, voxels |
 
-## 2. Why the lanes became a "fallback"
+## 2. Confirmed errors in how tasks are posed
 
-The cost unit changed from weighted metres to SECONDS (70b993f76, 2026-11-24, the author's «все выбираем по времени»).
-In the metres mode a free metre inside a hub cost `FreeInHubFactor` = 2.5 and a lane metre `LaneCostFactor` = 0.35 - the
-lanes' priority (the author 2026-11-22: «на территории хаба зелёная зона приоритетнее пустого пространства из соображений
-безопасности»). In the time mode both factors are gone (`freeLeg` returns `freeTime(length + turn penalty)` at the free
-cruise; `HubLaneNetwork.cpp:302-307`): a free metre in the hub costs the same as anywhere. A 6 km direct leg at 150 m/s
-(64 s) beats the lane chain (86 s) every time. **The safety priority was a weight in the old cost and silently vanished
-with the new unit - a regression of an agreed rule, not a planner limit.**
+1. **The terminal straight is computed at the ship's maximum speed (500 m/s) BEFORE the hub limit (150 m/s) is applied,
+   and the direct (non-segmented) path never recomputes it** (`SpaceStateDocking.cpp:3470` computes it; the lanes run
+   `HubLaneRouting.cpp:80-94` caps the speed; only obstacles, speeds and straights are copied back at `:3628-3631`).
+   B2-04: 1.25 x 500^2 / (2 x 17.65) = 8820 m of mandatory straight on an 8374 m chord. The segmented path recomputes its
+   legs (`SegmentedRouteComposer.cpp:743-751, 973-1022`) - which is why the lanes-only retry worked.
+2. **A visual parameter is the planner's only hard minimum radius**: `minimumComfortRadiusMeters =
+   requiredGuidanceTunnelRadiusMeters(gateSpacing 500 m) = 955 m`, whatever the speed (`RoutePlanner.cpp:488-500`,
+   `OrdinaryRoutePolicy.h:209-234`). A U-turn from rest costs a ~1.9 km loop because the HUD's frames are 500 m apart.
+   (The 1275 m in the lane log is v^2/a_lat at 150 m/s for the lane MODEL only; the optimizer never sees it.)
+3. **An open pad is posed as a docking port** (`SpaceStateDocking.cpp:878`, `HubSemanticAnchorKind::DockingPort`): a
+   mandatory HORIZONTAL arrival tangent "from the pad toward the ship" (`:868-873`, `terminalOutward = forward` `:3340`),
+   the docking terminal policy (`requiredDockingAxisMinimumMeters` >= 700 m) and the route-up reference. None of it is a
+   pad's requirement: the pad service flies the climb / across / down itself.
+4. **The start must leave along the nose** (`start.tangent` = the hull nose at rest; the shape family has no turn in
+   place): a ship at rest pointing away pays a loop bounded by error 2's 955 m floor.
+5. **Handovers assumed, not confirmed**: `LandOnPad` -> `releaseClientAutopilot` + `requests.clear()` + `m_padAnchor = {}`
+   at once (`SpaceStateDocking.cpp:1630-1640, 3652-3666, 4855-4865`); the server may refuse (`GameSimulationPadLanding.cpp
+   168-243, 297-382`) and nothing retries. Also the station's early release (`SpaceState.cpp:1136-1147`) and
+   `RouteService` (`SpaceStateRouteRun.cpp:177-185`).
+6. **The dock goal is hand-copied**: the client plans to the JSON anchor `dock_gate_front` (`hub_semantic_anchors.json
+   6-37`) + `max(300, 10L + 4 clearance)` (`:3324-3335`), not to `HexDockGeometry`'s axis join / the server's capture box
+   (z -1000..-150, radial < 60 m, < 25 m/s, `GameSimulationDockTraffic.cpp:864-878`); a hull longer than ~80 m gets a goal
+   outside the capture box (arithmetic). After the client route ends and before the capture nobody flies the ship
+   (`SpaceStateDocking.cpp:4966-4976`).
+7. **Dispatcher data unused**: pilot ships always go `directEntry` (no hold, `GameSimulationDockTraffic.cpp:605-611`) and
+   are admitted with a hard-coded Cobrett envelope and Medium class (`:601-603, 778-779`) - the real hull is not checked.
+8. **More than one control owner**: one shared flag `m_clientAutopilotControlActive` cleared by several paths without
+   checking the owner; capsule rescue outside `arbitrateFlightTask`; several pilots may submit in one frame
+   (`SpaceStateFormation.cpp:153-219`, `SpaceState.cpp:3345-3352`).
+9. **The cost unit change lost the lanes' preference** (70b993f76: `FreeInHubFactor` 2.5 / `LaneCostFactor` 0.35 exist
+   only in the metres mode) - an agreed rule (the author 2026-11-22) dropped silently.
 
-## 3. Why it planned a free trajectory where a network exists
+## 3. Constraints per destination type (current -> proposed)
 
-Two levels judge feasibility differently. The chain search accepts a free leg when its STRAIGHT segment is clear and the
-turn-room heuristic passes; the optimizer must then fly it as a curve that starts at the ship's heading and arrives along
-the goal's direction after a 764 m mandatory straight with a 1275 m turn radius. In the failed starts the straight was
-clear (the leg ran above the city, to the approach point 525 m over the deck) but the optimizer's best shape violated its
-limits (violation 0.106, 5300 evaluations, 0 valid) - three times, deterministically. The search chose a leg it cannot
-know to be flyable; the lanes-only retry (2026-11-28) works because the lane chain's legs are short and well posed.
+| destination | constraint | owner today | proposed owner / value |
+|---|---|---|---|
+| hex dock | entry corridor 100 m, slot 160x60, axis, spin 2 deg/s, speeds 12 / 8 m/s, pad fit | `HexDockGeometry` (server) | same; the client goal = the dock's own capture box (from the dock, not a JSON copy) |
+| hex dock | terminal straight >= 700 m | `OrdinaryRoutePolicy` | the dock's corridor length + the braking room at the corridor's entry speed (12 m/s) |
+| hex dock | waiting place | dispatcher (holds exist, pilots bypass them) | dispatcher (author's intent: the planner brings the ship to the ASSIGNED place) |
+| open pad | horizontal arrival tangent, 700 m straight, docking up | `SpaceStateDocking` synthesis | **none**: arrive in the service's takeover AREA (around the hover point), any direction, speed <= the service's takeover speed |
+| open pad | climb / across / down, the place | pad service (server) | same; the takeover CONFIRMED (the snapshot's `padService` phase) before the route is dropped |
+| hangar | door, bay, steps, speeds | pad service | same (not inherited by open pads) |
+| ring | sync gate on the axis, hold, roll sync | client | a gate task (arrive on the axis, match the spin); the co-rotating leg is a separate task in the city frame - the gate's axis does not pass to it |
+| body surface | site, descent, ground | Landing / Body autopilot | unchanged (no docking axes; confirmed by `freeFlightSurfaceState`) |
+| arbitrary point | near < 1500 m / < 20 m/s etc. | `RouteLegPilot` | the initiator's stated conditions only (pass / stop / area / speed / optional direction) |
+| pursuit / formation | relative offset, matched velocity | `updateFormationTask` (client, DEV) | the initiator's relative state; then the escort service |
 
-## 4. Why not first climb out into free space
+Physical limits are never a destination's: braking room, turn radius at a speed, angular acceleration come from the ship
+(`RouteRequestCapability`) and are the planner's to satisfy, on curves too (section 5).
 
-No such strategy exists on the client. "Over the structures" exists only in the SERVER's pad service (the transit height)
-and, for contact, in LiftClear (along the contact normal, ~60 m). The planner never composes "climb / move outward to
-open space, then plan" - so a start low among buildings or under the transit layer has no simple way out other than the
-optimizer or (now) the voxel search.
+## 4. Owners of truth
 
-## 5. Where a real voxel search is needed
+| owner | creates | receives | decides | must not decide | hands over when |
+|---|---|---|---|---|---|
+| infrastructure config (dock geometry, hub plan, lanes, pads) | corridors, capture boxes, transit heights, lane tubes | - | - | the route | - |
+| dispatcher (dock / ring / pad) | admission, place, queue | request + hull | who, where, when | the path | snapshot phase (confirmed) |
+| task initiator (UI, script, capsule) | the destination + arrival conditions | - | what is wanted | how to fly | - |
+| planner | the route (geometry + speed profile) | task + ship capability + world | the path | arrival conditions not in the task | - |
+| route executor (autopilot) | control | the route | how to follow | the route | the service's CONFIRMATION |
+| pad / dock / escort service | its own control | the ship at its takeover | its final manoeuvre | - | its own completion |
+| server physics | the authoritative state | control | everything physical | - | - |
+| HUD / maps | presentation | the executed route | nothing | anything | - |
 
-Not demonstrated by any live scenario. The only live use was a DEV start inside the hub's solid core box - an invalid
-physical state (audit #12 rightly calls it so). Hangars: the pad service flies the door / bay points itself; docks: their
-corridors. The candidate cases are local and rare: a ship wedged under an overhang or in a gap after manual flight /
-a collision, where the straight climb is blocked. **A 3D maze search over the whole city is not needed when the problem
-is solved by leaving to open space.**
+## 5. Proposed task contract (on the existing `RoutePlanRequest`; no parallel structure)
 
-## 6. Duplications
+- Spatial: goal point OR goal area (radius / box), frame, the frame's epoch, tolerance.
+- Kinematic: arrival speed or range; `terminalOutward` OPTIONAL (`std::optional` / a `hasTerminalDirection` flag - today
+  it has a default value and is always a hard tangent); hull attitude optional; relative velocity for moving targets.
+- Infrastructure: mandatory corridors (exists: `mandatoryTangentStraights` - from the infrastructure only), speed limits by
+  region, forbidden regions, the assigned place.
+- Completion: reach point / area / state, or "until the service confirms the takeover".
+- Absent = unconstrained. Derived values (braking room, leads) are computed by the PLANNER from the final capability and
+  speed limits, never stored stale in the request.
 
-- The segment "over the city to the pad" has two owners: the client planner (its goal = the pad's approach point, or a
-  lane exit) and the server pad service (climb / across / down from its takeover).
-- "Out of contact" has three: LiftClear, the PreplanningSafetyCourse escape, the voxel escape.
-- The voxel fallback brought a SECOND route executor (`m_dockFallback`, stop-turn-go) next to the route autopilot - against
-  B3 (one executed route).
+## 6. Keep
 
-## 7. Proposed model (keeps every agreed rule)
+The continuous optimizer and its speed profiler; the route-draft net; the lane network and the composer; the hex dock and
+its dispatcher; the pad service (incl. hangars); the ring sync; the body / landing autopilots; the progress watchdogs;
+the lanes-only recovery (it is a correct alternative topology).
 
-1. **The hub envelope**: the city's built volume + margin, from the hub plan (blocks, heights, the ring's deck); the lane
-   tubes are inside it.
-2. **Rules first, time second (lexicographic, not weights)**:
-   - R1 the hard rules as today (no cut through a lane tube, joins from open sky, clearances, the ring's sync gate on the
-     axis, Newtonian ships to the outskirts docks, the dispatcher);
-   - R2 inside the envelope only: lanes, their join / exit legs (bounded length), and the pad service's transit; a free
-     leg through the envelope's interior is not an option;
-   - R3 outside the envelope: free flight at cruise;
-   - R4 among the options R1-R3 allow: minimum time (the author's 2026-11-24 rule, now a tie-breaker inside safety).
-   (The author's 2026-11-22 «баланс» rule for the pad service's straight way stays R2's bounded exception.)
-3. **Strategy ladder** (each finite, told):
-   1. the plan under R1-R4;
-   2. no reachable lane entry / no feasible leg: a deterministic CLIMB-OUT leg (the hub's outward normal / "up" over the
-      deck, the ring's axis side) to outside the envelope, then 1. again;
-   3. the climb is blocked (confined: an overhang, a gap): a LOCAL voxel escape bounded to that space (not the city);
-   4. refusal only for a proven enclosure (the author's exception).
-4. **Owners**: the pad service owns the final approach from the lane exit (the client's goal for a pad = the lane exit,
-   `endAtLaneExit`, as designed 2026-11-22); one route executor (the autopilot) flies every leg - the climb-out and a
-   local escape polyline as ordinary route gates; `m_dockFallback` goes.
-5. **Feasibility in one place**: the chain search's free-leg test uses the same limits the optimizer will apply (the
-   terminal straight, the turn radius at the leg's speed), so a chosen leg is a flyable leg.
+## 7. Duplications
 
-## 8. What this means for the current code (proposal; nothing changed yet)
+- "Over the city to the pad": client planner + pad service -> the pad service owns it from its takeover area.
+- "Out of contact": LiftClear + safe course + voxel escape -> one escape (LiftClear), the voxel only for a proven
+  confined case.
+- A second route executor (`m_dockFallback`) -> removed (B3).
+- The dock goal re-derived from a JSON copy -> taken from the dock's geometry.
 
-- Restore the lanes' priority as constraint R2 in `HubLaneNetwork` (the envelope test on free legs), time as R4.
-- Replace strategy 3 of 2026-11-28 (the city-wide voxel route) by the climb-out leg; keep the voxel code only as the
-  local confined escape (strategy 3 of the ladder), its extension stopped until a scenario proves the need.
-- Fold the fallback executor into the route autopilot (B3).
-- Then re-run the B2-04 grid: success must come from strategy 1 (lanes), not from retries.
+## 8. Artificial constraints to remove (and the revision-1 envelope)
+
+- The stale 500 m/s terminal straight (error 1) - a bug fix.
+- The 955 m radius floor from the HUD gate spacing (error 2) - the physical limit is the speed profile's; the frames
+  adapt their spacing to the curvature (the author's readability rule kept: the tunnel stays continuous).
+- The pad's horizontal arrival tangent and the docking terminal policy for pads (error 3).
+- The nose-tangent start at rest (error 4) - a turn-in-place start segment for a ship at rest (Assisted has the authority;
+  the planner then starts along the needed course).
+- The revision-1 "hub envelope with lanes mandatory inside" is NOT needed for B2-04 (its failure was error 1) and would
+  forbid the reasonable case "already over the city in safe space". Instead the lanes' PREFERENCE returns as a policy
+  term in the time cost (an agreed rule), with forbidden regions as hard constraints - order: rules -> feasibility ->
+  safety policy -> time.
+
+## 9. Planner vs task formation
+
+| change | where |
+|---|---|
+| terminal straight from the final speed limits | task formation (the request's derived values recomputed after the lanes' caps, or computed in the planner) |
+| optional arrival direction / arrival area | contract + task formation (pads, points) + the optimizer accepting a free goal tangent |
+| radius floor from physics, frames adaptive | planner (drop the comfort floor as a hard constraint) + HUD frame placement |
+| turn in place at rest | planner (a start segment) |
+| confirmed handovers | executor / task lifecycle |
+| dock goal from the dock geometry, real hull to the dispatcher | task formation + server |
+| one control owner | client control arbitration |
+
+## 10. Transition plan (each step: build, tests, the B2-04 grid, live landings, commit)
+
+1. Fix error 1 (recompute the terminal straight / leads after the speed caps; the planner derives them). Expected:
+   the grid succeeds on the FIRST attempt.
+2. Pads as their own destination kind: an arrival area, no tangent, no docking terminal policy; the takeover confirmed
+   by the snapshot before the route is dropped.
+3. The radius floor: physics in the optimizer, adaptive frames on the HUD (measure the routes' length / time before and
+   after; frames still continuous).
+4. Turn-in-place start at rest.
+5. Confirmed handovers for the station release and `RouteService`; one control owner.
+6. Dock goal from `HexDockGeometry`; the real hull to the dispatcher.
+7. Retire the voxel fallback from the normal ladder (keep the code for a proven confined case, its own executor removed).
+8. The lanes' preference as a policy term (after 1-3 show where it still matters).
+
+## 11. B2-04 — the actual request and the experiments
+
+Failed request (live dump, `[RouteRequestDump]`, start point city (5588, 2810, 0)):
+
+| parameter | value | source / owner | justified? |
+|---|---|---|---|
+| destination type | pad B2-04, synthesized DockingPort | `SpaceStateDocking.cpp:878` | no (error 3) |
+| goal point | hover point 525 m over the deck (`laneCeiling + 40`), + 80 m along `forward` | `:859-862, 3324-3335` | the hover point yes; the +80 m and the docking ref no |
+| arrival direction | (0.21, 0, -0.98) horizontal, pad -> ship | `:868-873`, `terminalOutward` | no |
+| start speed / tangent | 0 / the hull nose (0.98, -0.22, 0) | `:3321-3323` | the nose tangent at rest: no (error 4) |
+| arrival speed | 0 | the pad port | the service takes over moving ships too - to check |
+| max / geometry speed | 150 / 150 (hub cap 500 -> 150) | `HubLaneRouting.cpp:80-94` | yes (the hub limit) |
+| braking / lateral | 17.65 / 17.65 m/s^2 (the Assisted third of 0.9 x installed) | `RouteRequestCapability.h:66-88` | yes (physics + reserve) |
+| protected start straight | 67 m | `requiredAssistedStartLeadMeters` at rest | ok |
+| protected goal straight | **8820 m = 1.25 x 500^2 / (2 x 17.65)** | `:3470`, stale (error 1) | **no** |
+| minimum radius | 955 m = 500 m gates / (pi/6) | `RoutePlanner.cpp:488-500` | no - visual (error 2) |
+| 1275 m | v^2 / a_lat at 150 m/s, the lane model only | `HubLaneRouting.cpp:38` | not used by the optimizer |
+| 764 m | the lane model's join approach | `freeLegModelFor` | not used by the optimizer |
+| handover | 250 m from the hover point -> LandOnPad, the route dropped at once | `:4849-4865` | unconfirmed (error 5) |
+
+Controlled experiments (`ELITE_DEV_NAV_EXP`, one constraint removed each, the first attempt's outcome):
+
+| experiment | outcome | evaluations | route time |
+|---|---|---|---|
+| baseline | **infeasible** | 5433 | - |
+| termcap (the terminal straight from the design speed: 797 m) | **valid, the net's fast path** | 244 | **67 s** |
+| nofloor (no 955 m radius floor) | valid, fast path | 222 | 146 s |
+| freegoal (no mandatory arrival tangent) | infeasible | 5411 | - |
+| nostart (start straight 30 m) | infeasible | 5235 | - |
+| all four | valid, fast path | 266 | 65 s |
+
+The original continuous planner solves the task once the task is posed right; the search algorithm needs no change for
+this case. The radius floor alone also unblocks it, at twice the route time (a loop).
+
+## 12. Acceptance criteria
+
+- The B2-04 grid (10 starts): every start LANDED on the FIRST plan (no replan) after step 1; route times recorded.
+- No arrival constraint in a pad request beyond the service's takeover area (a source check + the request dump).
+- No route dropped before the service's takeover is replicated (a source barrier + a live refusal case: the server
+  refuses, the client keeps / re-plans and tells).
+- One control writer per frame (a DEV counter of submitters per frame = 1).
+- HUD / map route = the executed route (B3 barrier), frames continuous with adaptive spacing.
+- Docks: a long-hull request gets a goal inside the capture box; the dispatcher sees the real hull.

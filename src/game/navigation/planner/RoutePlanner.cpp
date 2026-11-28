@@ -539,6 +539,35 @@ RoutePlan planContinuousAssisted(
     request.maxPatternIterations = 160;
 
     const RoutePlannerOptions& options = RoutePlanner::options();
+    // DEV: the concept review's controlled experiments (RoutePlannerOptions::exp*) - one constraint off each
+    if (options.expNoFloor)
+        request.minimumComfortRadiusMeters = 0.0;
+    if (options.expFreeGoal)
+        request.goal.tangent = normalizedOr(input.goalMeters - input.startMeters, request.start.tangent);
+    if (options.expTermCap && request.brakingMps2 > 1.0e-6)
+        request.protectedGoalStraightMeters = std::min(
+            request.protectedGoalStraightMeters,
+            std::max(0.0, 1.25 * request.designSpeedMps * request.designSpeedMps / (2.0 * request.brakingMps2)));
+    if (options.expNoStart)
+        request.protectedStartStraightMeters = std::min(request.protectedStartStraightMeters, 30.0);
+    if ((options.expDump || options.expNoFloor || options.expFreeGoal || options.expTermCap || options.expNoStart) && options.log)
+    {
+        char line[1024];
+        std::snprintf(line, sizeof line,
+                      "[RouteRequestDump] start (%.0f,%.0f,%.0f) v %.1f tangent (%.2f,%.2f,%.2f) | goal (%.0f,%.0f,%.0f) v %.1f tangent "
+                      "(%.2f,%.2f,%.2f) | chord %.0f m | protected start %.0f m goal %.0f m | design %.0f m/s max %.0f | lat %.2f "
+                      "brake %.2f accel %.2f m/s2 | w %.3f rad/s a %.3f rad/s2 | radius floor %.0f m | hull %.1f m | obstacles %zu",
+                      request.start.positionMeters.x, request.start.positionMeters.y, request.start.positionMeters.z,
+                      request.start.speedMps, request.start.tangent.x, request.start.tangent.y, request.start.tangent.z,
+                      request.goal.positionMeters.x, request.goal.positionMeters.y, request.goal.positionMeters.z,
+                      request.goal.speedMps, request.goal.tangent.x, request.goal.tangent.y, request.goal.tangent.z,
+                      glm::length(request.goal.positionMeters - request.start.positionMeters), request.protectedStartStraightMeters,
+                      request.protectedGoalStraightMeters, request.designSpeedMps, input.maxSpeedMps, request.maxLateralAccelerationMps2,
+                      request.brakingMps2, request.acceleratingMps2, request.maxAngularVelocityRadPerSecond,
+                      request.maxAngularAccelerationRadPerSecond2, request.minimumComfortRadiusMeters, request.hullRadiusMeters,
+                      request.obstacles.size());
+        options.log(line);
+    }
     // the route-draft net's scenes: every real optimizer request (RoutePlannerOptions::draftDumpPath, appended)
     if (!options.draftDumpPath.empty())
         appendRouteDraftRequest(options.draftDumpPath.c_str(), request);

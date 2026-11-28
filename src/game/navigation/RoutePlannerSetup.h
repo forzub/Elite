@@ -33,6 +33,16 @@ inline void configureRoutePlannerFromEnvironment()
         if (ok)
             o.draftNet = &net;
     }
+    if (const char* exp = std::getenv("ELITE_DEV_NAV_EXP"); exp && *exp)
+    {
+        const std::string e = std::string(",") + exp + ",";
+        o.expNoFloor = e.find(",nofloor,") != std::string::npos;
+        o.expFreeGoal = e.find(",freegoal,") != std::string::npos;
+        o.expTermCap = e.find(",termcap,") != std::string::npos;
+        o.expNoStart = e.find(",nostart,") != std::string::npos;
+        o.expDump = true;
+        std::cerr << "[NavExp] experiments: " << exp << std::endl;
+    }
     if (const char* dump = std::getenv("ELITE_ROUTE_DRAFT_DUMP"); dump && *dump)
         o.draftDumpPath = dump;
     o.log = [](const std::string& line) { std::cerr << line << std::endl; };
